@@ -49,6 +49,22 @@ function toBeMaced(suite: string, body: Bytes): Bytes {
   return encodeCanonical([PERMIT_CONTEXT, suite, body])
 }
 
+/**
+ * Sign a payload using an arbitrary signing function over the to-be-signed
+ * bytes. This is the hook that lets keys live behind a custody provider
+ * (HSM / KMS) — see keystore/. `signFn` receives the exact bytes to sign.
+ */
+export function signEnvelopeWith(
+  payload: unknown,
+  suite: string,
+  signFn: (toBeSigned: Bytes) => Bytes,
+  context = '',
+): SignedEnvelope {
+  const payloadBytes = encodeCanonical(payload)
+  const sig = signFn(toBeSigned(suite, context, payloadBytes))
+  return { suite, context, payload: payloadBytes, sig }
+}
+
 /** Sign a payload under a suite's signature scheme, producing an envelope. */
 export function signEnvelope(
   payload: unknown,
@@ -56,10 +72,7 @@ export function signEnvelope(
   secretKey: Bytes,
   context = '',
 ): SignedEnvelope {
-  const payloadBytes = encodeCanonical(payload)
-  const signer = signerFor(suite)
-  const sig = signer.sign(toBeSigned(suite, context, payloadBytes), secretKey)
-  return { suite, context, payload: payloadBytes, sig }
+  return signEnvelopeWith(payload, suite, (tbs) => signerFor(suite).sign(tbs, secretKey), context)
 }
 
 /** Verify an envelope against a public key. Returns false on any mismatch. */

@@ -15,6 +15,7 @@ import {
   type KeyPair,
 } from '../../crypto/src/index.js'
 import type { AppraisalPolicy, AppraisalResult, AttestationClaims, Evidence } from './types.js'
+import type { QuoteVerifierRegistry } from './verifiers.js'
 
 const HARDWARE_FORMATS = new Set(['tdx', 'sev-snp', 'cca', 'tpm'])
 
@@ -48,18 +49,32 @@ export class SoftwareAttester {
   }
 }
 
-/** Appraise a single piece of evidence against a policy. */
-export function appraise(evidence: Evidence, policy: AppraisalPolicy): AppraisalResult {
+/**
+ * Appraise a single piece of evidence against a policy. For hardware (TEE)
+ * formats, a registered quote verifier is consulted; with none registered the
+ * format is rejected with a CONNECT pointer.
+ */
+export function appraise(
+  evidence: Evidence,
+  policy: AppraisalPolicy,
+  verifiers?: QuoteVerifierRegistry,
+): AppraisalResult {
   const reasons: string[] = []
 
   if (!policy.acceptedFormats.includes(evidence.format)) {
     reasons.push(`format "${evidence.format}" not accepted by policy`)
   }
   if (HARDWARE_FORMATS.has(evidence.format)) {
-    reasons.push(
-      `TEE quote verification for "${evidence.format}" is not implemented ` +
-        `(CONNECT: ${evidence.format} attestation verification SDK)`,
-    )
+    const verifier = verifiers?.get(evidence.format)
+    if (!verifier) {
+      reasons.push(
+        `TEE quote verification for "${evidence.format}" is not implemented ` +
+          `(CONNECT: ${evidence.format} attestation verification SDK)`,
+      )
+    } else {
+      const verdict = verifier.verify(evidence, policy.expectedMeasurements ?? [])
+      if (!verdict.ok) reasons.push(...verdict.reasons)
+    }
   }
   if (!policy.trustedAttesters.some((k) => constantTimeEqual(k, evidence.attesterPublicKey))) {
     reasons.push('attester key is not in the trusted set')
@@ -93,8 +108,9 @@ export function appraiseNofM(
   evidences: readonly Evidence[],
   policy: AppraisalPolicy,
   n: number,
+  verifiers?: QuoteVerifierRegistry,
 ): AppraisalResult {
-  const valid = evidences.map((e) => appraise(e, policy)).filter((r) => r.valid)
+  const valid = evidences.map((e) => appraise(e, policy, verifiers)).filter((r) => r.valid)
   const formats = new Set(valid.map((r) => r.claims!.format))
   if (formats.size >= n) {
     return { valid: true, reasons: [], claims: valid[0]!.claims }

@@ -42,6 +42,24 @@ export interface AppraisalPolicy {
   readonly now: number
   readonly trustedAttesters: readonly Bytes[]
   readonly acceptedFormats: readonly AttestationFormat[]
+  /** Allowed enclave measurements (hex) for TEE formats; checked by the adapter. */
+  readonly expectedMeasurements?: readonly string[]
+}
+
+/** Verdict from a per-format TEE quote verifier adapter. */
+export interface QuoteVerdict {
+  readonly ok: boolean
+  readonly reasons: string[]
+}
+
+/**
+ * A pluggable verifier for a hardware attestation format. A real TDX/SEV-SNP/CCA
+ * quote-verification adapter implements this; until one is registered, hardware
+ * formats are rejected.
+ */
+export interface QuoteVerifier {
+  readonly format: AttestationFormat
+  verify(evidence: Evidence, expectedMeasurements: readonly string[]): QuoteVerdict
 }
 
 export interface AppraisalResult {

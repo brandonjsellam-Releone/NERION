@@ -33,6 +33,7 @@ export {
 export type { SuiteId } from './suites.js'
 export {
   signEnvelope,
+  signEnvelopeWith,
   verifyEnvelope,
   openEnvelope,
   issuePermit,

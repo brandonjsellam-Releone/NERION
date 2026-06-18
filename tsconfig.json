@@ -31,7 +31,8 @@
     "conformance/**/*.ts",
     "disclosure/**/*.ts",
     "ledger/**/*.ts",
-    "settlement/**/*.ts"
+    "settlement/**/*.ts",
+    "keystore/**/*.ts"
   ],
   "exclude": ["node_modules", "dist"]
 }

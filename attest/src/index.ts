@@ -8,5 +8,8 @@ export type {
   Evidence,
   AppraisalPolicy,
   AppraisalResult,
+  QuoteVerdict,
+  QuoteVerifier,
 } from './types.js'
 export { SoftwareAttester, appraise, appraiseNofM } from './software.js'
+export { QuoteVerifierRegistry } from './verifiers.js'

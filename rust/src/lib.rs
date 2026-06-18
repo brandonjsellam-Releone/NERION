@@ -15,6 +15,8 @@
 
 use ml_dsa::signature::{Signer, Verifier};
 use ml_dsa::{B32, Keypair, MlDsa87, Signature, SigningKey};
+use ml_kem::kem::TryDecapsulate;
+use ml_kem::{B32 as KemB32, DecapsulationKey, MlKem1024, Seed};
 use sha3::{Digest, Sha3_256};
 
 /// SuiteID identifiers mirroring crypto/src/suites.ts (active subset).
@@ -68,6 +70,18 @@ impl MlDsaKeypair {
     }
 }
 
+/// ML-KEM-1024 (FIPS 203) deterministic encapsulate/decapsulate round-trip.
+/// Uses FIPS deterministic keygen (64-byte d‖z seed) and deterministic
+/// encapsulation (32-byte m), so no OS RNG is needed. Returns true iff both
+/// sides derive the same shared secret.
+pub fn mlkem1024_roundtrip_ok(seed: [u8; 64], m: [u8; 32]) -> bool {
+    let dk = DecapsulationKey::<MlKem1024>::from_seed(Seed::from(seed));
+    let ek = dk.encapsulation_key();
+    let (ct, ss_send) = ek.encapsulate_deterministic(&KemB32::from(m));
+    let ss_recv = dk.try_decapsulate(&ct).expect("decapsulate");
+    ss_send == ss_recv
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -105,5 +119,10 @@ mod tests {
         let msg = b"determinism";
         // Same seed -> same key -> a signature from one verifies under the other.
         assert!(b.verify(msg, &a.sign(msg)));
+    }
+
+    #[test]
+    fn ml_kem_1024_encaps_decaps_roundtrip() {
+        assert!(mlkem1024_roundtrip_ok([1u8; 64], [3u8; 32]));
     }
 }

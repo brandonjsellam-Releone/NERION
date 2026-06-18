@@ -16,8 +16,8 @@
     "conformance": "node tools/conformance.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "format": "prettier --write \"{crypto,capabilities,kernel,receipts,translog,attest,planes,sdks,governance,conformance,disclosure,ledger,settlement}/**/*.ts\"",
-    "format:check": "prettier --check \"{crypto,capabilities,kernel,receipts,translog,attest,planes,sdks,governance,conformance,disclosure,ledger,settlement}/**/*.ts\"",
+    "format": "prettier --write \"{crypto,capabilities,kernel,receipts,translog,attest,planes,sdks,governance,conformance,disclosure,ledger,settlement,keystore}/**/*.ts\"",
+    "format:check": "prettier --check \"{crypto,capabilities,kernel,receipts,translog,attest,planes,sdks,governance,conformance,disclosure,ledger,settlement,keystore}/**/*.ts\"",
     "lint:cleanroom": "node tools/cleanroom-lint.mjs",
     "demo": "vitest run receipts/test/e2e.test.ts",
     "gate": "npm run lint:cleanroom && npm run format:check && npm run typecheck && npm run test"

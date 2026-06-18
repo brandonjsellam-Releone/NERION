@@ -35,6 +35,8 @@ seed), so no OS entropy is used at runtime.
 - `SuiteId` (`PS-1` / `PS-5`) mirroring `crypto/src/suites.ts`.
 - `MlDsaKeypair::from_seed([u8;32])` — deterministic ML-DSA-87 keygen.
 - `sign` / `verify` (round-trip + tamper-rejection tests authored).
+- `mlkem1024_roundtrip_ok(seed, m)` — ML-KEM-1024 (FIPS 203) deterministic
+  encapsulate/decapsulate round-trip (RustCrypto `ml-kem`).
 - `sha3_256` — the PolarSeek commitment hash.
 
 The cross-implementation goal: this crate (and any third-party build) must

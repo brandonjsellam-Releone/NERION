@@ -12,15 +12,16 @@
 | `kernel/` | Stateless deterministic `decide()`; risk-tiering; byte-identical ReplayBundle; TLA⁺ safety model |
 | `receipts/` | PQ receipts (hashes only, no PII); external `verifyReceiptInclusion` |
 | `translog/` | RFC 6962 Merkle log (inclusion + consistency); **Signed Tree Heads + split-view detection**; persistent file log |
-| `attest/` | RATS attestation (software root real; TEE stubs); N-of-M heterogeneous appraisal |
+| `attest/` | RATS attestation (software root real); **TEE quote-verifier adapter framework** (plug real TDX/SEV-SNP/CCA + measurement policy); N-of-M heterogeneous appraisal |
 | `planes/` | `PolarSeekNode` orchestration; **action-bound PermitTokens** (replay-resistant) |
 | `governance/` | **M-of-N quorum**, revocation registry, customer local kill switch |
 | `disclosure/` | Sound selective disclosure; **ZK range proof** (`amount < threshold`, audited group / unaudited protocol) |
 | `sdks/ts/` | `PolarSeekClient` + **MCP/tool-call adapter** (a denied call never executes) |
 | `ledger/` | **Pure-PoS** ledger: verifiable stake-weighted sortition, ≥2/3 stake finality, PQ light-client verification |
 | `settlement/` | **Non-transferable metering credits** (issuer-signed; meter-down; no transfer op; token deferred) |
+| `keystore/` | **Key-custody abstraction**: `KeyProvider` + working software backend + **HSM/KMS provider stubs** (PKCS#11, cloud KMS); keys never leave the provider |
 | `conformance/` | The certification suite — 11 checks across every guarantee |
-| `rust/` | **Compiler-verified** Rust hot-path foundation: ML-DSA-87 (RustCrypto) + SuiteID. Builds + type-checks; tests compile (not executed here) |
+| `rust/` | **Compiler-verified** Rust hot-path foundation: **ML-DSA-87 + ML-KEM-1024** (RustCrypto) + SuiteID + SHA3. Builds + type-checks; tests compile (not executed here) |
 
 ## Runnable
 
@@ -38,8 +39,8 @@ Everything **software can supply** is built and tested. **NOT yet** (and mostly 
 |---|---|---|
 | Patent-counsel **FTO** | counsel | ❌ (FTO_TODO.md) |
 | External **security/crypto audit** (incl. the ZK protocol) | audit firm | ❌ |
-| Real **TEE** (TDX/SEV-SNP/CCA) + **HSM/KMS** | hardware/cloud | ❌ (stubs in place) |
-| Executing Rust **tests** + the full Rust **port** (KEM/kernel/…) | a host that permits running built binaries (this sandbox blocks it) + more build | ✅ (foundation compiles + type-checks here) |
+| Real **TEE silicon** (TDX/SEV-SNP/CCA) + physical **HSM/cloud-KMS** | hardware/cloud creds | ❌ — but the **TEE quote-verifier adapter** (`attest/`) and **KeyProvider** custody (`keystore/`, software backend + HSM/KMS stubs) frameworks are built and tested; wiring real hardware is config/credentials, not new architecture |
+| Executing Rust **tests** + the full Rust **port** (kernel/receipts/…) | a host that permits running built binaries (this sandbox blocks it) + more build | ✅ (foundation: ML-DSA-87 + ML-KEM-1024 compile + type-check here) |
 | **Public** ledger network (external validators, real economic stake) vs the local pure-PoS engine | pilot + deploy | ✅ engine built; networked deployment pending |
 | Machine-checked **TLA⁺**; threshold-**MPC** (vs M-of-N independent sigs); ECVRF/**PQ-VRF** sortition; Python/Go SDKs | more build | ✅ |
 
