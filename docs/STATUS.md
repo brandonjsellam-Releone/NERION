@@ -14,7 +14,8 @@
 
 | Module | State |
 |---|---|
-| `crypto/` `capabilities/` `kernel/` `receipts/` `translog/` `attest/` `planes/` | Implemented, tested (108) |
+| `crypto/` `capabilities/` `kernel/` `receipts/` `translog/` `attest/` `planes/` | Implemented, tested (111) |
+| `sdks/ts/` — `PolarSeekClient` + **MCP/tool-call adapter** | Implemented, tested — a denied tool call never executes |
 | `tools/cleanroom-lint.mjs` | CI non-infringement gate (F1–F8) |
 | `npm run demo` | End-to-end T2 governed-payment trace |
 | `npm run bundle` / `verify:cli` | Portable receipt + **independent external verification** |
@@ -27,8 +28,8 @@
 
 ## Next actions (toward the deployable wedge & beyond)
 
-1. **SDK + MCP/LangChain adapter** (`sdks/`): wrap high-risk agent tool-calls (payments, infra, data export/delete, deploy, key rotation) through `PolarSeekNode.admit` — the operational agent integration for pilots.
-2. **Transparency hardening**: multi-operator gossip + split-view detection; ZK proof for one property ("amount < threshold"); persistent log.
+1. **SDK over a remote PQ-hybrid transport** + LangChain/LlamaIndex adapters and a Python/Go SDK (the in-process TS MCP adapter + `PolarSeekClient` already ship and are tested).
+2. **Transparency hardening**: multi-operator gossip + split-view detection; ZK proof for one property ("amount < threshold"); persistent + mirrorable log.
 3. **Provision Rust** for the hot-path; machine-check `kernel/spec` (TLAPS/Lean); wire official NIST ACVP vectors. Then P3 ledger/settlement/governance.
 
 ## Council

@@ -25,7 +25,8 @@
     "receipts/**/*.ts",
     "translog/**/*.ts",
     "attest/**/*.ts",
-    "planes/**/*.ts"
+    "planes/**/*.ts",
+    "sdks/**/*.ts"
   ],
   "exclude": ["node_modules", "dist"]
 }
