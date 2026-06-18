@@ -18,6 +18,6 @@
     "outDir": "dist",
     "rootDir": "."
   },
-  "include": ["crypto/**/*.ts"],
+  "include": ["crypto/**/*.ts", "capabilities/**/*.ts", "kernel/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

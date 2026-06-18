@@ -2,11 +2,11 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   test: {
-    include: ['crypto/test/**/*.test.ts'],
+    include: ['{crypto,capabilities,kernel}/test/**/*.test.ts'],
     environment: 'node',
     coverage: {
       provider: 'v8',
-      include: ['crypto/src/**/*.ts'],
+      include: ['{crypto,capabilities,kernel}/src/**/*.ts'],
       reporter: ['text', 'json-summary'],
     },
   },

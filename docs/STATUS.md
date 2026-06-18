@@ -1,43 +1,41 @@
 # PolarSeek — STATUS
 
-**Phase: P0 (Foundations).** Updated 2026-06-18.
+**Phase: P1 (Kernel & Capabilities) — substantially complete.** Updated 2026-06-18.
 
-## P0 exit criterion — ✅ MET
+## Milestones
 
-> "Hybrid KEM + ML-DSA round-trip + KATs pass."
+### P0 (Foundations) — ✅ MET
+Hybrid KEM + ML-DSA round-trip + KATs pass. `crypto/` green.
 
-`crypto/` is implemented and **green**: `npm run gate` runs the clean-room linter,
-prettier check, `tsc`, and **51 vitest tests** (hybrid KEM round-trips, ML-DSA-87
-& SLH-DSA sign/verify, AES-256-GCM/HMAC/SHAKE, deterministic-CBOR determinism,
-SuiteID negotiation + downgrade resistance, signed envelopes + PermitTokens, and
-deterministic KAT vectors).
+### P1 (Kernel & Capabilities) — ✅ exit criteria met (formal model authored)
+> "Two independent runs of the same ReplayBundle yield identical decision + receipt hash; formal properties pass."
 
-## (a) What changed
+- **Byte-identical replay:** `kernel/test/replay.test.ts` — same ReplayBundle ⇒ identical decision + receipt hash (unit + fast-check property).
+- **Formal properties (property-tested):** attenuation-never-amplifies, default-deny, allow-implies-authorization, determinism. Modeled in `kernel/spec/PolarSeekKernel.tla` (authored; **not yet machine-checked** — no TLA⁺ toolchain locally; executable counterpart is green).
+- **Total: 82 tests pass** (`npm run gate`: clean-room lint + prettier + tsc + vitest).
 
-- Monorepo scaffolded at `C:\Users\User\polarseek` (short path — ADR-0003); git on `main`; CI workflow (`.github/workflows/ci.yml`).
-- `crypto/` reference implementation in TypeScript over audited `@noble` libs (ADR-0002): SuiteID registry + negotiation, hybrid KEMs (X-Wing; ML-KEM-1024+P-384), ML-DSA-87, SLH-DSA-SHAKE-256f, AES-256-GCM, HMAC-SHA-384, SHA3/SHAKE256, deterministic CBOR, SuiteID-bound signed envelopes, hot-path PermitTokens. HQC + Falcon are honest `NotImplementedError` agility stubs.
-- Deterministic KAT vectors (`crypto/vectors/`), reproducible via `_gen.mjs`; CI fails on drift.
-- Clean-room CI linter (`tools/cleanroom-lint.mjs`) enforcing CLEANROOM F1–F8.
-- Docs: THREAT_MODEL, CLEANROOM (with the extracted SIGA claim map, anchor patent **US 9,607,214 B2**), DESIGN_AROUND, FTO_TODO, PRIOR_ART_NOTES, ADR-0001/0002/0003, council verdicts.
+## (a) What changed since P0
+
+- **`capabilities/`** — typed, PQ-signed (ML-DSA-87) grants; **attenuation-only** UCAN/macaroon-style delegation (`narrow` clamps to the parent so a child can never broaden); chain verification against explicit trusted roots; **default-deny resolver** with per-action ceiling, rolling aggregate cap (enforced via the **signed scalar**, never in-kernel state), counterparty allowlist, risk-tier ceiling, validity window, and holder binding.
+- **`kernel/`** — stateless, deterministic `decide()` (pure function, fail-closed, no clock/IO/state); deterministic risk-tiering (T0–T3) with tier→obligations; pinned **evaluator version** hashed into every decision; **ReplayBundle** for byte-identical re-derivation.
+- **`kernel/spec/`** — TLA⁺ safety model + honest status note.
 
 ## (b) Test / council results
 
-- **Tests:** 51/51 pass; format + typecheck + clean-room lint clean.
-- **Council (Gemini / watsonx / DeepSeek):** PASS with corrections applied — see [council/P0-verdicts.md](./council/P0-verdicts.md). Gemini's "unverifiable" flags on 2025–26 NIST items were **overruled by primary-source re-verification** (SP 800-227 final 2025-09-18; HQC selected 2025-03-11; SP 800-230 IPD 2026-04-13). Fixed: HQC FIPS-number precision, PS-1 Cat-3 floor labeling, public-verifiability attributed to Plane 2.
+- Tests: **82/82** pass; format + typecheck + clean-room lint clean.
+- Council (P0): PASS with corrections applied — [council/P0-verdicts.md](./council/P0-verdicts.md). The DeepSeek-flagged **PermitToken replay** and **HMAC key management** are P1/P2 kernel-integration items (the kernel itself is now built; binding the PermitToken to a single-use attestation nonce + audience/action is the next step). Re-run the full council before P1 sign-off.
 
 ## (c) Risks / decisions
 
-- ADR-0001 (crypto suite & standards) · ADR-0002 (TS reference + KEM pairing) · ADR-0003 (repo location).
-- **Honest caveats:** only `crypto/` is built; `<1 ms` is a **target**, Planes 2–3 are **unbuilt**; the Rust hot-path is **deferred** (no toolchain). PermitToken replay defense and HMAC key management are **P1 kernel requirements** (already in the threat model). Engineering design-around is **not** a legal opinion — FTO required ([FTO_TODO.md](./FTO_TODO.md)).
+- ADR-0001 (crypto suite) · ADR-0002 (TS reference + KEM pairing) · ADR-0003 (repo location).
+- **Honest caveats:** the formal model is authored, **not machine-checked** (no toolchain); `<1 ms` hot-path is a **target** (no Rust yet); Planes 2–3 (receipts/translog/ledger/attest) remain unbuilt; attestation binding for PermitTokens is not yet wired. Design-around ≠ legal opinion — FTO required ([FTO_TODO.md](./FTO_TODO.md)).
 
 ## (d) Next 3 actions
 
-1. **P1 kernel**: stateless deterministic admission kernel + typed capabilities (UCAN/macaroon attenuation) + ReplayBundle (byte-identical replay), with the PermitToken replay defenses (single-use attestation nonce + audience/action binding) the council flagged.
-2. **Provision Rust** (`rustup`) and port `crypto/`+`kernel/` to the same SuiteID/wire contract for the hot path; add differential tests (TS ↔ Rust) and wire official **NIST ACVP** KAT vectors.
-3. **Formal spec** (`kernel/spec/`, TLA+/Lean): soundness, attenuation-never-amplifies, receipt-implies-authorization; then re-run the full council before P1 exit.
+1. **P2 receipts + transparency log:** batch ML-DSA-87 receipts over decisions (reuse `signEnvelope` + the ReplayBundle `receiptHash`), Merkle-anchor to a SCITT-style append-only log with inclusion/consistency proofs; an external CLI verifies a receipt with no issuer trust.
+2. **Attestation + PermitToken hardening:** wire the Plane-1 PermitToken to a single-use attestation nonce + audience/action binding (closes the council's #1 finding); per-resource HKDF-derived MAC keys.
+3. **End-to-end T2 demo** (flagship): action intent → admission decision → PermitToken → ML-DSA receipt → verifiable transparency-log entry. Provision Rust + machine-check the TLA⁺ spec in parallel as toolchains allow.
 
-## KAT / TODO backlog
+## Backlog
 
-- Wire official NIST ACVP KAT vectors alongside the deterministic regression vectors.
-- Implement HQC (on FIPS-207 publication) and re-evaluate Falcon (on FIPS 206 final).
-- GitHub remote + CI execution; SLSA provenance + reproducible-build attestation.
+- Official NIST ACVP KAT vectors; HQC (on FIPS publication) + Falcon (on FIPS 206); SLSA provenance; GitHub remote + CI execution; machine-check `kernel/spec` (TLAPS/Lean).
