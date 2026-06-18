@@ -1,0 +1,9 @@
+# On windows-gnu toolchains that lack a complete mingw binutils (no `as`/import-
+# lib support), the transitive `getrandom` crate can't build its default Windows
+# backend. We pin its `rdrand` backend (pure CPU instruction, no import lib /
+# dlltool). NOTE: PolarSeek's keygen here is deterministic (FIPS KeyGen_internal
+# from a seed), so getrandom is only a build-time transitive dependency and is
+# not used at runtime. On Linux/macOS or a full Windows toolchain this override
+# is unnecessary — remove it to use the platform's standard CSPRNG.
+[target.x86_64-pc-windows-gnu]
+rustflags = ['--cfg', 'getrandom_backend="rdrand"']

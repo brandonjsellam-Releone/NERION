@@ -1,0 +1,9 @@
+[package]
+name = "polarseek-crypto"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+hex = "0.4.3"
+ml-dsa = "0.1.1"
+sha3 = "0.12.0"
