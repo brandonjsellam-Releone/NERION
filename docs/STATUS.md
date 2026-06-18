@@ -1,7 +1,7 @@
 # PolarSeek — STATUS
 
-**Phase: P0–P3 software build complete; conformance ✔.** Updated 2026-06-18.
-**137 tests pass** (`npm run gate`). **`npm run conformance` → 11/11 CONFORMANT.**
+**Phase: P0–P4 software build complete; conformance ✔; Rust foundation compiles.** Updated 2026-06-18.
+**148 tests pass** (`npm run gate`). **`npm run conformance` → 11/11 CONFORMANT.**
 
 ## Modules — all implemented, tested, and conformance-checked
 
@@ -17,14 +17,18 @@
 | `governance/` | **M-of-N quorum**, revocation registry, customer local kill switch |
 | `disclosure/` | Sound selective disclosure; **ZK range proof** (`amount < threshold`, audited group / unaudited protocol) |
 | `sdks/ts/` | `PolarSeekClient` + **MCP/tool-call adapter** (a denied call never executes) |
+| `ledger/` | **Pure-PoS** ledger: verifiable stake-weighted sortition, ≥2/3 stake finality, PQ light-client verification |
+| `settlement/` | **Non-transferable metering credits** (issuer-signed; meter-down; no transfer op; token deferred) |
 | `conformance/` | The certification suite — 11 checks across every guarantee |
+| `rust/` | **Compiler-verified** Rust hot-path foundation: ML-DSA-87 (RustCrypto) + SuiteID. Builds + type-checks; tests compile (not executed here) |
 
 ## Runnable
 
-- `npm run gate` — clean-room lint + prettier + tsc + 137 tests
+- `npm run gate` — clean-room lint + prettier + tsc + 148 tests
 - `npm run demo` — end-to-end T2 governed payment
 - `npm run build && npm run bundle && npm run verify:cli` — independent external receipt verification
 - `npm run conformance` — certification report (11/11)
+- `cd rust && cargo build && cargo test --no-run` — Rust foundation compiles + type-checks (run `cargo test` on a host that permits executing built binaries)
 
 ## Deployment maturity — Local/Private dev (honest)
 
@@ -35,8 +39,9 @@ Everything **software can supply** is built and tested. **NOT yet** (and mostly 
 | Patent-counsel **FTO** | counsel | ❌ (FTO_TODO.md) |
 | External **security/crypto audit** (incl. the ZK protocol) | audit firm | ❌ |
 | Real **TEE** (TDX/SEV-SNP/CCA) + **HSM/KMS** | hardware/cloud | ❌ (stubs in place) |
-| **Rust** hot-path (true <1 ms, constant-time) | provision `rustup` + port to the conformance contract | ✅ pending toolchain |
-| Machine-checked **TLA⁺**; threshold-MPC (vs M-of-N); P4 PoS **ledger** + public network; Python/Go SDKs | more build | ✅ |
+| Executing Rust **tests** + the full Rust **port** (KEM/kernel/…) | a host that permits running built binaries (this sandbox blocks it) + more build | ✅ (foundation compiles + type-checks here) |
+| **Public** ledger network (external validators, real economic stake) vs the local pure-PoS engine | pilot + deploy | ✅ engine built; networked deployment pending |
+| Machine-checked **TLA⁺**; threshold-**MPC** (vs M-of-N independent sigs); ECVRF/**PQ-VRF** sortition; Python/Go SDKs | more build | ✅ |
 
 See [DEPLOY.md](./DEPLOY.md). Design-around ≠ legal opinion — FTO required ([FTO_TODO.md](./FTO_TODO.md)).
 
