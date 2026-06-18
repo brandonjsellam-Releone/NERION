@@ -25,7 +25,16 @@ const FORBIDDEN = [
 ]
 
 // Admission-path source dirs (only those that exist are scanned).
-const SCAN_DIRS = ['crypto/src', 'kernel', 'capabilities', 'receipts', 'translog', 'planes', 'sdks']
+const SCAN_DIRS = [
+  'crypto/src',
+  'kernel',
+  'capabilities',
+  'receipts',
+  'translog',
+  'attest',
+  'planes',
+  'sdks',
+]
 const CODE_EXT = new Set(['.ts', '.rs', '.go', '.py', '.rego'])
 const SKIP_DIR = new Set(['node_modules', 'dist', 'spec', 'test', 'vectors'])
 

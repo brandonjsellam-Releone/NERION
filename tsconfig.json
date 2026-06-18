@@ -23,7 +23,9 @@
     "capabilities/**/*.ts",
     "kernel/**/*.ts",
     "receipts/**/*.ts",
-    "translog/**/*.ts"
+    "translog/**/*.ts",
+    "attest/**/*.ts",
+    "planes/**/*.ts"
   ],
   "exclude": ["node_modules", "dist"]
 }
