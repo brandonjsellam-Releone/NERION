@@ -26,17 +26,22 @@ evidence anyone can verify.
 
 Risk tiers **T0–T3** select how much assurance runs synchronously.
 
-## Status — P0 (Foundations): crypto green ✅
+## Status — P0–P2 complete + hardened ✅ (Local/Private dev-deployable)
 
-The P0 exit criterion ("hybrid KEM + ML-DSA round-trip + KATs pass") is **met**.
-`crypto/` is implemented in TypeScript over audited `@noble` libraries
-(ADR-0002), with a negotiable `SuiteID` and **51 passing tests**. Everything
-else (`kernel/`, `receipts/`, `translog/`, `attest/`, `ledger/`, …) is honest
-scaffolding. See [docs/STATUS.md](docs/STATUS.md).
+`crypto/`, `capabilities/`, `kernel/`, `receipts/`, `translog/`, `attest/`, and
+`planes/` are implemented in TypeScript over audited `@noble` libraries
+(ADR-0002), with **108 passing tests**. The kernel is stateless/deterministic,
+PermitTokens are action-bound (replay-resistant), and an external CLI verifies a
+receipt's signature + transparency-log inclusion with no operator trust.
+`ledger/`, `settlement/`, `governance/`, and the `sdks/` agent adapters remain
+scaffolding. Deployment maturity is **Local/Private dev** — see
+[docs/DEPLOY.md](docs/DEPLOY.md) and [docs/STATUS.md](docs/STATUS.md).
 
 ```bash
 npm ci
-npm run gate     # clean-room lint + prettier + tsc + vitest (51 tests)
+npm run gate          # clean-room lint + prettier + tsc + 108 tests
+npm run demo          # end-to-end T2 governed-payment trace
+npm run build && npm run bundle && npm run verify:cli   # independent receipt verification
 ```
 
 ## What's real today

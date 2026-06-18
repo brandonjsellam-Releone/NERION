@@ -10,6 +10,9 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
+    "build": "tsc",
+    "bundle": "node tools/demo-bundle.mjs",
+    "verify:cli": "node tools/verify-receipt.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "format": "prettier --write \"{crypto,capabilities,kernel,receipts,translog,attest,planes}/**/*.ts\"",

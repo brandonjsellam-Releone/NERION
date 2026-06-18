@@ -1,36 +1,36 @@
 # PolarSeek — STATUS
 
-**Phase: P2 (Receipts & Transparency) — core complete.** Updated 2026-06-18.
+**Phase: P2 complete + hardened; P3 wedge in progress.** Updated 2026-06-18.
+**108 tests pass** (`npm run gate`). Runnable: `npm run demo`, `npm run bundle && npm run verify:cli`.
 
 ## Milestones
 
-- **P0 (Foundations) — ✅** Hybrid KEM + ML-DSA round-trip + KATs. `crypto/` green.
-- **P1 (Kernel & Capabilities) — ✅** Byte-identical ReplayBundle; attenuation-never-amplifies + default-deny property-tested; TLA⁺ model authored.
-- **P2 (Receipts & Transparency) — ✅ core** "An external verifier checks a receipt's signature + log inclusion with no trust in the issuer or the log operator." Demonstrated end-to-end (`npm run demo`).
+- **P0 Foundations — ✅** SuiteID crypto-agility, hybrid KEMs, ML-DSA-87/SLH-DSA, deterministic CBOR, KATs.
+- **P1 Kernel & Capabilities — ✅** Stateless deterministic `decide()`; attenuation-only capabilities (attenuation-never-amplifies property-tested); byte-identical ReplayBundle; TLA⁺ model (authored).
+- **P2 Receipts & Transparency — ✅** RFC 6962 Merkle log (inclusion + consistency proofs); PQ receipts (hashes only); **standalone external verifier CLI** — verifies signature + log inclusion with no trust in the issuer or operator.
+- **P2 hardening — ✅** RATS attestation (software root real; TEE stubs); **action-bound PermitTokens** closing the replay finding; `PolarSeekNode` orchestrating the planes.
 
-**96 tests pass** (`npm run gate`: clean-room lint + prettier + tsc + vitest).
+## What is real and runnable today
 
-## (a) What changed since P1
+| Module | State |
+|---|---|
+| `crypto/` `capabilities/` `kernel/` `receipts/` `translog/` `attest/` `planes/` | Implemented, tested (108) |
+| `tools/cleanroom-lint.mjs` | CI non-infringement gate (F1–F8) |
+| `npm run demo` | End-to-end T2 governed-payment trace |
+| `npm run bundle` / `verify:cli` | Portable receipt + **independent external verification** |
+| `kernel/spec/*.tla` | Formal safety model (authored, not machine-checked) |
 
-- **`translog/`** — RFC 6962-style Merkle transparency log: leaf/node domain separation, Merkle root, **inclusion proofs** and **consistency (append-only) proofs**, verified by Trillian-style decomposition. Exhaustively tested for all indices/sizes 1–16 plus tamper/rewrite rejection. `TransparencyLog` append-only operator + operator-untrusted `checkInclusion`/`checkConsistency`.
-- **`receipts/`** — PQ-signed (ML-DSA-87) receipts committing **hashes only** (intent/capability/policy/input/decision) + jurisdiction/tier/suite/timestamp; **no PII, no payloads**. `verifyReceiptInclusion()` = full external verification trusting only the issuer key + a gossiped root.
-- **End-to-end T2 demo** (`receipts/test/e2e.test.ts`, `npm run demo`): intent → admission decision → PermitToken → deterministic replay → PQ receipt → transparency-log anchoring → independent external verify (PASS), plus a DENY control.
+## Honest caveats (deployment maturity = Local/Private dev)
 
-## (b) Test / council results
+- **Not production-hardened.** No Rust hot-path (`<1 ms` is a target); software attester only (real TEE/HSM pending); in-memory single-operator log (no gossip/mirroring/ledger anchoring yet); no ZK selective disclosure yet; TLA⁺ not machine-checked.
+- **Design-around ≠ legal opinion.** FTO required before any public non-infringement claim ([FTO_TODO.md](./FTO_TODO.md)). See [DEPLOY.md](./DEPLOY.md) for the full production gap list.
 
-- Tests: **96/96** pass; format + typecheck + clean-room lint clean.
-- Council (P0): PASS with corrections — [council/P0-verdicts.md](./council/P0-verdicts.md). Re-run the full council before P2 sign-off / any public claim.
+## Next actions (toward the deployable wedge & beyond)
 
-## (c) Risks / decisions
+1. **SDK + MCP/LangChain adapter** (`sdks/`): wrap high-risk agent tool-calls (payments, infra, data export/delete, deploy, key rotation) through `PolarSeekNode.admit` — the operational agent integration for pilots.
+2. **Transparency hardening**: multi-operator gossip + split-view detection; ZK proof for one property ("amount < threshold"); persistent log.
+3. **Provision Rust** for the hot-path; machine-check `kernel/spec` (TLAPS/Lean); wire official NIST ACVP vectors. Then P3 ledger/settlement/governance.
 
-- ADR-0001/0002/0003 stand. **Honest caveats:** the external verifier exists as a library function + demo, not yet a packaged standalone CLI binary; the log is an in-memory reference (no multi-operator gossip/mirroring or ledger anchoring yet); ZK selective disclosure not yet built; PermitToken↔attestation binding still pending (P2 hardening); TLA⁺ model not machine-checked; `<1 ms` hot-path is a target (no Rust). Design-around ≠ legal opinion — FTO required ([FTO_TODO.md](./FTO_TODO.md)).
+## Council
 
-## (d) Next 3 actions
-
-1. **Attestation + PermitToken hardening** (`attest/`): RATS verifier interface + bind the Plane-1 PermitToken to a single-use attestation nonce + audience/action (closes the council's #1 finding); per-resource HKDF-derived MAC keys.
-2. **Transparency hardening**: standalone `verify-receipt` CLI; multi-operator gossip + split-view detection; ZK proof for one property ("amount < threshold") with selective disclosure.
-3. **Provision Rust** for the hot-path kernel/crypto (differential tests vs the TS contract) and **machine-check** `kernel/spec` (TLAPS/Lean). Wire official NIST ACVP vectors.
-
-## Backlog
-
-- HQC (on FIPS publication) + Falcon (on FIPS 206); SLSA provenance; GitHub remote + CI execution; P3 ledger + settlement + governance.
+P0 council (Gemini/watsonx/DeepSeek) PASS with corrections — [council/P0-verdicts.md](./council/P0-verdicts.md). The DeepSeek #1 replay finding is now addressed (action-bound permits). Re-run the full council before any external claim / pilot sign-off.
