@@ -16,3 +16,6 @@ export {
 } from './merkle.js'
 export { TransparencyLog, checkInclusion, checkConsistency } from './log.js'
 export type { InclusionWitness, ConsistencyWitness } from './log.js'
+export { PersistentTransparencyLog } from './persistent.js'
+export { signTreeHead, verifyTreeHead, detectEquivocation, checkAppendOnly } from './sth.js'
+export type { SignedTreeHead, Equivocation } from './sth.js'

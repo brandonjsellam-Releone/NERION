@@ -11,7 +11,7 @@
     "noImplicitOverride": true,
     "noFallthroughCasesInSwitch": true,
     "forceConsistentCasingInFileNames": true,
-    "declaration": true,
+    "declaration": false,
     "sourceMap": true,
     "skipLibCheck": true,
     "verbatimModuleSyntax": true,
@@ -26,7 +26,10 @@
     "translog/**/*.ts",
     "attest/**/*.ts",
     "planes/**/*.ts",
-    "sdks/**/*.ts"
+    "sdks/**/*.ts",
+    "governance/**/*.ts",
+    "conformance/**/*.ts",
+    "disclosure/**/*.ts"
   ],
   "exclude": ["node_modules", "dist"]
 }

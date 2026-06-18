@@ -34,6 +34,9 @@ const SCAN_DIRS = [
   'attest',
   'planes',
   'sdks',
+  'governance',
+  'conformance',
+  'disclosure',
 ]
 const CODE_EXT = new Set(['.ts', '.rs', '.go', '.py', '.rego'])
 const SKIP_DIR = new Set(['node_modules', 'dist', 'spec', 'test', 'vectors'])
