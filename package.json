@@ -1,0 +1,33 @@
+{
+  "name": "polarseek",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Post-Quant PolarSeek — open, post-quantum-native execution-governance protocol for AI/agent actions. P0 reference crypto (TypeScript).",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "format": "prettier --write \"crypto/**/*.ts\"",
+    "format:check": "prettier --check \"crypto/**/*.ts\"",
+    "lint:cleanroom": "node tools/cleanroom-lint.mjs",
+    "gate": "npm run lint:cleanroom && npm run format:check && npm run typecheck && npm run test"
+  },
+  "dependencies": {
+    "@noble/ciphers": "^2.0.0",
+    "@noble/curves": "^2.2.0",
+    "@noble/hashes": "^2.0.0",
+    "@noble/post-quantum": "^0.6.1",
+    "cbor2": "^2.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "prettier": "^3.3.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}

@@ -1,0 +1,4 @@
+# Enforce LF line endings for reproducible builds across platforms.
+* text=auto eol=lf
+*.png binary
+*.pdf binary
