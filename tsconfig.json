@@ -29,7 +29,9 @@
     "sdks/**/*.ts",
     "governance/**/*.ts",
     "conformance/**/*.ts",
-    "disclosure/**/*.ts"
+    "disclosure/**/*.ts",
+    "ledger/**/*.ts",
+    "settlement/**/*.ts"
   ],
   "exclude": ["node_modules", "dist"]
 }
