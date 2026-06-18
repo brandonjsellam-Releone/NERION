@@ -1,37 +1,45 @@
 # PolarSeek — STATUS
 
-**Phase: P2 complete + hardened; P3 wedge in progress.** Updated 2026-06-18.
-**108 tests pass** (`npm run gate`). Runnable: `npm run demo`, `npm run bundle && npm run verify:cli`.
+**Phase: P0–P3 software build complete; conformance ✔.** Updated 2026-06-18.
+**137 tests pass** (`npm run gate`). **`npm run conformance` → 11/11 CONFORMANT.**
 
-## Milestones
+## Modules — all implemented, tested, and conformance-checked
 
-- **P0 Foundations — ✅** SuiteID crypto-agility, hybrid KEMs, ML-DSA-87/SLH-DSA, deterministic CBOR, KATs.
-- **P1 Kernel & Capabilities — ✅** Stateless deterministic `decide()`; attenuation-only capabilities (attenuation-never-amplifies property-tested); byte-identical ReplayBundle; TLA⁺ model (authored).
-- **P2 Receipts & Transparency — ✅** RFC 6962 Merkle log (inclusion + consistency proofs); PQ receipts (hashes only); **standalone external verifier CLI** — verifies signature + log inclusion with no trust in the issuer or operator.
-- **P2 hardening — ✅** RATS attestation (software root real; TEE stubs); **action-bound PermitTokens** closing the replay finding; `PolarSeekNode` orchestrating the planes.
-
-## What is real and runnable today
-
-| Module | State |
+| Module | What it provides |
 |---|---|
-| `crypto/` `capabilities/` `kernel/` `receipts/` `translog/` `attest/` `planes/` | Implemented, tested (111) |
-| `sdks/ts/` — `PolarSeekClient` + **MCP/tool-call adapter** | Implemented, tested — a denied tool call never executes |
-| `tools/cleanroom-lint.mjs` | CI non-infringement gate (F1–F8) |
-| `npm run demo` | End-to-end T2 governed-payment trace |
-| `npm run bundle` / `verify:cli` | Portable receipt + **independent external verification** |
-| `kernel/spec/*.tla` | Formal safety model (authored, not machine-checked) |
+| `crypto/` | SuiteID crypto-agility, hybrid KEMs, ML-DSA-87/SLH-DSA, deterministic CBOR, signed envelopes, PermitTokens, KATs |
+| `capabilities/` | Typed, attenuation-only (UCAN/macaroon) PQ-signed authority; default-deny resolver; signed-scalar aggregates |
+| `kernel/` | Stateless deterministic `decide()`; risk-tiering; byte-identical ReplayBundle; TLA⁺ safety model |
+| `receipts/` | PQ receipts (hashes only, no PII); external `verifyReceiptInclusion` |
+| `translog/` | RFC 6962 Merkle log (inclusion + consistency); **Signed Tree Heads + split-view detection**; persistent file log |
+| `attest/` | RATS attestation (software root real; TEE stubs); N-of-M heterogeneous appraisal |
+| `planes/` | `PolarSeekNode` orchestration; **action-bound PermitTokens** (replay-resistant) |
+| `governance/` | **M-of-N quorum**, revocation registry, customer local kill switch |
+| `disclosure/` | Sound selective disclosure; **ZK range proof** (`amount < threshold`, audited group / unaudited protocol) |
+| `sdks/ts/` | `PolarSeekClient` + **MCP/tool-call adapter** (a denied call never executes) |
+| `conformance/` | The certification suite — 11 checks across every guarantee |
 
-## Honest caveats (deployment maturity = Local/Private dev)
+## Runnable
 
-- **Not production-hardened.** No Rust hot-path (`<1 ms` is a target); software attester only (real TEE/HSM pending); in-memory single-operator log (no gossip/mirroring/ledger anchoring yet); no ZK selective disclosure yet; TLA⁺ not machine-checked.
-- **Design-around ≠ legal opinion.** FTO required before any public non-infringement claim ([FTO_TODO.md](./FTO_TODO.md)). See [DEPLOY.md](./DEPLOY.md) for the full production gap list.
+- `npm run gate` — clean-room lint + prettier + tsc + 137 tests
+- `npm run demo` — end-to-end T2 governed payment
+- `npm run build && npm run bundle && npm run verify:cli` — independent external receipt verification
+- `npm run conformance` — certification report (11/11)
 
-## Next actions (toward the deployable wedge & beyond)
+## Deployment maturity — Local/Private dev (honest)
 
-1. **SDK over a remote PQ-hybrid transport** + LangChain/LlamaIndex adapters and a Python/Go SDK (the in-process TS MCP adapter + `PolarSeekClient` already ship and are tested).
-2. **Transparency hardening**: multi-operator gossip + split-view detection; ZK proof for one property ("amount < threshold"); persistent + mirrorable log.
-3. **Provision Rust** for the hot-path; machine-check `kernel/spec` (TLAPS/Lean); wire official NIST ACVP vectors. Then P3 ledger/settlement/governance.
+Everything **software can supply** is built and tested. **NOT yet** (and mostly not closable by code):
+
+| Gap | Closes via | Code? |
+|---|---|---|
+| Patent-counsel **FTO** | counsel | ❌ (FTO_TODO.md) |
+| External **security/crypto audit** (incl. the ZK protocol) | audit firm | ❌ |
+| Real **TEE** (TDX/SEV-SNP/CCA) + **HSM/KMS** | hardware/cloud | ❌ (stubs in place) |
+| **Rust** hot-path (true <1 ms, constant-time) | provision `rustup` + port to the conformance contract | ✅ pending toolchain |
+| Machine-checked **TLA⁺**; threshold-MPC (vs M-of-N); P4 PoS **ledger** + public network; Python/Go SDKs | more build | ✅ |
+
+See [DEPLOY.md](./DEPLOY.md). Design-around ≠ legal opinion — FTO required ([FTO_TODO.md](./FTO_TODO.md)).
 
 ## Council
 
-P0 council (Gemini/watsonx/DeepSeek) PASS with corrections — [council/P0-verdicts.md](./council/P0-verdicts.md). The DeepSeek #1 replay finding is now addressed (action-bound permits). Re-run the full council before any external claim / pilot sign-off.
+P0 council PASS with corrections ([council/P0-verdicts.md](./council/P0-verdicts.md)); the replay finding is addressed (action-bound permits). Re-run the full council + commission the ZK/crypto audit before any external claim or pilot sign-off.
