@@ -12,9 +12,10 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "format": "prettier --write \"{crypto,capabilities,kernel}/**/*.ts\"",
-    "format:check": "prettier --check \"{crypto,capabilities,kernel}/**/*.ts\"",
+    "format": "prettier --write \"{crypto,capabilities,kernel,receipts,translog}/**/*.ts\"",
+    "format:check": "prettier --check \"{crypto,capabilities,kernel,receipts,translog}/**/*.ts\"",
     "lint:cleanroom": "node tools/cleanroom-lint.mjs",
+    "demo": "vitest run receipts/test/e2e.test.ts",
     "gate": "npm run lint:cleanroom && npm run format:check && npm run typecheck && npm run test"
   },
   "dependencies": {
