@@ -18,6 +18,13 @@ use ml_dsa::{B32, Keypair, MlDsa87, Signature, SigningKey};
 use ml_kem::kem::TryDecapsulate;
 use ml_kem::{B32 as KemB32, DecapsulationKey, MlKem1024, Seed};
 use sha3::{Digest, Sha3_256};
+use aes_gcm::aead::{Aead, Payload};
+use aes_gcm::{Aes256Gcm, Nonce};
+use hmac::digest::KeyInit;
+use hmac::{Hmac, Mac};
+use sha2::Sha384;
+
+type HmacSha384 = Hmac<Sha384>;
 
 /// SuiteID identifiers mirroring crypto/src/suites.ts (active subset).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -82,6 +89,37 @@ pub fn mlkem1024_roundtrip_ok(seed: [u8; 64], m: [u8; 32]) -> bool {
     ss_send == ss_recv
 }
 
+/// HMAC-SHA-384 — the Plane-1 PermitToken MAC (matches crypto/src/symmetric.ts).
+pub fn hmac_sha384(key: &[u8], msg: &[u8]) -> [u8; 48] {
+    let mut mac = HmacSha384::new_from_slice(key).expect("HMAC accepts any key length");
+    mac.update(msg);
+    let bytes = mac.finalize().into_bytes();
+    let mut out = [0u8; 48];
+    out.copy_from_slice(&bytes);
+    out
+}
+
+/// Constant-time HMAC-SHA-384 verification.
+pub fn hmac_sha384_verify(key: &[u8], msg: &[u8], tag: &[u8]) -> bool {
+    let mut mac = HmacSha384::new_from_slice(key).expect("HMAC accepts any key length");
+    mac.update(msg);
+    mac.verify_slice(tag).is_ok()
+}
+
+/// AES-256-GCM seal (transport AEAD). Output is ciphertext || 16-byte tag.
+pub fn aes256gcm_seal(key: &[u8; 32], nonce: &[u8; 12], pt: &[u8], aad: &[u8]) -> Vec<u8> {
+    let cipher = <Aes256Gcm as aes_gcm::KeyInit>::new_from_slice(key).expect("32-byte key");
+    cipher
+        .encrypt(Nonce::from_slice(nonce), Payload { msg: pt, aad })
+        .expect("AES-256-GCM encryption")
+}
+
+/// AES-256-GCM open; returns None on tag/AAD mismatch (never panics on bad input).
+pub fn aes256gcm_open(key: &[u8; 32], nonce: &[u8; 12], ct: &[u8], aad: &[u8]) -> Option<Vec<u8>> {
+    let cipher = <Aes256Gcm as aes_gcm::KeyInit>::new_from_slice(key).expect("32-byte key");
+    cipher.decrypt(Nonce::from_slice(nonce), Payload { msg: ct, aad }).ok()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -124,5 +162,32 @@ mod tests {
     #[test]
     fn ml_kem_1024_encaps_decaps_roundtrip() {
         assert!(mlkem1024_roundtrip_ok([1u8; 64], [3u8; 32]));
+    }
+
+    #[test]
+    fn hmac_sha384_roundtrip_and_tamper() {
+        let key = [1u8; 32];
+        let msg = b"PolarSeek-Permit-v1";
+        let tag = hmac_sha384(&key, msg);
+        assert_eq!(tag.len(), 48);
+        assert!(hmac_sha384_verify(&key, msg, &tag));
+        let mut bad = tag;
+        bad[0] ^= 1;
+        assert!(!hmac_sha384_verify(&key, msg, &bad));
+        assert!(!hmac_sha384_verify(&[2u8; 32], msg, &tag));
+    }
+
+    #[test]
+    fn aes256gcm_roundtrip_and_tamper() {
+        let key = [7u8; 32];
+        let nonce = [9u8; 12];
+        let pt = b"hot-path payload";
+        let aad = b"suite=PS-5";
+        let ct = aes256gcm_seal(&key, &nonce, pt, aad);
+        assert_eq!(aes256gcm_open(&key, &nonce, &ct, aad).as_deref(), Some(&pt[..]));
+        let mut bad = ct.clone();
+        bad[0] ^= 0xff;
+        assert!(aes256gcm_open(&key, &nonce, &bad, aad).is_none());
+        assert!(aes256gcm_open(&key, &nonce, &ct, b"suite=PS-1").is_none());
     }
 }

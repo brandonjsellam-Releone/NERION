@@ -37,7 +37,13 @@ seed), so no OS entropy is used at runtime.
 - `sign` / `verify` (round-trip + tamper-rejection tests authored).
 - `mlkem1024_roundtrip_ok(seed, m)` — ML-KEM-1024 (FIPS 203) deterministic
   encapsulate/decapsulate round-trip (RustCrypto `ml-kem`).
+- `hmac_sha384` / `hmac_sha384_verify` — the Plane-1 PermitToken MAC (constant-time).
+- `aes256gcm_seal` / `aes256gcm_open` — transport AEAD (never panics on bad input).
 - `sha3_256` — the PolarSeek commitment hash.
+
+Together these are the **complete Plane-1 hot-path crypto** (HMAC-SHA-384 +
+AES-256-GCM) plus the PQ primitives — the part Rust exists for (constant-time,
+fast). Kernel/receipts/CBOR remain to be ported against the `../conformance` contract.
 
 The cross-implementation goal: this crate (and any third-party build) must
 satisfy the same SuiteID/wire contract validated by `../conformance`.
