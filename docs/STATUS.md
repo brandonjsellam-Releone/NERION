@@ -17,7 +17,7 @@
 | `governance/` | **M-of-N quorum**, revocation registry, customer local kill switch |
 | `disclosure/` | Sound selective disclosure; **ZK range proof** (`amount < threshold`, audited group / unaudited protocol) |
 | `sdks/ts/` | `PolarSeekClient` + **MCP/tool-call adapter** (a denied call never executes) |
-| `ledger/` | **Pure-PoS** ledger: verifiable stake-weighted sortition, ≥2/3 stake finality, PQ light-client verification |
+| `ledger/` | **Pure-PoS** ledger: grind-resistant canonical-round sortition, ≥2/3 stake finality with **equivocation detection + slashing (accountable safety)**, PQ light-client verification |
 | `settlement/` | **Non-transferable metering credits** (issuer-signed; meter-down; no transfer op; token deferred) |
 | `keystore/` | **Key-custody abstraction**: `KeyProvider` + working software backend + **HSM/KMS provider stubs** (PKCS#11, cloud KMS); keys never leave the provider |
 | `conformance/` | The certification suite — 11 checks across every guarantee |

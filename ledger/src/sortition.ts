@@ -14,6 +14,16 @@ import { encodeCanonical, SHA3_SHAKE256 } from '../../crypto/src/index.js'
 import { bytesToHex } from '@noble/hashes/utils.js'
 import type { ValidatorSet } from './types.js'
 
+/**
+ * The single canonical round for a height (grind-resistance, LEDGER-002): the
+ * leader is fixed by the parent hash, so a proposer cannot choose `round` to
+ * make itself leader. (A view-change / timeout liveness fallback for an offline
+ * leader is future work — see docs/STATUS.md.)
+ */
+export function canonicalRound(_height: number): number {
+  return 0
+}
+
 export function totalStake(set: ValidatorSet): number {
   return set.validators.reduce((a, v) => a + v.stake, 0)
 }

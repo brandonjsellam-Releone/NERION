@@ -15,7 +15,7 @@ import {
   type KeyPair,
 } from '../../crypto/src/index.js'
 import { bytesToHex } from '@noble/hashes/utils.js'
-import { selectLeader, stakeOf, totalStake } from './sortition.js'
+import { selectLeader, stakeOf, totalStake, canonicalRound } from './sortition.js'
 import type {
   Attestation,
   Block,
@@ -181,7 +181,14 @@ export function verifyFinalized(
   }
   if (block.header.prevHash !== expectedPrev)
     reasons.push('prevHash does not extend the expected head')
-  if (selectLeader(set, expectedPrev, block.header.round) !== block.header.proposer) {
+  if (block.header.round !== canonicalRound(block.header.height)) {
+    reasons.push('non-canonical round (grind-resistance, LEDGER-002)')
+  }
+  // Zero total stake (e.g. after slashing) finalizes nothing — and selectLeader
+  // is undefined on an empty set, so guard before calling it (fail closed).
+  if (total <= 0) {
+    reasons.push('validator set has no stake')
+  } else if (selectLeader(set, expectedPrev, block.header.round) !== block.header.proposer) {
     reasons.push('proposer is not the sortition leader')
   }
   if (
@@ -217,7 +224,7 @@ export function verifyFinalized(
     attestingStake += stake
   }
 
-  const finalized = attestingStake * finalityDen >= finalityNum * total
+  const finalized = total > 0 && attestingStake * finalityDen >= finalityNum * total
   if (!finalized)
     reasons.push(
       `attesting stake ${attestingStake}/${total} below finality ${finalityNum}/${finalityDen}`,
