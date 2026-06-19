@@ -21,7 +21,7 @@
 | `settlement/` | **Non-transferable metering credits** (issuer-signed; meter-down; no transfer op; token deferred) |
 | `keystore/` | **Key-custody abstraction**: `KeyProvider` + working software backend + **HSM/KMS provider stubs** (PKCS#11, cloud KMS); keys never leave the provider |
 | `conformance/` | The certification suite — 11 checks across every guarantee |
-| `rust/` | **Compiler-verified** Rust hot-path foundation: **ML-DSA-87 + ML-KEM-1024** (RustCrypto) + SuiteID + SHA3. Builds + type-checks; tests compile (not executed here) |
+| `rust/` | **Compiler-verified** Rust hot-path: **full Plane-1 crypto** (HMAC-SHA-384 + AES-256-GCM) + **ML-DSA-87 + ML-KEM-1024** + SuiteID + SHA3 (RustCrypto). Builds + type-checks; tests compile (not executed here) |
 
 ## Runnable
 
