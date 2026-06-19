@@ -4,6 +4,9 @@
  * Prereq: `npm run build`.  Usage: `npm run conformance`.
  */
 import { runConformance } from '../dist/conformance/src/index.js'
+import { loadEnv } from '../dist/ops/src/index.js'
+
+loadEnv() // load .env if present (no-op otherwise)
 
 const report = runConformance()
 console.log('PolarSeek conformance report')

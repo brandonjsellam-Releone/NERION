@@ -13,6 +13,9 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { hexToBytes } from '@noble/hashes/utils.js'
 import { verifyReceiptInclusion } from '../dist/receipts/src/index.js'
+import { loadEnv } from '../dist/ops/src/index.js'
+
+loadEnv()
 
 const defaultPath = fileURLToPath(new URL('../polarseek-receipt-bundle.json', import.meta.url))
 const path = process.argv[2] ?? defaultPath

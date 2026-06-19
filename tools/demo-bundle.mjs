@@ -17,6 +17,9 @@ import { TransparencyLog } from '../dist/translog/src/index.js'
 import { receiptLeaf } from '../dist/receipts/src/index.js'
 import { SoftwareAttester, appraise } from '../dist/attest/src/index.js'
 import { PolarSeekNode } from '../dist/planes/src/index.js'
+import { loadEnv } from '../dist/ops/src/index.js'
+
+loadEnv()
 
 const NOW = 1_750_000_000
 const suite = SUITE_IDS.PS_5
