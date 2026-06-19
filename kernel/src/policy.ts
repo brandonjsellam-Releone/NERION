@@ -14,10 +14,17 @@ import type { Policy } from './types.js'
 /** Bump on any change to the decision logic; bound into the evaluator version. */
 export const KERNEL_VERSION = 'polarseek-kernel/0.1.0'
 
-/** Deterministic tier of an intent: first matching prefix wins, else default. */
+/**
+ * Deterministic tier of an intent: first matching prefix wins, else default.
+ *
+ * Matching is SEGMENT-wise, not substring (PS-KERNEL-03): a rule prefix matches
+ * only on an exact type or a dotted-namespace child, so `data.read` does not
+ * under-tier a crafted `data.readX`.
+ */
 export function tierOf(intent: ActionIntent, policy: Policy): RiskTier {
   for (const rule of policy.tierRules) {
-    if (intent.type === rule.prefix || intent.type.startsWith(rule.prefix)) return rule.tier
+    const boundary = rule.prefix.endsWith('.') ? rule.prefix : rule.prefix + '.'
+    if (intent.type === rule.prefix || intent.type.startsWith(boundary)) return rule.tier
   }
   return policy.defaultTier
 }

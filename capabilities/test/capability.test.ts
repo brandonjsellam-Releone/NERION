@@ -93,6 +93,20 @@ describe('default-deny resolver', () => {
       resolve(pay(500), [root], trustedRoots, baseCtx({ holder: delegateeHex })).authorized,
     ).toBe(false)
   })
+
+  it('denies non-finite / non-integer / negative amounts (PS-CAP-01/02 fail-closed)', () => {
+    expect(resolve(pay(Number.NaN), [root], trustedRoots, baseCtx()).authorized).toBe(false)
+    expect(resolve(pay(Number.POSITIVE_INFINITY), [root], trustedRoots, baseCtx()).authorized).toBe(
+      false,
+    )
+    expect(resolve(pay(-100), [root], trustedRoots, baseCtx()).authorized).toBe(false)
+    expect(resolve(pay(1.5), [root], trustedRoots, baseCtx()).authorized).toBe(false)
+  })
+
+  it('denies when no holder identity is supplied (PS-CAP-03)', () => {
+    const noHolder: EvalContext = { now: 1000, tier: 2, observedAggregate: 0 }
+    expect(resolve(pay(500), [root], trustedRoots, noHolder).authorized).toBe(false)
+  })
 })
 
 describe('attenuating delegation', () => {

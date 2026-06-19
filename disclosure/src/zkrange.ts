@@ -223,9 +223,18 @@ export function proveBelow(amount: bigint, r: bigint, threshold: bigint, n = 32)
   }
 }
 
-/** Verify a proof that `commitment` (= commit(amount, r)) hides 0 ≤ amount < threshold. */
-export function verifyBelow(commitment: Pt, threshold: bigint, proof: RangeProof): boolean {
-  const n = proof.n
+/**
+ * Verify a proof that `commitment` (= commit(amount, r)) hides 0 ≤ amount < threshold.
+ *
+ * `n` is the VERIFIER's expected bit-length (a protocol constant, default 32) —
+ * it is NOT taken from the proof. A proof whose `n` differs is rejected, and `n`
+ * is hard-capped at 252 so that 2^n < L (preventing modular wraparound). This
+ * closes ZKRANGE-001: an attacker could otherwise pick a large `proof.n` so that
+ * 2^n ≥ L and wrap a false range claim around the group order.
+ */
+export function verifyBelow(commitment: Pt, threshold: bigint, proof: RangeProof, n = 32): boolean {
+  if (!Number.isInteger(n) || n < 1 || n > 252) return false
+  if (proof.n !== n) return false
   const bound = 1n << BigInt(n)
   if (threshold < 1n || threshold > bound) return false
   const cDiff = sub(mul(G, threshold - 1n), commitment)

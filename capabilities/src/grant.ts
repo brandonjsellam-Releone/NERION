@@ -21,6 +21,14 @@ export function authorizesIntent(
     if (!grant.counterparties.includes(intent.counterparty)) return false
   }
 
+  // Fail closed on malformed numeric inputs at the trust boundary: a non-finite,
+  // non-integer, or negative amount/aggregate would otherwise slip past the
+  // ceiling comparisons (NaN/Infinity make `>` false). PS-CAP-01 / PS-CAP-02.
+  if (intent.amount !== undefined && !(Number.isSafeInteger(intent.amount) && intent.amount >= 0)) {
+    return false
+  }
+  if (!(Number.isSafeInteger(ctx.observedAggregate) && ctx.observedAggregate >= 0)) return false
+
   const amount = intent.amount ?? 0
   if (grant.perActionCeiling !== null && amount > grant.perActionCeiling) return false
   if (grant.aggregateCap !== null && ctx.observedAggregate + amount > grant.aggregateCap) {

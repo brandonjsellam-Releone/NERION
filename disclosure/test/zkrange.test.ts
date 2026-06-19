@@ -33,6 +33,16 @@ describe('ZK range proof — amount < threshold (audited group, unaudited protoc
     expect(proof.diff.commitments.length).toBe(proof.n)
   })
 
+  it('rejects a proof whose n differs from the verifier-expected n (ZKRANGE-001)', () => {
+    const r = randomScalar()
+    const C = commit(40n, r)
+    const proof = proveBelow(40n, r, 100n, 16)
+    // Prover used n=16; a verifier expecting the protocol-constant n=32 rejects.
+    expect(verifyBelow(C, 100n, proof)).toBe(false)
+    // It only verifies when the verifier explicitly expects the same n.
+    expect(verifyBelow(C, 100n, proof, 16)).toBe(true)
+  })
+
   it('rejects a proof checked against the wrong threshold', () => {
     const r = randomScalar()
     const C = commit(40n, r)

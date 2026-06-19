@@ -70,7 +70,11 @@ export function verifyPermitForAction(
     reasons.push('permit audience does not match this resource')
   if (claims.actionHash !== actionHash(check.intent))
     reasons.push('permit is not bound to this action')
-  if (check.now > claims.exp) reasons.push('permit has expired')
+  // Fail closed on a missing/non-finite exp: such a permit must NOT be treated
+  // as non-expiring (PS-PLANE-05).
+  if (!(typeof claims.exp === 'number' && Number.isFinite(claims.exp) && check.now <= claims.exp)) {
+    reasons.push('permit expired or has no valid expiry')
+  }
   if (check.sessionId !== undefined && claims.sessionId !== check.sessionId) {
     reasons.push('permit session mismatch')
   }

@@ -33,7 +33,18 @@ export function buildReplayBundle(input: KernelInput): ReplayBundle {
 
 export function replay(bundle: ReplayBundle): ReplayResult {
   const input = decodeCbor(bundle.inputBytes) as KernelInput
-  const decision = decide(input)
+  let decision = decide(input)
+  // Enforce the pinned evaluator version: a bundle whose recorded version does
+  // not match the re-derived one is tampered or drifted — fail closed (PS-KERNEL-01).
+  if (decision.evaluatorVersion !== bundle.evaluatorVersion) {
+    decision = {
+      effect: 'deny',
+      tier: 3,
+      reasons: ['replay evaluator-version mismatch (bundle tampered or policy drift)'],
+      obligations: [],
+      evaluatorVersion: decision.evaluatorVersion,
+    }
+  }
   const inputHash = bytesToHex(SHA3_SHAKE256.digest(bundle.inputBytes))
   const receiptHash = bytesToHex(
     SHA3_SHAKE256.digest(encodeCanonical([decision.evaluatorVersion, inputHash, decision])),

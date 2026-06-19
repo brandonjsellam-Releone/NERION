@@ -75,10 +75,27 @@ export function signEnvelope(
   return signEnvelopeWith(payload, suite, (tbs) => signerFor(suite).sign(tbs, secretKey), context)
 }
 
-/** Verify an envelope against a public key. Returns false on any mismatch. */
-export function verifyEnvelope(env: SignedEnvelope, publicKey: Bytes): boolean {
-  const signer = signerFor(env.suite)
-  return signer.verify(env.sig, toBeSigned(env.suite, env.context, env.payload), publicKey)
+/**
+ * Verify an envelope against a public key. Returns false on any mismatch.
+ *
+ * If `allowedSuites` is supplied, the envelope's self-declared SuiteID must be
+ * in it — preventing a relying party from inferring trust solely from a
+ * self-declared suite (cross-suite downgrade, PS-CRYPTO-01). An unknown or
+ * not-yet-implemented suite yields a clean `false`, never an exception
+ * (PS-CRYPTO-02).
+ */
+export function verifyEnvelope(
+  env: SignedEnvelope,
+  publicKey: Bytes,
+  allowedSuites?: readonly string[],
+): boolean {
+  if (allowedSuites !== undefined && !allowedSuites.includes(env.suite)) return false
+  try {
+    const signer = signerFor(env.suite)
+    return signer.verify(env.sig, toBeSigned(env.suite, env.context, env.payload), publicKey)
+  } catch {
+    return false
+  }
 }
 
 /** Decode an envelope's payload. Caller MUST verify first. */

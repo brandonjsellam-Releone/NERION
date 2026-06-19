@@ -26,11 +26,15 @@ export function resolve(
   trustedRoots: readonly Bytes[],
   ctx: EvalContext,
 ): ResolveResult {
+  // Holder binding is mandatory: without an authenticated requester we cannot
+  // bind a capability to its subject, so we fail closed (PS-CAP-03).
+  if (ctx.holder === undefined) return DENY('requester holder identity is required')
+
   for (const cap of candidates) {
     if (!verifyChain(cap, trustedRoots)) continue
 
     // The requester must be the subject the capability was ultimately granted to.
-    if (ctx.holder !== undefined && effectiveGrant(cap).subject !== ctx.holder) continue
+    if (effectiveGrant(cap).subject !== ctx.holder) continue
 
     // Defense in depth: every grant in the chain must authorize the intent
     // (the tail is most-restrictive, but we check all).

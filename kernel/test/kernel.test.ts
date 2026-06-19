@@ -53,6 +53,9 @@ describe('deterministic risk tiering', () => {
     expect(tierOf(PAY, DEFAULT_POLICY)).toBe(2)
     expect(tierOf({ type: 'actuation.physical.arm', resource: 'r' }, DEFAULT_POLICY)).toBe(3)
     expect(tierOf({ type: 'totally.unknown', resource: 'r' }, DEFAULT_POLICY)).toBe(3)
+    // PS-KERNEL-03: a crafted near-prefix must NOT inherit the low tier.
+    expect(tierOf({ type: 'data.readX', resource: 'r' }, DEFAULT_POLICY)).toBe(3)
+    expect(tierOf({ type: 'data.read', resource: 'r' }, DEFAULT_POLICY)).toBe(0)
   })
 })
 

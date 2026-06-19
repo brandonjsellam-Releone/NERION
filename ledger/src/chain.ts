@@ -124,7 +124,28 @@ export class Ledger {
       expectedPrev,
       this.finalityNum,
       this.finalityDen,
+      {
+        expectedHeight: this.height(),
+        expectedSuite: this.suite,
+      },
     )
+  }
+}
+
+export interface VerifyOpts {
+  /** If set, the block must extend to exactly this height (LEDGER-005). */
+  readonly expectedHeight?: number
+  /** If set, block + attestations must use this suite (LEDGER-003/004). */
+  readonly expectedSuite?: string
+}
+
+// A failed signer resolution (e.g. an attacker-declared bogus suite) must NEVER
+// throw out of the verifier (LEDGER-003) — it is a failed verification.
+function safeVerify(suite: string, sig: Bytes, msg: Bytes, pub: Bytes): boolean {
+  try {
+    return signerFor(suite).verify(sig, msg, pub)
+  } catch {
+    return false
   }
 }
 
@@ -132,6 +153,12 @@ export class Ledger {
  * Stateless PQ light-client verification of a (claimed) finalized block:
  * correct sortition leader, valid proposer signature, valid distinct
  * attestations, and attesting stake >= finality fraction of total stake.
+ *
+ * `opts.expectedHeight`/`opts.expectedSuite` pin the block to its chain position
+ * and to the ledger's suite. NOTE (LEDGER-001/002): full BFT finality safety and
+ * grind-resistant leader selection require the planned VRF sortition + slashing /
+ * equivocation tracking; the current deterministic public sortition is a
+ * single-trusted-set demo (a proposer can grind `round`). See docs/STATUS.md.
  */
 export function verifyFinalized(
   block: Block,
@@ -140,18 +167,26 @@ export function verifyFinalized(
   expectedPrev: string,
   finalityNum = 2,
   finalityDen = 3,
+  opts: VerifyOpts = {},
 ): LightClientVerdict {
   const reasons: string[] = []
   const total = totalStake(set)
   const h = blockHash(block.header)
 
+  if (opts.expectedSuite !== undefined && block.suite !== opts.expectedSuite) {
+    reasons.push('block suite is not the ledger suite')
+  }
+  if (opts.expectedHeight !== undefined && block.header.height !== opts.expectedHeight) {
+    reasons.push('block height does not match the chain position')
+  }
   if (block.header.prevHash !== expectedPrev)
     reasons.push('prevHash does not extend the expected head')
   if (selectLeader(set, expectedPrev, block.header.round) !== block.header.proposer) {
     reasons.push('proposer is not the sortition leader')
   }
   if (
-    !signerFor(block.suite).verify(
+    !safeVerify(
+      block.suite,
       block.proposerSig,
       headerBytes(block.header),
       hexToBytesLocal(block.header.proposer),
@@ -165,10 +200,12 @@ export function verifyFinalized(
   for (const a of attestations) {
     if (a.blockHash !== h) continue
     if (counted.has(a.validator)) continue
+    if (opts.expectedSuite !== undefined && a.suite !== opts.expectedSuite) continue
     const stake = stakeOf(set, a.validator)
     if (stake <= 0) continue
     if (
-      !signerFor(a.suite).verify(
+      !safeVerify(
+        a.suite,
         a.sig,
         encodeCanonical(['polarseek-attest-v1', h]),
         hexToBytesLocal(a.validator),

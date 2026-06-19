@@ -13,7 +13,7 @@
  */
 
 import { resolve, type EvalContext, type RiskTier } from '../../capabilities/src/index.js'
-import { tierOf, evaluatorVersion } from './policy.js'
+import { tierOf, evaluatorVersion, KERNEL_VERSION } from './policy.js'
 import type { Decision, KernelInput } from './types.js'
 
 function obligationsForTier(tier: RiskTier): string[] {
@@ -30,8 +30,11 @@ function obligationsForTier(tier: RiskTier): string[] {
 }
 
 export function decide(input: KernelInput): Decision {
-  const ev = evaluatorVersion(input.policy)
+  // Computed inside the try so a policy that cannot be canonicalized fails
+  // closed (deny) rather than throwing (PS-KERNEL-02).
+  let ev = `${KERNEL_VERSION}+uncomputed`
   try {
+    ev = evaluatorVersion(input.policy)
     const tier = tierOf(input.intent, input.policy)
 
     if (input.policy.denyActions.includes(input.intent.type)) {

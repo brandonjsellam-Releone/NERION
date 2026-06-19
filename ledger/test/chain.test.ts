@@ -88,4 +88,13 @@ describe('pure-PoS ledger', () => {
     const atts = keys.map((k) => ledger.attest(block, k))
     expect(verifyFinalized(block, atts, set, 'cd'.repeat(32)).ok).toBe(false)
   })
+
+  it('does not throw on a hostile/bogus suite and returns false (LEDGER-003)', () => {
+    const ledger = new Ledger(set, suite)
+    const proposer = leaderKey(GENESIS_PREV, 0)
+    const block = ledger.propose('1a'.repeat(32), 0, 1000, proposer)
+    const bogus = { ...block, suite: 'BOGUS-SUITE-DOES-NOT-EXIST' }
+    expect(() => verifyFinalized(bogus, [], set, GENESIS_PREV)).not.toThrow()
+    expect(verifyFinalized(bogus, [], set, GENESIS_PREV).ok).toBe(false)
+  })
 })
