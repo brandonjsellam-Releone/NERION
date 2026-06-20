@@ -39,7 +39,9 @@ All planes are implemented in TypeScript over audited `@noble` libraries
 all built and tested. The kernel is stateless/deterministic, PermitTokens are
 action-bound, and an external CLI verifies a receipt's signature + transparency-log
 inclusion with no operator trust. The novel cryptographic *compositions* layered on
-`@noble` are **UNAUDITED** ([docs/AUDIT_PACKAGE.md](docs/AUDIT_PACKAGE.md)).
+`@noble` are **UNAUDITED**, and the ZK layer's **soundness is classical** (discrete‑log — a
+transitional, not‑yet‑PQ leg; the commitment's *hiding* is PQ) — see the claim‑by‑claim
+[docs/ASSURANCE.md](docs/ASSURANCE.md) and [docs/AUDIT_PACKAGE.md](docs/AUDIT_PACKAGE.md).
 Deployment maturity is **Local/Private dev** — four external launch gates remain
 ([docs/LAUNCH_READINESS.md](docs/LAUNCH_READINESS.md)).
 

@@ -34,6 +34,11 @@
  * out-of-bound amount. So: receipt-envelope integrity is PQ (ML-DSA-87); the ZK
  * proof's INTEGRITY is classical; the amount's SECRECY is unconditional.
  *
+ * NUANCE (Team Apex / DeepSeek, 2026-06-20): the COMMITMENT's hiding is unconditional, but
+ * the non-interactive proof's ZERO-KNOWLEDGE is established in the classical random-oracle
+ * model and is NOT yet analyzed in the QROM. Treat "the proof itself reveals nothing about
+ * the amount to a QUANTUM verifier" as UNPROVEN (not guaranteed) pending QROM analysis.
+ *
  * LINKAGE CONTRACT (soundness prerequisite, per the design audit's strongest
  * finding): this proves a property of the COMMITTED amount. End-to-end soundness
  * requires the ISSUER to commit the SAME amount the kernel decided on and bind the

@@ -62,6 +62,8 @@ All three "above the apex" upgrades are now implemented + conformance-checked.
 
 **v:2 receipt linkage — binding PRIMITIVE now IMPLEMENTED (unaudited).** The commitment-to-intent gap (a malicious issuer could carry two unlinked amount commitments — `commitments.intent = SHA3(intent)` and a perfectly-hiding `Pedersen(C_amount)` — with nothing proving they hold the same value) is closed by **structural binding** (ADR-0013, after adversarial council review replaced a heavy ZK equality circuit): `disclosure/commitbind.ts` hashes the commitment *into* the intent digest, so substitution is rejected (6 tests, incl. malicious-substitution + bad-opening). The committed value is derived from `intent.amount` with a safe-integer guard; `verifyBoundAmount` performs the full opening check. **UNAUDITED**; full v:2 receipt-body wiring + external ZK audit still pending.
 
+**Top forward upgrade (Team Apex deep audit, 2026-06-20):** migrate the commitment layer from classical Pedersen/ristretto255 to a **post-quantum commitment scheme** (lattice- or hash-based), preserving the v:2 SHA3 binding + re-running C21 — this makes the ZK layer's *soundness* post-quantum end-to-end (today the commitment *hiding* is PQ/information-theoretic, but the proof *soundness* is classical/transitional, discrete-log), and raises the audit bar from a bespoke classical proof to a PQ primitive + binding argument. The proof's zero-knowledge is also only ROM-proven, not QROM-analyzed. See [ASSURANCE.md](./ASSURANCE.md).
+
 ## US-gov public-standards track (CNSA 2.0 / NIST / SCITT / Zero-Trust)
 
 Grounding PolarSeek in the authoritative PUBLIC/declassified corpus (no classified material) for gov credibility:

@@ -20,8 +20,9 @@ every allowed action emits a post‑quantum, externally‑verifiable receipt —
 loop**.
 
 ## What is real today (independently reproducible from the open source)
-- **Built + verified:** **297 passing tests**, a **21/21 machine‑checked conformance report**
-  (`npm run conformance`) — reproducible by anyone from the Apache‑2.0 source.
+- **Built + verified:** **297 passing tests** + **21/21 automated conformance checks** against the project's
+  own spec (`npm run conformance`), reproducible from the Apache‑2.0 source — implementation *consistency*,
+  **not** external security validation (see [ASSURANCE.md](ASSURANCE.md)).
 - **Post‑quantum‑native:** ML‑DSA‑87 / ML‑KEM‑1024 / SLH‑DSA (FIPS 203/204/205), hybrid KEMs, and a
   **CNSA 2.0 conformance oracle** that emits a signed, transparency‑log‑anchored verdict.
 - **Decentralized accountability:** **k‑of‑n quorum receipts** — no single host can mint one — over a pure
