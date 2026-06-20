@@ -8,3 +8,4 @@ coverage/
 !.env.example
 polarseek-receipt-bundle.json
 docs/ENV-SOURCING.md
+docs/ENV-SOURCING.md
