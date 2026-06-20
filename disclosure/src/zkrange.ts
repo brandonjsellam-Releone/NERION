@@ -218,6 +218,10 @@ function verifySub(target: Pt, sub: SubProof, n: number, stmt: Bytes, prefix: st
  * Throws RangeProofError if the inputs are out of the supported range.
  */
 export function proveBelow(amount: bigint, r: bigint, threshold: bigint, n = 32): RangeProof {
+  // Match the verifier's hard cap (ZKRANGE-002): n ≤ 251 so 2^(n+1) ≤ L. Refuse to
+  // build a proof at an unsound bit-length rather than emit one the verifier rejects.
+  if (!Number.isInteger(n) || n < 1 || n > 251)
+    throw new RangeProofError('n must be in [1, 251] (2^(n+1) ≤ L)')
   const bound = 1n << BigInt(n)
   if (amount < 0n || amount >= bound) throw new RangeProofError('amount must be in [0, 2^n)')
   if (threshold < 1n || threshold > bound)

@@ -9,8 +9,9 @@
  * satisfaction proof attests a property of the COMMITTED amount, so end-to-end
  * soundness needs the issuer's Pedersen commitment to be the SAME amount the
  * kernel decided on. The fix (ADR-0013, after adversarial council review replaced
- * a heavy ZK equality circuit): hash the canonical intent AND the compressed
- * commitment together, so any other commitment yields a different digest.
+ * a heavy ZK equality circuit): hash the canonical intent SKELETON (amount omitted —
+ * see CB-001) AND the compressed commitment together, so any other commitment yields a
+ * different digest, while the public digest never leaks the amount.
  *
  * TRUST MODEL (read before integrating — the review panel flagged this):
  *  - The BINDER (the admission kernel / issuer, which holds the plaintext amount
@@ -24,10 +25,11 @@
  *  - A verifier that HOLDS the opening (the kernel, or a non-private auditor) uses
  *    `verifyBoundAmount`, which additionally checks `commit(intent.amount, opening)`
  *    equals the commitment.
- *  - A PRIVACY verifier (no amount, no opening) relies on the binder's signature
- *    over the receipt + the range / policy-satisfaction proof + this binding.
- *    Structural binding does NOT defend against a binder that is itself malicious
- *    at admission — that is the quorum / attestation trust model's job (ADR-0013).
+ *  - A PRIVACY verifier (no amount, no opening) CAN recompute this digest from the
+ *    amount-free intent skeleton + the commitment (the amount is not in the pre-image,
+ *    CB-001), and relies on the binder's signature + the range / policy-satisfaction
+ *    proof for the amount. Structural binding does NOT defend against a binder that is
+ *    itself malicious at admission — that is the quorum / attestation model's job.
  *
  * SCOPE / STATUS: binding PRIMITIVE + verification, with tests. Wiring it into the
  * signed v:2 receipt body is a clearly-scoped follow-up. Soundness of the
@@ -72,14 +74,27 @@ export function intentAmount(intent: ActionIntent): bigint {
 
 /**
  * Bound intent digest = SHA3-256 over the deterministic CBOR encoding of
- * {domain, intent, commitment}. Including the compressed commitment in the hashed
- * pre-image binds it to this exact intent by construction. dCBOR makes the encoding
- * unambiguous, so there is no concatenation-splitting ambiguity.
+ * {domain, intent-skeleton, commitment}, where the skeleton is the intent with its
+ * `amount` OMITTED.
+ *
+ * CB-001 (Team Apex audit, 2026-06-21): this digest is a PUBLIC, externally-
+ * recomputable receipt field. Hashing the plaintext `amount` into it would NULLIFY the
+ * commitment's perfect hiding — anyone holding the receipt could brute-force the amount
+ * over its small enumerable domain by recomputing the digest per candidate. The amount
+ * is instead bound CRYPTOGRAPHICALLY by the commitment (and checked against
+ * `intent.amount` in `verifyBoundAmount`), so it is excluded from the pre-image. Any
+ * future SECRET intent field must be excluded here likewise.
+ *
+ * Including the compressed commitment still binds the point to this exact intent
+ * skeleton; dCBOR makes the encoding unambiguous (no concatenation-splitting).
  */
 export function boundIntentDigest(intent: ActionIntent, commitment: Pt): Bytes {
+  // Bind every intent field EXCEPT the secret amount (CB-001). The commitment carries the
+  // amount's binding; the public digest must not make it brute-forceable.
+  const skeleton = Object.fromEntries(Object.entries(intent).filter(([k]) => k !== 'amount'))
   const preimage = encodeCanonical({
     domain: DOMAIN,
-    intent,
+    intent: skeleton,
     commitment: commitment.toBytes(),
   })
   return SHA3_SHAKE256.digest(preimage)

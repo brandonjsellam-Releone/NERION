@@ -102,7 +102,11 @@ export function buildQuorumReceipt(
     receipt,
     quorum: { setId: quorumSetId(set, k, epoch), k, epoch, suite },
   }
-  const msg = encodeCanonical(body)
+  // Domain-separated signing message (Team Apex audit 2026-06-21): the QUORUM_CONTEXT
+  // tag is at the TOP LEVEL of the signed bytes, not only inside setId — so a validator's
+  // ML-DSA-87 signature over a quorum body can never be confused with (or harvested from)
+  // any other message shape that reuses the same key.
+  const msg = encodeCanonical([QUORUM_CONTEXT, body])
   const signer = signerFor(suite)
   const attestations = signers.map((s) => ({
     validator: bytesToHex(s.publicKey),
@@ -118,7 +122,8 @@ function countDistinctValid(
   onValid: (v: string) => void,
 ): void {
   const q = receipt.body.quorum
-  const msg = encodeCanonical(receipt.body)
+  // Must match buildQuorumReceipt's domain-separated message exactly.
+  const msg = encodeCanonical([QUORUM_CONTEXT, receipt.body])
   const seen = new Set<string>()
   for (const a of receipt.attestations) {
     if (a.suite !== q.suite) continue // bind to the quorum's committed suite

@@ -24,8 +24,9 @@ satisfied the kernel's NUMERIC policy bounds — `amount ≤ perActionCeiling`, 
 - `verifyPolicySatisfaction(commitment, bounds, proof)` → fail-closed; reconstructs `C_sum` from the
   PUBLIC (trusted/signed) `aggregate`; rejects an `n` mismatch, a capped policy missing the aggregate,
   a missing aggregate proof, or a stray aggregate proof under an uncapped policy.
-- `policyProofDigest(commitment, proof, policyBinding)` → the value a future **v:2** receipt carries in
-  `commitments.psr`, binding the proof to the policy identity (`evaluatorVersion`) and transitively
+- `policyProofDigest(commitment, bounds, proof, policyBinding)` → the value a future **v:2** receipt carries
+  in `commitments.psr`, binding the proof to the policy identity (`evaluatorVersion`) **and the explicit
+  numeric bounds** (ceiling / cap / aggregate / n — added by the Team Apex audit 2026-06-21) and transitively
   ML-DSA-87-signing + log-anchoring it via the receipt body.
 
 **Deliberately the CONSERVATIVE subset:** it composes ONLY the existing audited-group range proof — no

@@ -88,13 +88,22 @@ describe('policy-satisfaction proof (hidden-amount compliance, UNAUDITED)', () =
     ).toBe(false)
   })
 
-  it('policyProofDigest binds commitment + policy + proof (deterministic, policy-sensitive)', () => {
+  it('policyProofDigest binds commitment + policy + bounds + proof (deterministic, sensitive)', () => {
     const { commitment, opening } = commitAmount(40n)
-    const proof = provePolicySatisfaction(40n, opening, { perActionCeiling: 100n })
-    const a = policyProofDigest(commitment, proof, 'kernel-v1+policyhashAAAA')
-    const b = policyProofDigest(commitment, proof, 'kernel-v1+policyhashAAAA')
-    const c = policyProofDigest(commitment, proof, 'kernel-v1+policyhashBBBB')
+    const bounds = { perActionCeiling: 100n }
+    const proof = provePolicySatisfaction(40n, opening, bounds)
+    const a = policyProofDigest(commitment, bounds, proof, 'kernel-v1+policyhashAAAA')
+    const b = policyProofDigest(commitment, bounds, proof, 'kernel-v1+policyhashAAAA')
+    const c = policyProofDigest(commitment, bounds, proof, 'kernel-v1+policyhashBBBB')
+    // Team Apex: the digest must ALSO change when the explicit numeric bounds change.
+    const d = policyProofDigest(
+      commitment,
+      { perActionCeiling: 200n },
+      proof,
+      'kernel-v1+policyhashAAAA',
+    )
     expect(a).toBe(b) // deterministic
-    expect(a).not.toBe(c) // a proof under one policy id digests differently than another
+    expect(a).not.toBe(c) // sensitive to the policy id
+    expect(a).not.toBe(d) // sensitive to the explicit bounds
   })
 })

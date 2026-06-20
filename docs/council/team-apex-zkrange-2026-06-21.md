@@ -42,6 +42,83 @@ verified the primitives but not the dual‑range step; the OpenAI seat returned 
 **Lesson: the value of a multi‑model panel is in *verifying the minority report*, not averaging the majority.**
 A simple majority vote here would have shipped the bug.
 
+## Follow-up — `policyproof.ts` (policy-satisfaction composition), same campaign
+
+The panel (DeepSeek · Grok · Hermes; Gemini 503, OpenAI empty) then audited the policy-satisfaction layer
+that *composes* the range proof.
+
+**Central worry, adjudicated SAFE.** All three asked: *does `proveBelow` bind the threshold, or could a proof
+for a large threshold verify against a small one?* It **binds it** — `zkrange` folds `threshold` into both the
+Fiat-Shamir `statementHash` **and** the verifier-recomputed `cDiff`, and the existing test "rejects a proof
+checked against the wrong threshold" confirms it. **No cross-bounds soundness break.**
+
+**Two hardenings applied (panel-recommended, MEDIUM/LOW):**
+1. `policyProofDigest` now binds the **explicit numeric bounds** (ceiling / cap / aggregate / n), not just the
+   `policyBinding` string — so the v:2 receipt anchor is self-describing and a proof cannot be re-anchored as
+   satisfying different bounds that share a policyBinding (+ a test asserting the digest changes when bounds do).
+2. `proveBelow` now enforces the same **n ≤ 251** cap as the verifier (fail-fast; closes the prove/verify
+   spec divergence the panel flagged).
+
+Neither is a break (the proof is threshold-bound), but both are genuine audit-trail + consistency hardening.
+Gate green at 298 tests / 21-of-21.
+
+## Follow-up — `receipts/quorum.ts` (k-of-n quorum receipts), same campaign
+
+Panel: DeepSeek · Grok · Hermes (all delivered; Gemini 503, OpenAI empty).
+
+**One real hardening applied; two over-reaches adjudicated SAFE.**
+
+- **Applied (unanimous): explicit top-level domain separation.** The signed message was
+  `canonical({receipt, quorum})` with `QUORUM_CONTEXT` only *inside* `setId`. DeepSeek framed a
+  cross-protocol signature-confusion path (harvest a validator's ML-DSA signature from another protocol
+  that reuses the key and reproduces the body shape, then replay it as a quorum attestation). **Not
+  currently exploitable** in Nerion — no other protocol signs that 2-field shape — but it is textbook
+  best practice and exactly what an external auditor flags. Fix: the signed message is now
+  `canonical([QUORUM_CONTEXT, body])` on **both** build and verify.
+- **Adjudicated SAFE — Hermes "stake-path `q.k` divergence":** claimed an attacker could choose `q.k` to
+  make a `setId` validate for a high-stake subset. **False** — `q.k` and `q.setId` are both inside the
+  signed body, so neither can change without valid signatures; the committed `q.k` is signature-bound.
+- **Adjudicated SAFE — Hermes "replay across receipts":** the full `ReceiptBody` (decision hashes +
+  timestamp) is in the signed message, so genuine distinct decisions never share signatures.
+
+Acknowledged (unchanged, already-documented trust model): safety reduces to ML-DSA-87 EUF-CMA **assuming
+k distinct, non-colluding member keys**; the verifier must supply its own finalized trusted set. Both are
+stated in the module docstring and [ASSURANCE.md](../ASSURANCE.md). Gate green at 298 tests / 21-of-21.
+
+## Follow-up — `disclosure/commitbind.ts` (v:2 commitment binding) — **CB-001, the headline find**
+
+Panel: DeepSeek · Grok · Hermes — **unanimous, concrete, and correct** (DeepSeek "DO-NOT-SHIP,"
+Grok "Critical flaw," Hermes "broken for its stated privacy goals").
+
+**CB-001 — the public binding digest leaked the amount via brute-force.** `boundIntentDigest` hashed the
+FULL intent *including the plaintext `amount`* into a digest that is a PUBLIC, "externally-recomputable"
+receipt field. The Pedersen commitment is perfectly hiding and the random opening is NOT in the pre-image
+— but the amount **is**. So anyone holding the receipt (digest + commitment + the rest of the intent)
+recovers the amount by enumerating candidates, recomputing the digest, and matching. Amounts are
+low-entropy, so this is O(amount-space) hashes — trivial. The commitment's information-theoretic hiding is
+**nullified** by the public hash pre-image. This is the exact "unsalted selective-disclosure brute-force
+over small enumerable domains" class the project already flags in `policyproof.ts` — re-introduced here.
+
+**Severity, honestly scoped.** commitbind is a reference PRIMITIVE **not yet wired into the signed receipt
+body** (per its own docstring), so no production receipt carries this digest yet — **caught before it
+shipped.** It must be fixed before wiring; it would have been a serious privacy regression if wired.
+
+**Adjudication (verified, not rubber-stamped).** The attack reproduces directly from the code — amount in
+the pre-image + public digest + enumerable domain. True positive, independently derived at the lead seat
+*before* the fan-out, then confirmed 3-for-3. The encoding itself is sound (dCBOR + canonical ristretto255,
+no malleability — DeepSeek).
+
+**Fix applied (all three converge).** Omit the amount from the digest pre-image. The amount is already
+bound CRYPTOGRAPHICALLY by the commitment and checked against `intent.amount` in the opening-holder's
+`verifyBoundAmount`; the public digest now binds only the amount-free intent skeleton + the commitment
+point. This *also* closes a second gap the panel raised — a privacy verifier previously could not recompute
+the digest at all (it needed the amount); now it can, from the skeleton. Regression test asserts two intents
+differing only in amount produce the SAME digest, while a different non-secret field still changes it.
+
+**Acknowledged (unchanged trust model).** Against a binder malicious *at admission* (binds commitment-to-Z
+under intent-amount-Y), only `verifyBoundAmount` (opening-holder) or the quorum/attestation layer defends —
+documented, by design.
+
 ## Residual (unchanged, honest)
 
 Soundness remains **classical** (discrete‑log); zero‑knowledge is proven in the classical ROM, not the QROM.

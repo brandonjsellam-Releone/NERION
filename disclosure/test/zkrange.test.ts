@@ -47,18 +47,15 @@ describe('ZK range proof — amount < threshold (audited group, unaudited protoc
     expect(verifyBelow(C, 100n, proof, 16)).toBe(true)
   })
 
-  it('rejects an otherwise-valid n=252 proof — ZKRANGE-002 wraparound cap (found by Team Apex)', () => {
+  it('rejects n > 251 on both sides — ZKRANGE-002 wraparound cap (found by Team Apex)', () => {
     const r = randomScalar()
-    const C = commit(40n, r)
-    // 40 < 100 is TRUE and this 252-bit proof is syntactically valid — but n=252 is
-    // UNSOUND: L = 2^252 + d (d ≈ 2^124.7), so a negative diff can wrap into [0, 2^n),
-    // letting a huge amount falsely prove "< threshold". The verifier hard-caps n at 251
-    // (2^(n+1) ≤ L), so even this honest proof is refused.
-    const proof = proveBelow(40n, r, 100n, 252)
-    expect(verifyBelow(C, 100n, proof, 252)).toBe(false)
-    // n = 251 is the safe maximum.
-    const proof251 = proveBelow(7n, r, 50n, 251)
+    // n=252 is UNSOUND: L = 2^252 + d (d ≈ 2^124.7), so a negative diff can wrap into
+    // [0, 2^n) and a huge amount could falsely prove "< threshold". Both sides cap at 251
+    // (2^(n+1) ≤ L): the prover refuses to build it, and the verifier refuses to accept it.
+    expect(() => proveBelow(40n, r, 100n, 252)).toThrow(RangeProofError)
+    const proof251 = proveBelow(7n, r, 50n, 251) // n=251 is the safe maximum
     expect(verifyBelow(commit(7n, r), 50n, proof251, 251)).toBe(true)
+    expect(verifyBelow(commit(7n, r), 50n, proof251, 252)).toBe(false)
   })
 
   it('rejects a proof checked against the wrong threshold', () => {

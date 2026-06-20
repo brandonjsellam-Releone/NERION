@@ -168,6 +168,7 @@ function serializeRangeProof(p: RangeProof): unknown {
  */
 export function policyProofDigest(
   commitment: Pt,
+  bounds: PolicyBounds,
   proof: PolicySatisfactionProof,
   policyBinding: string,
 ): string {
@@ -176,6 +177,13 @@ export function policyProofDigest(
     policyBinding,
     bytesToHex(commitment.toBytes()),
     proof.n,
+    // Bind the EXPLICIT numeric bounds (Team Apex audit, 2026-06-21): a proof valid under
+    // one ceiling/cap cannot be re-anchored as satisfying different bounds that happen to
+    // share the same policyBinding string — the digest is self-describing.
+    bounds.perActionCeiling.toString(),
+    bounds.aggregateCap !== undefined ? bounds.aggregateCap.toString() : 'none',
+    bounds.aggregate !== undefined ? bounds.aggregate.toString() : 'none',
+    bounds.n ?? 32,
     serializeRangeProof(proof.ceiling),
     proof.aggregate ? serializeRangeProof(proof.aggregate) : 'none',
   ])

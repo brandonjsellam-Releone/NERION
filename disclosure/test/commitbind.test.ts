@@ -57,4 +57,17 @@ describe('v:2 structural commitment-binding (ADR-0013, UNAUDITED)', () => {
     const { commitment } = commitAmount(42n)
     expect(boundIntentDigest(intent, commitment)).toEqual(boundIntentDigest(intent, commitment))
   })
+
+  it('CB-001 (Team Apex): the public digest does NOT bind the plaintext amount', () => {
+    const { commitment } = commitAmount(42n)
+    // Two intents identical except for the amount must yield the SAME digest — the amount is
+    // bound by the (perfectly-hiding) commitment, not the public preimage. Were it in the
+    // preimage, an attacker could brute-force it over its small enumerable domain.
+    const a: ActionIntent = { type: 'payment.transfer', resource: 'vendor-acme', amount: 500 }
+    const b: ActionIntent = { type: 'payment.transfer', resource: 'vendor-acme', amount: 999999 }
+    expect(boundIntentDigest(a, commitment)).toEqual(boundIntentDigest(b, commitment))
+    // ...while a different NON-secret field still changes the digest (skeleton binding intact).
+    const c: ActionIntent = { type: 'payment.transfer', resource: 'vendor-evil', amount: 500 }
+    expect(boundIntentDigest(a, commitment)).not.toEqual(boundIntentDigest(c, commitment))
+  })
 })
