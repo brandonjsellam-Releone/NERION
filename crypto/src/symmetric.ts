@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 TRELYAN
+//
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * Symmetric primitives for the hot path and hashing.
  *

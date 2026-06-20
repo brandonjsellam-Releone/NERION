@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 TRELYAN
+//
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * Canonical CBOR — the byte-exact serialization PolarSeek hashes and signs.
  *

@@ -1,0 +1,28 @@
+{
+  "description": "Govern-the-verb negative oracle vector. Perception-shaped side-data that MUST NOT influence a PolarSeek admission decision. Each field is injected into intent.params; a conforming kernel returns a BYTE-IDENTICAL Decision (it governs the typed verb — type/amount/counterparty — never accompanying perception). This file lives in conformance/vectors/ (clean-room-lint skipped) so it may name the forbidden SIGA perception primitives precisely in order to forbid their influence.",
+  "fields": {
+    "camera": "rtsp://cam-01/stream",
+    "videoFrame": "ZnJhbWUtYnl0ZXM=",
+    "pixel_buffer": [0, 0, 0, 255],
+    "sensor_frame": 4096,
+    "frameSequence": [1, 2, 3, 4, 5],
+    "staticFeature": [0.11, 0.22, 0.33],
+    "dynamicFeature": [0.44, 0.55],
+    "cognitive_loop": true,
+    "object_identity": "track-9",
+    "identity_continuity": 0.98,
+    "track_object": "pedestrian-3",
+    "crossFrameId": "xf-77",
+    "object_persistence": 17,
+    "zone_occupancy": 5,
+    "field_of_view": 120,
+    "dwell_time": 42,
+    "geofence": "zone-A",
+    "zone_entry": true,
+    "occupancy_over_time": [3, 4, 5],
+    "last_seen": 1750000000,
+    "gaitSignature": "g-abc-123",
+    "faceVector": [0.5, 0.6, 0.7, 0.8],
+    "biometricTemplate": "bt-deadbeef"
+  }
+}

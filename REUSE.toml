@@ -1,0 +1,58 @@
+# SPDX-FileCopyrightText: 2026 TRELYAN
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# REUSE configuration (spec 3.3 — https://reuse.software). Declares licensing
+# for files that do not carry an inline SPDX header (docs, data, generated,
+# dotfiles) and for the bundled third-party license texts. Files with inline
+# SPDX headers are authoritative on their own and are not listed here.
+
+version = 1
+
+# --- First-party files without inline headers: PolarSeek's own docs, data,
+#     config, and dotfiles. Authored by TRELYAN, licensed Apache-2.0. ---
+[[annotations]]
+path = [
+  "**/*.md",
+  "**/*.tla",
+  ".gitignore",
+  "rust/.gitignore",
+  ".gitattributes",
+  ".env.example",
+  "package.json",
+  "tsconfig.json",
+  ".prettierrc.json",
+  "polarseek-receipt-bundle.json",
+  "conformance/vectors/ps-kat.json",
+  "conformance/vectors/ps-negative.json",
+  "crypto/vectors/deterministic-kat.json",
+  "NOTICE",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 TRELYAN"
+SPDX-License-Identifier = "Apache-2.0"
+
+# --- Canonical license text + machine-generated lockfiles: covered by the
+#     project license, but NOT claimed as TRELYAN's copyright. ---
+[[annotations]]
+path = ["LICENSE", "package-lock.json", "rust/Cargo.lock"]
+precedence = "override"
+SPDX-FileCopyrightText = "NONE"
+SPDX-License-Identifier = "Apache-2.0"
+
+# --- Bundled third-party dependencies (redistributed in the `npm run bundle`
+#     artifact): upstream MIT notices with their upstream copyright holders. ---
+[[annotations]]
+path = "third_party/noble.LICENSE.txt"
+precedence = "override"
+SPDX-FileCopyrightText = [
+  "2022 Paul Miller (https://paulmillr.com)",
+  "2024 Paul Miller (https://paulmillr.com)",
+]
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = "third_party/cbor2.LICENSE.txt"
+precedence = "override"
+SPDX-FileCopyrightText = "2023 Joe Hildebrand"
+SPDX-License-Identifier = "MIT"

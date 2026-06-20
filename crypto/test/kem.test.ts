@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 TRELYAN
+//
+// SPDX-License-Identifier: Apache-2.0
+
 import { describe, it, expect } from 'vitest'
 import { getKem, implementedKemIds, KEM_IDS } from '../src/kem.js'
 import { NotImplementedError } from '../src/errors.js'

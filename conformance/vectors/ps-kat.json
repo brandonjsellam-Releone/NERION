@@ -1,0 +1,116 @@
+{
+  "version": "PS-KAT-1",
+  "note": "Frozen Known-Answer Tests for PolarSeek deterministic primitives. Regenerate with `npm run kat`. Per-vector cross-implementation coverage: SHA3-256 and HMAC-SHA384 are reproduced by TS, Rust AND Python (3 languages); SHAKE256 by TS and Python; AES-256-GCM and the ML-DSA-87 *public key* by TS and Rust; SLH-DSA-SHAKE-256f keygen and the dCBOR encodings by TS only. Randomized ops are property-checked, not byte-pinned.",
+  "hash": {
+    "sha3_256": [
+      {
+        "msgUtf8": "",
+        "digestHex": "a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a"
+      },
+      {
+        "msgUtf8": "PolarSeek KAT — govern the verb, never the eye",
+        "digestHex": "0db14575015bec3260b93176b83e4a5ce4d16638f25ee9e08af94e2e745d395a"
+      },
+      {
+        "msgUtf8": "post-quantum all the way down",
+        "digestHex": "7791f0d2941f8953b613662b83c08c03916669fe6f21946a4f63a69a429ff4bf"
+      }
+    ],
+    "shake256": [
+      {
+        "msgUtf8": "PolarSeek KAT — govern the verb, never the eye",
+        "outLen": 16,
+        "outHex": "8606b8dd0aff6f9f28f71a5f7fd5c112"
+      },
+      {
+        "msgUtf8": "PolarSeek KAT — govern the verb, never the eye",
+        "outLen": 32,
+        "outHex": "8606b8dd0aff6f9f28f71a5f7fd5c112b3611566bb331460e5623e4eb4c19814"
+      },
+      {
+        "msgUtf8": "PolarSeek KAT — govern the verb, never the eye",
+        "outLen": 64,
+        "outHex": "8606b8dd0aff6f9f28f71a5f7fd5c112b3611566bb331460e5623e4eb4c19814594ef562509cb2367afb3873c702b4e44e7a508303f80d6c4a678f84a196593b"
+      }
+    ]
+  },
+  "mac": {
+    "hmac_sha384": [
+      {
+        "keyHex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+        "msgUtf8": "PolarSeek KAT — govern the verb, never the eye",
+        "tagHex": "7001760f70ad42f6fbb17c7a68335348c3c19c8f31aa9d01782ab85fb906220e2ac59c34d5673c0e6c7add148d6ffacb"
+      },
+      {
+        "keyHex": "070a0d101316191c1f2225282b2e3134373a3d404346494c4f5255585b5e6164676a6d707376797c7f8285888b8e9194",
+        "msgUtf8": "post-quantum all the way down",
+        "tagHex": "be43dea24a24165e4b64806e974d191348ffa3d9edbc9f6f6c00d941639cf59f47cb216d4f158d718bcedbc509a44ce9"
+      }
+    ]
+  },
+  "aead": {
+    "aes_256_gcm": [
+      {
+        "keyHex": "01060b10151a1f24292e33383d42474c51565b60656a6f74797e83888d92979c",
+        "nonceHex": "090b0d0f11131517191b1d1f",
+        "aadHex": "50532d414144",
+        "ptHex": "736574746c653a616363743a2f2f74726561737572792f6f707320616d6f756e743c7468726573686f6c64",
+        "ctHex": "00c9fd0d255c995707641a94320f3b681cd75041f84b4002605c13e2d0f9c7f4288fa88af98a4e3285d215cefecd844fa3bbe8a0d62431408963e5"
+      }
+    ]
+  },
+  "sig": {
+    "ML-DSA-87": {
+      "seedHex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "publicKeyLen": 2592,
+      "secretKeyLen": 4896,
+      "publicKeySha3": "e6cf50a9c2fa5234f59949ff61f8161db4d629532127f4aefa8bb10811ecfb1e",
+      "secretKeySha3": "db6218a2eeae53e567d25222055251eab0ba85d1c69aeb8a62253d2096fd96a2"
+    },
+    "SLH-DSA-SHAKE-256f": {
+      "seedHex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f",
+      "publicKeyLen": 64,
+      "secretKeyLen": 128,
+      "publicKeySha3": "df086641c953bcfd542bfd4d86a59c56c4add4ce32f1c6672c41947bf5142349",
+      "secretKeySha3": "39f22b19b89fb21d7e16aa9e129b99b4c224c60eb19af411f64f3f6d4d4adb84"
+    }
+  },
+  "cbor": [
+    {
+      "label": "sorted-keys",
+      "value": {
+        "z": 1,
+        "a": 2,
+        "m": 3
+      },
+      "hex": "a3616102616d03617a01"
+    },
+    {
+      "label": "nested",
+      "value": {
+        "effect": "allow",
+        "tier": 2,
+        "obligations": [
+          "receipt",
+          "log"
+        ],
+        "n": 0
+      },
+      "hex": "a4616e006474696572026665666665637465616c6c6f776b6f626c69676174696f6e73826772656365697074636c6f67"
+    },
+    {
+      "label": "ints",
+      "value": [
+        0,
+        1,
+        23,
+        24,
+        255,
+        256,
+        65535,
+        65536
+      ],
+      "hex": "88000117181818ff19010019ffff1a00010000"
+    }
+  ]
+}

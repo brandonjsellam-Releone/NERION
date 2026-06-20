@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 TRELYAN
+//
+// SPDX-License-Identifier: Apache-2.0
+
 // Regenerates crypto/vectors/deterministic-kat.json.
 // Run: node crypto/vectors/_gen.mjs   (kept in-repo so vectors are reproducible)
 import { writeFileSync } from 'node:fs'

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 TRELYAN
+//
+// SPDX-License-Identifier: Apache-2.0
+
 import { describe, it, expect } from 'vitest'
 import { runConformance } from '../src/index.js'
 
@@ -11,6 +15,6 @@ describe('PolarSeek conformance suite', () => {
     }
     expect(report.ok).toBe(true)
     expect(report.passed).toBe(report.total)
-    expect(report.total).toBeGreaterThanOrEqual(11)
+    expect(report.total).toBeGreaterThanOrEqual(20)
   })
 })

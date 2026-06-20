@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 TRELYAN
+//
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * @polarseek/attest — RATS-style session attestation (software root + TEE stubs).
  */

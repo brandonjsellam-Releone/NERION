@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 TRELYAN
+//
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * Key providers: a working software backend, HSM/KMS stubs, a routing registry,
  * and an envelope-signing helper that keeps secret keys behind the provider.
@@ -63,16 +67,15 @@ abstract class StubKeyProvider implements KeyProvider {
   }
 }
 
-/** PKCS#11 HSM (SoftHSM / Luna / CloudHSM) — pending bindings + module. */
-export class Pkcs11KeyProvider extends StubKeyProvider {
-  readonly name = 'pkcs11'
-  protected readonly connect = 'a PKCS#11 module + pkcs11 bindings (SoftHSM/Luna/CloudHSM)'
-}
-
-/** Cloud KMS (AWS KMS / Azure Key Vault / GCP KMS) — pending credentials + SDK. */
+/**
+ * Generic cloud-KMS stub for GCP KMS (pending credentials + SDK). The other
+ * backends are wired as sealing providers: Azure → AzureKeyVaultKeyProvider,
+ * AWS → AwsKmsKeyProvider, PKCS#11 HSM → Pkcs11KeyProvider.
+ */
 export class CloudKmsKeyProvider extends StubKeyProvider {
   readonly name = 'cloud-kms'
-  protected readonly connect = 'cloud KMS credentials + SDK (AWS KMS / Azure Key Vault / GCP KMS)'
+  protected readonly connect =
+    'GCP KMS credentials + SDK (Azure→AzureKeyVaultKeyProvider, AWS→AwsKmsKeyProvider, HSM→Pkcs11KeyProvider)'
 }
 
 /** Routes key operations to the provider named in each KeyRef. */

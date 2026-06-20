@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 TRELYAN
+//
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * RFC 6962-style Merkle tree: leaf/node domain separation, Merkle root,
  * inclusion proofs, and consistency (append-only) proofs.

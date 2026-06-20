@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 TRELYAN
+//
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * Pure-PoS ledger with stake-finality and PQ light-client verification.
  *
@@ -16,6 +20,8 @@ import {
 } from '../../crypto/src/index.js'
 import { bytesToHex } from '@noble/hashes/utils.js'
 import { selectLeader, stakeOf, totalStake, canonicalRound } from './sortition.js'
+import { prove as vrfProve, verify as vrfVerify } from './vrf.js'
+import { vrfAlpha, vrfLeaderEligible, verifyViewChangeCert } from './leader.js'
 import type {
   Attestation,
   Block,
@@ -23,6 +29,7 @@ import type {
   FinalizedBlock,
   LightClientVerdict,
   ValidatorSet,
+  ViewChangeCert,
 } from './types.js'
 
 export const GENESIS_PREV = '00'.repeat(32)
@@ -43,11 +50,29 @@ function headerBytes(h: BlockHeader): Bytes {
     h.proposer,
     h.payloadRoot,
     h.timestamp,
+    h.vrfOutput ?? '',
   ])
 }
 
 export function blockHash(h: BlockHeader): string {
   return bytesToHex(SHA3_SHAKE256.digest(headerBytes(h)))
+}
+
+/**
+ * Message the PROPOSER signs: binds the cipher suite + block identity, so a valid
+ * signature cannot be replayed under a relabeled `suite` (cross-suite confusion —
+ * PS-1 and PS-5 share ML-DSA-87). Distinct domain tag from the hash preimage.
+ */
+function blockSignMessage(suite: string, hash: string): Bytes {
+  return encodeCanonical(['polarseek-block-sig-v1', suite, hash])
+}
+
+/**
+ * Message a VALIDATOR attests: binds the cipher suite + block identity. Exported
+ * so the equivocation verifier recovers the exact same preimage (no drift).
+ */
+export function attestMessage(suite: string, hash: string): Bytes {
+  return encodeCanonical(['polarseek-attest-v1', suite, hash])
 }
 
 export class Ledger {
@@ -82,17 +107,68 @@ export class Ledger {
       payloadRoot,
       timestamp,
     }
-    const sig = signerFor(this.suite).sign(headerBytes(header), proposer.secretKey)
+    const sig = signerFor(this.suite).sign(
+      blockSignMessage(this.suite, blockHash(header)),
+      proposer.secretKey,
+    )
     return { header, proposerSig: sig, suite: this.suite }
+  }
+
+  /**
+   * VRF-mode proposal (ADR-0004): the proposer must be VRF-eligible for the draw.
+   * `vrfSecret` is the proposer's CLASSICAL ed25519 VRF seed — separate from its
+   * ML-DSA consensus key. `viewChangeCert` is required when `round > 0`.
+   */
+  proposeVrf(
+    payloadRoot: string,
+    round: number,
+    timestamp: number,
+    proposer: KeyPair,
+    vrfSecret: Bytes,
+    viewChangeCert?: ViewChangeCert,
+  ): Block {
+    const proposerHex = bytesToHex(proposer.publicKey)
+    const prevHash = this.headHash()
+    const { beta, proof } = vrfProve(vrfSecret, vrfAlpha(prevHash, round))
+    if (!vrfLeaderEligible(this.set, proposerHex, beta)) {
+      throw new LedgerError('proposer is not VRF-eligible for this round')
+    }
+    if (
+      round > 0 &&
+      !verifyViewChangeCert(
+        this.set,
+        this.suite,
+        this.height(),
+        prevHash,
+        round - 1,
+        viewChangeCert,
+        this.finalityNum,
+        this.finalityDen,
+      )
+    ) {
+      throw new LedgerError('round > 0 requires a valid 2/3 view-change certificate')
+    }
+    const header: BlockHeader = {
+      height: this.height(),
+      prevHash,
+      round,
+      proposer: proposerHex,
+      payloadRoot,
+      timestamp,
+      vrfOutput: bytesToHex(beta),
+    }
+    const sig = signerFor(this.suite).sign(
+      blockSignMessage(this.suite, blockHash(header)),
+      proposer.secretKey,
+    )
+    const block: Block = { header, proposerSig: sig, suite: this.suite, vrfProof: proof }
+    return viewChangeCert ? { ...block, viewChangeCert } : block
   }
 
   /** A validator attests (signs) a block hash. */
   attest(block: Block, validator: KeyPair): Attestation {
     const h = blockHash(block.header)
-    const sig = signerFor(this.suite).sign(
-      encodeCanonical(['polarseek-attest-v1', h]),
-      validator.secretKey,
-    )
+    const sig = signerFor(this.suite).sign(attestMessage(this.suite, h), validator.secretKey)
     return { blockHash: h, validator: bytesToHex(validator.publicKey), suite: this.suite, sig }
   }
 
@@ -155,10 +231,12 @@ function safeVerify(suite: string, sig: Bytes, msg: Bytes, pub: Bytes): boolean 
  * attestations, and attesting stake >= finality fraction of total stake.
  *
  * `opts.expectedHeight`/`opts.expectedSuite` pin the block to its chain position
- * and to the ledger's suite. NOTE (LEDGER-001/002): full BFT finality safety and
- * grind-resistant leader selection require the planned VRF sortition + slashing /
- * equivocation tracking; the current deterministic public sortition is a
- * single-trusted-set demo (a proposer can grind `round`). See docs/STATUS.md.
+ * and to the ledger's suite. Leader eligibility is dual-mode, FIXED by the
+ * validator set: VRF (ADR-0004 — private, grind-resistant, view-change liveness;
+ * when every validator carries a VRF key) or the deprecated deterministic
+ * sortition. A set in one mode rejects the other's blocks (no downgrade).
+ * Equivocation slashing is deferred (LEDGER-006); the view-change round-skip
+ * caveat is LEDGER-007. See docs/adr/ADR-0004 and docs/STATUS.md.
  */
 export function verifyFinalized(
   block: Block,
@@ -181,21 +259,71 @@ export function verifyFinalized(
   }
   if (block.header.prevHash !== expectedPrev)
     reasons.push('prevHash does not extend the expected head')
-  if (block.header.round !== canonicalRound(block.header.height)) {
-    reasons.push('non-canonical round (grind-resistance, LEDGER-002)')
-  }
-  // Zero total stake (e.g. after slashing) finalizes nothing — and selectLeader
-  // is undefined on an empty set, so guard before calling it (fail closed).
+  // Leader eligibility. The MODE is fixed by the VALIDATOR SET, never per block: a
+  // set whose validators all carry a VRF key is VRF-mode (ADR-0004), and a
+  // proof-less legacy block is rejected as a DOWNGRADE — so the predictable
+  // deterministic leader can never bypass VRF. A set with no VRF keys is legacy
+  // (deprecated). total<=0 fails closed first (selectLeader is undefined on it).
+  const vrfSet = set.validators.length > 0 && set.validators.every((v) => v.vrfPubkey !== undefined)
   if (total <= 0) {
     reasons.push('validator set has no stake')
-  } else if (selectLeader(set, expectedPrev, block.header.round) !== block.header.proposer) {
-    reasons.push('proposer is not the sortition leader')
+  } else if (vrfSet) {
+    if (block.vrfProof === undefined) {
+      reasons.push('legacy block rejected: this validator set is VRF-mode (no downgrade)')
+    } else {
+      // round > 0 requires a ≥2/3 view-change cert for the PREVIOUS round (liveness
+      // without grind by a <1/3 adversary). LIMITATION (LEDGER-007): only round r-1
+      // is proven, not a chain from round 0, so a ≥2/3 coalition can skip to an
+      // arbitrary round to re-draw the VRF leader among themselves — a fairness
+      // weakening exploitable only by the quorum that already controls liveness;
+      // safety is unaffected (each block still needs its own 2/3 attestations). A
+      // cert chain (each cert referencing the prior) is the rigorous future fix.
+      if (
+        block.header.round > 0 &&
+        !verifyViewChangeCert(
+          set,
+          block.suite,
+          block.header.height,
+          expectedPrev,
+          block.header.round - 1,
+          block.viewChangeCert,
+          finalityNum,
+          finalityDen,
+        )
+      ) {
+        reasons.push('round > 0 without a valid 2/3 view-change certificate')
+      }
+      const proposerV = set.validators.find((v) => v.pubkey === block.header.proposer)
+      if (proposerV === undefined || proposerV.vrfPubkey === undefined) {
+        reasons.push('proposer is not a validator with a VRF key')
+      } else {
+        const beta = vrfVerify(
+          hexToBytesLocal(proposerV.vrfPubkey),
+          vrfAlpha(expectedPrev, block.header.round),
+          block.vrfProof,
+        )
+        if (beta === null) reasons.push('VRF proof is invalid')
+        else if (bytesToHex(beta) !== (block.header.vrfOutput ?? '').toLowerCase())
+          reasons.push('vrfOutput does not match the VRF proof')
+        else if (!vrfLeaderEligible(set, block.header.proposer, beta))
+          reasons.push('proposer is not VRF-eligible for this round')
+      }
+    }
+  } else if (block.vrfProof !== undefined) {
+    reasons.push('VRF block rejected: this validator set has no VRF keys')
+  } else {
+    if (block.header.round !== canonicalRound(block.header.height)) {
+      reasons.push('non-canonical round (grind-resistance, LEDGER-002)')
+    }
+    if (selectLeader(set, expectedPrev, block.header.round) !== block.header.proposer) {
+      reasons.push('proposer is not the sortition leader')
+    }
   }
   if (
     !safeVerify(
       block.suite,
       block.proposerSig,
-      headerBytes(block.header),
+      blockSignMessage(block.suite, h),
       hexToBytesLocal(block.header.proposer),
     )
   ) {
@@ -206,18 +334,15 @@ export function verifyFinalized(
   let attestingStake = 0
   for (const a of attestations) {
     if (a.blockHash !== h) continue
+    // Count only attestations under the block's OWN declared suite. Together with the
+    // suite-bound proposer signature this closes cross-suite confusion even when a
+    // standalone light client omits opts.expectedSuite (council/audit hardening).
+    if (a.suite !== block.suite) continue
     if (counted.has(a.validator)) continue
     if (opts.expectedSuite !== undefined && a.suite !== opts.expectedSuite) continue
     const stake = stakeOf(set, a.validator)
     if (stake <= 0) continue
-    if (
-      !safeVerify(
-        a.suite,
-        a.sig,
-        encodeCanonical(['polarseek-attest-v1', h]),
-        hexToBytesLocal(a.validator),
-      )
-    ) {
+    if (!safeVerify(a.suite, a.sig, attestMessage(a.suite, h), hexToBytesLocal(a.validator))) {
       continue
     }
     counted.add(a.validator)

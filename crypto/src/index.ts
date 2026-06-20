@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 TRELYAN
+//
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * @polarseek/crypto — post-quantum, crypto-agile primitives behind a SuiteID.
  *
@@ -22,6 +26,23 @@ export type { KemId } from './kem.js'
 export { SIG_IDS, getSigner, implementedSigIds } from './sign.js'
 export type { SigId } from './sign.js'
 export {
+  getCodeSigner,
+  assertSingleTree,
+  CODE_SIG_IDS,
+  implementedCodeSigIds,
+} from './code-sign.js'
+export type { CodeSigner, HbsParams, HbsHash, CodeSigId } from './code-sign.js'
+export {
+  coseSign1,
+  coseSign1Verify,
+  encodeCoseSign1,
+  decodeCoseSign1,
+  signEatResult,
+  COSE_ALG,
+  EAT_CLAIM,
+} from './cose.js'
+export type { CoseSign1 } from './cose.js'
+export {
   SUITE_IDS,
   getSuite,
   allSuites,
@@ -31,6 +52,8 @@ export {
   signerFor,
 } from './suites.js'
 export type { SuiteId } from './suites.js'
+export { assessCnsa20 } from './cnsa.js'
+export type { CnsaAssessment, CnsaFinding, CnsaStatus } from './cnsa.js'
 export {
   signEnvelope,
   signEnvelopeWith,

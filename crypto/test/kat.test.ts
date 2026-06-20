@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 TRELYAN
+//
+// SPDX-License-Identifier: Apache-2.0
+
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { ml_kem1024 } from '@noble/post-quantum/ml-kem.js'

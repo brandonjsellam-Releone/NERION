@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 TRELYAN
+//
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * M-of-N quorum approval, revocation registry, and the local kill switch.
  *
@@ -64,6 +68,11 @@ export function enact(
 ): EnactmentResult {
   const reasons: string[] = []
   if (now < p.notBefore || now > p.notAfter) reasons.push('proposal is outside its validity window')
+  // Fail-closed on a non-positive threshold: threshold=0 would otherwise enact a
+  // proposal with ZERO approvals (`0 < 0` is false). Surfaced by the re-audit.
+  if (!Number.isInteger(quorum.threshold) || quorum.threshold < 1) {
+    reasons.push('quorum threshold must be a positive integer')
+  }
 
   const members = new Set(quorum.members)
   const distinctValid = new Set<string>()

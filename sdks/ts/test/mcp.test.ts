@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 TRELYAN
+//
+// SPDX-License-Identifier: Apache-2.0
+
 import { describe, it, expect } from 'vitest'
 import { bytesToHex } from '@noble/hashes/utils.js'
 import { signerFor, SUITE_IDS, randomBytes } from '../../../crypto/src/index.js'

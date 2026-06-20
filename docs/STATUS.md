@@ -1,34 +1,34 @@
 # PolarSeek — STATUS
 
-**Phase: P0–P4 software build complete; conformance ✔; Rust foundation compiles.** Updated 2026-06-18.
-**148 tests pass** (`npm run gate`). **`npm run conformance` → 11/11 CONFORMANT.**
+**Phase: P0–P4 software build complete; conformance ✔; Rust foundation compiles.** Updated 2026-06-20.
+**291 tests pass** (`npm run gate`). **`npm run conformance` → 20/20 CONFORMANT.**
 
 ## Modules — all implemented, tested, and conformance-checked
 
 | Module | What it provides |
 |---|---|
-| `crypto/` | SuiteID crypto-agility, hybrid KEMs, ML-DSA-87/SLH-DSA, deterministic CBOR, signed envelopes, PermitTokens, KATs |
+| `crypto/` | SuiteID crypto-agility, hybrid KEMs, ML-DSA-87/SLH-DSA, deterministic CBOR, signed envelopes, PermitTokens, KATs; **CNSA 2.0 conformance oracle** (`assessCnsa20` — machine-checkable NSA CNSA 2.0 classification, C15; [ADR-0008](./adr/ADR-0008-cnsa2-oracle.md)) |
 | `capabilities/` | Typed, attenuation-only (UCAN/macaroon) PQ-signed authority; default-deny resolver; signed-scalar aggregates |
 | `kernel/` | Stateless deterministic `decide()`; risk-tiering; byte-identical ReplayBundle; TLA⁺ safety model |
-| `receipts/` | PQ receipts (hashes only, no PII); external `verifyReceiptInclusion` |
+| `receipts/` | PQ receipts (hashes only, no PII); external `verifyReceiptInclusion`; **decentralized k-of-n quorum receipts** — no single host signs; validator-set-bound ([ADR-0005](./adr/ADR-0005-quorum-receipts.md)) |
 | `translog/` | RFC 6962 Merkle log (inclusion + consistency); **Signed Tree Heads + split-view detection**; persistent file log |
 | `attest/` | RATS attestation (software root real); **TEE quote-verifier adapter framework** (plug real TDX/SEV-SNP/CCA + measurement policy); N-of-M heterogeneous appraisal |
 | `planes/` | `PolarSeekNode` orchestration; **action-bound PermitTokens** (replay-resistant) |
 | `governance/` | **M-of-N quorum**, revocation registry, customer local kill switch |
-| `disclosure/` | Sound selective disclosure; **ZK range proof** (`amount < threshold`, audited group / unaudited protocol) |
+| `disclosure/` | Sound selective disclosure; **ZK range proof** (`amount < threshold`); **ZK Policy-Satisfaction Proof** — prove `amount ≤ ceiling` / `aggregate+amount ≤ cap` revealing NO amount ([ADR-0006](./adr/ADR-0006-zk-policy-satisfaction.md)); audited group / **unaudited protocol** |
 | `sdks/ts/` | `PolarSeekClient` + **MCP/tool-call adapter** (a denied call never executes) |
-| `ledger/` | **Pure-PoS** ledger: grind-resistant canonical-round sortition, ≥2/3 stake finality with **equivocation detection + slashing (accountable safety)**, PQ light-client verification |
+| `ledger/` | **Pure-PoS** ledger: **VRF private sortition + view-change liveness** ([ADR-0004](./adr/ADR-0004-vrf-sortition.md)) over the deprecated canonical-round mode, ≥2/3 stake finality with **equivocation detection + slashing (accountable safety)**, PQ light-client verification |
 | `settlement/` | **Non-transferable metering credits** (issuer-signed; meter-down; no transfer op; token deferred) |
 | `keystore/` | **Key-custody abstraction**: `KeyProvider` + working software backend + **HSM/KMS provider stubs** (PKCS#11, cloud KMS); keys never leave the provider |
-| `conformance/` | The certification suite — 11 checks across every guarantee |
+| `conformance/` | The certification suite — **20 checks** across every guarantee, incl. **C14 govern-the-verb negative oracle** (decision invariant to perception-shaped inputs — [ADR-0007](./adr/ADR-0007-govern-the-verb-oracle.md)) |
 | `rust/` | **Compiler-verified** Rust hot-path: **full Plane-1 crypto** (HMAC-SHA-384 + AES-256-GCM) + **ML-DSA-87 + ML-KEM-1024** + SuiteID + SHA3 (RustCrypto). Builds + type-checks; tests compile (not executed here) |
 
 ## Runnable
 
-- `npm run gate` — clean-room lint + prettier + tsc + 148 tests
+- `npm run gate` — clean-room lint + prettier + tsc + 291 tests
 - `npm run demo` — end-to-end T2 governed payment
 - `npm run build && npm run bundle && npm run verify:cli` — independent external receipt verification
-- `npm run conformance` — certification report (11/11)
+- `npm run conformance` — certification report (20/20)
 - `cd rust && cargo build && cargo test --no-run` — Rust foundation compiles + type-checks (run `cargo test` on a host that permits executing built binaries)
 
 ## Deployment maturity — Local/Private dev (honest)
@@ -48,4 +48,38 @@ See [DEPLOY.md](./DEPLOY.md). Design-around ≠ legal opinion — FTO required (
 
 ## Council
 
-P0 council PASS with corrections ([council/P0-verdicts.md](./council/P0-verdicts.md)); the replay finding is addressed (action-bound permits). Re-run the full council + commission the ZK/crypto audit before any external claim or pilot sign-off.
+P0 council PASS with corrections ([council/P0-verdicts.md](./council/P0-verdicts.md)); the replay finding is addressed (action-bound permits). ADR-0004 (VRF) and ADR-0005 (quorum receipts) were each team-designed, council-reviewed, and adversarially re-audited — the council's validator-set-binding finding and the re-audit's k=0 fail-open were both fixed. Re-run the full council + commission the ZK/crypto audit before any external claim or pilot sign-off.
+
+## "Above the apex" roadmap (vs SIGA)
+
+Apex upgrades that make PolarSeek categorically superior to SIGA's centralized, classical, patent-closed, perception-owning model — ranked by (superiority × buildability):
+
+1. ✅ **Decentralized k-of-n quorum receipts** (ADR-0005) — no single host can mint a receipt; attacks SIGA's #1 weakness (single Sovereign Host). Done.
+2. ◐ **ZK Policy-Satisfaction Receipts** (ADR-0006, subset shipped) — prove the kernel's numeric policy was satisfied revealing none of the amount. Structurally impossible for SIGA, whose billing/attestation requires seeing every payload. **Conservative subset SHIPPED** (`disclosure/policyproof.ts`): hidden-amount `amount ≤ ceiling` + `aggregate+amount ≤ cap` over the audited-group range proof; **unaudited** composition; amount confidentiality is information-theoretic (PQ), proof soundness is classical. **Deferred:** the set-membership OR-proof (new primitive), the v:2 receipt schema + node wiring (commitment-to-intent linkage), and external ZK audit.
+3. ✅ **Govern-the-verb runtime negative oracle** (ADR-0007) — promoted "govern the verb, never the eye" from a build-time grep to a portable runtime conformance fence (C14): perception-shaped fields injected into `intent.params` must not change `decide()`. Non-vacuous (a negative-control leaky kernel is caught). Done.
+
+All three "above the apex" upgrades are now implemented + conformance-checked.
+
+**v:2 receipt linkage — DEFERRED (adversarial verify caught it).** Wiring `commitAmount(intent.amount)` into a signed receipt does NOT close the commitment-to-intent gap against a *malicious issuer*: the receipt would carry two independent amount commitments (`commitments.intent = SHA3(intent)` and `commitments.psr = Pedersen(C_amount)`) with nothing proving they hold the same value — and Pedersen is perfectly hiding, so an issuer could commit an in-bounds amount while the intent says otherwise. Closing it needs a **Pedersen↔SHA3 ZK equality proof** (new, unaudited). The additive v:2 plumbing is sound and backward-compatible, but the soundness *claim* is gated on that equality proof. Not shipped.
+
+## US-gov public-standards track (CNSA 2.0 / NIST / SCITT / Zero-Trust)
+
+Grounding PolarSeek in the authoritative PUBLIC/declassified corpus (no classified material) for gov credibility:
+
+1. ✅ **CNSA 2.0 conformance oracle** (ADR-0008, C15) — machine-checkable NSA CNSA 2.0 classification. PS-5 conformant (transitional); PS-1 not; SLH-DSA/FN-DSA flagged excluded.
+1b. ✅ **Signed CNSA 2.0 verdict** (`conformance/cnsa-oracle.ts`, C16) — the gov-grade artifact: an ML-DSA-87-signed, deterministic, transparency-log-anchored, externally-verifiable CNSA verdict (`assertCnsa`/`signCnsaVerdict`/`verifyCnsaVerdict`/`cnsaVerdictLeaf`); deny-by-default allow-set, HARD vs WARN findings, level pure/transitional/non-conformant. (Team-ranked #1 of the gov track.)
+2. ✅ **Cryptographic Bill of Materials (CBOM)** (ADR-0009, `conformance/cbom.ts`, C17) — signed, anchored, machine-readable crypto inventory from the suite registry; hybrid KEMs decomposed; flags the quantum-vulnerable legs (P-384/X25519); supports the NSM-10/OMB M-23-02 inventory requirement (a CBOM helps satisfy it; not a mandated format). Accuracy council-corrected (Grok).
+3. ◐ **LMS / single-tree XMSS code-signing — SAFE SUBSET** (ADR-0010, C18). `crypto/code-sign.ts` (CodeSigner + single-tree policy + gated `getCodeSigner` stub), `keystore/hbs-state.ts` (one-time-key state manager + reserve-before-sign `HbsKeyProvider`, software store gated dev-only), cnsa oracle now flags HSS/XMSSᴹᵀ multi-tree as non-conformant. **Raw primitive NOT built** (`@noble` has none; SP 800-208 §8.1 = FIPS 140-3 L3+ hardware only; adapter-provided, throws). The software state store is **not** a production signer (restore-from-backup can reuse an OTS index → forgery; only an HSM hardware monotonic counter is reuse-safe).
+4. ✅ **COSE_Sign1 + RATS/EAT profile** (ADR-0011, `crypto/cose.ts`, C19) — byte-conformant RFC 9052 COSE_Sign1 over ML-DSA-87 (COSE alg -50, IANA provisional) + a nonce-bound EAT attestation-result. Closes the encoding gap blocking byte-level SCITT/RATS. Standards council-fact-checked (Grok corrected the ML-DSA code-point RFC attribution to IANA-provisional).
+5. ✅ **Signed SBOM + SLSA provenance** (ADR-0012, `conformance/supplychain.ts`, C20) — CycloneDX SBOM from the real deps + an in-toto/SLSA Provenance v1 statement, COSE-signed + anchored. EO 14028 / SSDF / SLSA procurement artifact (shapes + PQ signing; full transitive SBOM + SLSA L2/L3 are CI concerns).
+
+## Launch readiness — code-complete, NOT launch-cleared
+
+See **[LAUNCH_READINESS.md](./LAUNCH_READINESS.md)** + the counsel/auditor/vendor-ready packages
+([FTO_PACKAGE.md](./FTO_PACKAGE.md), [AUDIT_PACKAGE.md](./AUDIT_PACKAGE.md),
+[DEPLOY_HARDWARE.md](./DEPLOY_HARDWARE.md)). Four external gates stand between code-complete and launch —
+**none closable by code**: (1) **FTO** patent opinion (counsel), (2) **external crypto/ZK audit**
+(audit firm), (3) **FIPS 140-3 L3+ HSM/TEE hardware** (vendor + operator), (4) **FIPS CMVP validation**
+(accredited lab). PolarSeek has *prepared* each to accelerate the external party; it has *closed* none,
+and must never imply otherwise. Conformant ≠ validated; built ≠ audited; provisioned ≠ in-use;
+design-around ≠ legal opinion.

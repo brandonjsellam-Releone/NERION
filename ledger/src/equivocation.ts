@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 TRELYAN
+//
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * Accountable finality safety (LEDGER-001): equivocation detection + slashing.
  *
@@ -8,9 +12,9 @@
  * such cryptographic evidence and applies the slash.
  */
 
-import { encodeCanonical, signerFor, type Bytes } from '../../crypto/src/index.js'
+import { signerFor } from '../../crypto/src/index.js'
 import { hexToBytes } from '@noble/hashes/utils.js'
-import { blockHash } from './chain.js'
+import { blockHash, attestMessage } from './chain.js'
 import { stakeOf } from './sortition.js'
 import type { Attestation, Block, ValidatorSet } from './types.js'
 
@@ -23,13 +27,13 @@ export interface EquivocationProof {
   readonly attB: Attestation
 }
 
-function attMessage(h: string): Bytes {
-  return encodeCanonical(['polarseek-attest-v1', h])
-}
-
 function safeVerifyAtt(a: Attestation): boolean {
   try {
-    return signerFor(a.suite).verify(a.sig, attMessage(a.blockHash), hexToBytes(a.validator))
+    return signerFor(a.suite).verify(
+      a.sig,
+      attestMessage(a.suite, a.blockHash),
+      hexToBytes(a.validator),
+    )
   } catch {
     return false
   }

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 TRELYAN
+//
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * @polarseek/disclosure — selective disclosure + zero-knowledge range proof.
  *
@@ -8,5 +12,26 @@
  */
 
 export { commitField, verifyDisclosure } from './selective.js'
-export { commit, proveBelow, verifyBelow, RangeProofError, randomScalar } from './zkrange.js'
-export type { RangeProof } from './zkrange.js'
+export {
+  commit,
+  shiftCommitment,
+  proveBelow,
+  verifyBelow,
+  RangeProofError,
+  randomScalar,
+} from './zkrange.js'
+export type { RangeProof, Pt } from './zkrange.js'
+export {
+  commitAmount,
+  provePolicySatisfaction,
+  verifyPolicySatisfaction,
+  policyProofDigest,
+} from './policyproof.js'
+export type { PolicyBounds, PolicySatisfactionProof, AmountCommitment } from './policyproof.js'
+export {
+  boundIntentDigest,
+  boundIntentDigestHex,
+  verifyBoundCommitment,
+  bindDecidedAmount,
+} from './commitbind.js'
+export type { BoundAmount } from './commitbind.js'

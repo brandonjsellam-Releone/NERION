@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 TRELYAN
+//
+// SPDX-License-Identifier: Apache-2.0
+
 import { describe, it, expect } from 'vitest'
 import fc from 'fast-check'
 import { narrow, isAttenuationOf, authorizesIntent } from '../src/grant.js'

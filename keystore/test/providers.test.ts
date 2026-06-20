@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 TRELYAN
+//
+// SPDX-License-Identifier: Apache-2.0
+
 import { describe, it, expect } from 'vitest'
 import {
   SUITE_IDS,
@@ -7,7 +11,6 @@ import {
 } from '../../crypto/src/index.js'
 import {
   SoftwareKeyProvider,
-  Pkcs11KeyProvider,
   CloudKmsKeyProvider,
   KeyProviderRegistry,
   signEnvelopeViaProvider,
@@ -37,17 +40,7 @@ describe('software key provider', () => {
   })
 })
 
-describe('HSM / KMS provider stubs', () => {
-  it('PKCS#11 fails loudly with a CONNECT pointer', () => {
-    const p = new Pkcs11KeyProvider()
-    expect(() => p.generate(suite, 'k')).toThrow(NotImplementedError)
-    try {
-      p.sign({ provider: 'pkcs11', id: 'k' }, suite, new Uint8Array([1]))
-    } catch (e) {
-      expect((e as NotImplementedError).connect).toMatch(/PKCS#11/)
-    }
-  })
-
+describe('cloud-KMS provider stub (AWS / GCP)', () => {
   it('Cloud KMS fails loudly with a CONNECT pointer', () => {
     expect(() =>
       new CloudKmsKeyProvider().getPublicKey({ provider: 'cloud-kms', id: 'k' }),
@@ -59,7 +52,7 @@ describe('provider registry', () => {
   it('routes signing to the provider named in the ref', () => {
     const sw = new SoftwareKeyProvider()
     const { ref, publicKey } = sw.generate(suite, 'reg-key')
-    const registry = new KeyProviderRegistry().register(sw).register(new Pkcs11KeyProvider())
+    const registry = new KeyProviderRegistry().register(sw).register(new CloudKmsKeyProvider())
     const env = signEnvelopeViaProvider({ x: 1 }, suite, sw, ref)
     expect(verifyEnvelope(env, publicKey)).toBe(true)
     // Registry resolves the public key by ref.

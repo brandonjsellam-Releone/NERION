@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 TRELYAN
+//
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * Zero-knowledge range proof: prove a committed amount is BELOW a public
  * threshold WITHOUT revealing the amount. Built on the audited ristretto255
@@ -26,7 +30,7 @@ import { bytesToHex, concatBytes, utf8ToBytes } from '@noble/hashes/utils.js'
 import { randomBytes, type Bytes } from '../../crypto/src/index.js'
 
 const Point = ristretto255.Point
-type Pt = InstanceType<typeof Point>
+export type Pt = InstanceType<typeof Point>
 const L: bigint = Point.Fn.ORDER
 const G: Pt = Point.BASE
 // Second generator with unknown discrete log w.r.t. G (nothing-up-my-sleeve).
@@ -65,6 +69,15 @@ const inv = (a: bigint): bigint => modpow(a, L - 2n, L)
 /** Pedersen commitment C = G^v · H^r. */
 export function commit(value: bigint, r: bigint): Pt {
   return mul(G, value).add(mul(H, r))
+}
+
+/**
+ * Homomorphic shift by a PUBLIC value: `C + G^delta = commit(v+delta, r)`. Used to
+ * prove `aggregate + amount` bounds from a commitment to `amount` alone, where the
+ * running `aggregate` is a public (externally signed) scalar.
+ */
+export function shiftCommitment(c: Pt, delta: bigint): Pt {
+  return c.add(mul(G, delta))
 }
 
 interface BitProof {

@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 TRELYAN
+#
+# SPDX-License-Identifier: Apache-2.0
+
 # On windows-gnu toolchains that lack a complete mingw binutils (no `as`/import-
 # lib support), the transitive `getrandom` crate can't build its default Windows
 # backend. We pin its `rdrand` backend (pure CPU instruction, no import lib /

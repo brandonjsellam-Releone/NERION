@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 TRELYAN
+//
+// SPDX-License-Identifier: Apache-2.0
+
 import { describe, it, expect, afterEach } from 'vitest'
 import { getEnv, requireEnv, hasEnv, loadEnv, MissingEnvError } from '../src/index.js'
 

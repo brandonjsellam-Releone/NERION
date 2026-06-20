@@ -1,4 +1,9 @@
 #!/usr/bin/env node
+
+// SPDX-FileCopyrightText: 2026 TRELYAN
+//
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * Runs the PolarSeek conformance suite and prints a certification report.
  * Prereq: `npm run build`.  Usage: `npm run conformance`.

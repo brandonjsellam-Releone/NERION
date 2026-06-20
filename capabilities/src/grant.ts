@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 TRELYAN
+//
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * Pure predicates over grants: does a grant authorize an intent, and is one
  * grant a valid attenuation (narrowing) of another. These are the heart of the

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 TRELYAN
+//
+// SPDX-License-Identifier: Apache-2.0
+
 import { describe, it, expect } from 'vitest'
 import { bytesToHex } from '@noble/hashes/utils.js'
 import { signerFor, SUITE_IDS } from '../../crypto/src/index.js'
@@ -47,6 +51,11 @@ describe('M-of-N quorum', () => {
 
   it('does not enact below threshold', () => {
     expect(enact(p, [approve(p, suite, m1)], quorum, NOW).enacted).toBe(false)
+  })
+
+  it('fails closed on a non-positive threshold (zero cannot enact with no approvals)', () => {
+    const zeroQuorum: Quorum = { members: quorum.members, threshold: 0 }
+    expect(enact(p, [], zeroQuorum, NOW).enacted).toBe(false)
   })
 
   it('counts a duplicate signer only once', () => {

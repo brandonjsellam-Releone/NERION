@@ -26,20 +26,24 @@ evidence anyone can verify.
 
 Risk tiers **T0–T3** select how much assurance runs synchronously.
 
-## Status — P0–P2 complete + hardened ✅ (Local/Private dev-deployable)
+## Status — P0–P4 complete + hardened ✅ (Local/Private dev-deployable)
 
-`crypto/`, `capabilities/`, `kernel/`, `receipts/`, `translog/`, `attest/`, and
-`planes/` are implemented in TypeScript over audited `@noble` libraries
-(ADR-0002), with **108 passing tests**. The kernel is stateless/deterministic,
-PermitTokens are action-bound (replay-resistant), and an external CLI verifies a
-receipt's signature + transparency-log inclusion with no operator trust.
-`ledger/`, `settlement/`, `governance/`, and the `sdks/` agent adapters remain
-scaffolding. Deployment maturity is **Local/Private dev** — see
-[docs/DEPLOY.md](docs/DEPLOY.md) and [docs/STATUS.md](docs/STATUS.md).
+All planes are implemented in TypeScript over audited `@noble` libraries
+(ADR-0002), with **291 passing tests** and a **20/20 conformance report**.
+`crypto/`, `capabilities/`, `kernel/`, `receipts/`, `translog/`, `attest/`,
+`planes/`, `ledger/` (pure-PoS + VRF private sortition), `governance/`,
+`disclosure/` (zero-knowledge), `settlement/`, `keystore/`, and `conformance/` are
+all built and tested. The kernel is stateless/deterministic, PermitTokens are
+action-bound, and an external CLI verifies a receipt's signature + transparency-log
+inclusion with no operator trust. The novel cryptographic *compositions* layered on
+`@noble` are **UNAUDITED** ([docs/AUDIT_PACKAGE.md](docs/AUDIT_PACKAGE.md)).
+Deployment maturity is **Local/Private dev** — four external launch gates remain
+([docs/LAUNCH_READINESS.md](docs/LAUNCH_READINESS.md)).
 
 ```bash
 npm ci
-npm run gate          # clean-room lint + prettier + tsc + 108 tests
+npm run gate          # clean-room lint + prettier + tsc + 291 tests
+npm run conformance   # certification report → 20/20 CONFORMANT
 npm run demo          # end-to-end T2 governed-payment trace
 npm run build && npm run bundle && npm run verify:cli   # independent receipt verification
 ```
@@ -60,9 +64,13 @@ npm run build && npm run bundle && npm run verify:cli   # independent receipt ve
 - [STATUS.md](docs/STATUS.md) · [THREAT_MODEL.md](docs/THREAT_MODEL.md) ·
   [CLEANROOM.md](docs/CLEANROOM.md) · [DESIGN_AROUND.md](docs/DESIGN_AROUND.md) ·
   [FTO_TODO.md](docs/FTO_TODO.md) · [PRIOR_ART_NOTES.md](docs/PRIOR_ART_NOTES.md)
-- ADRs: [0001 crypto suite](docs/adr/ADR-0001-crypto-suite.md) ·
-  [0002 TS reference & KEM pairing](docs/adr/ADR-0002-ts-reference-and-kem-pairing.md) ·
-  [0003 repo location](docs/adr/ADR-0003-repo-location.md)
+- ADRs 0001–0013 — crypto suite, TS reference, VRF sortition, quorum receipts, ZK
+  policy-satisfaction, govern-the-verb oracle, CNSA 2.0, CBOM, LMS/XMSS code-signing,
+  COSE/RATS, SBOM/SLSA, and the v:2 Pedersen↔SHA3 commitment-equality design (ADR-0013,
+  proposed/unimplemented): see [docs/adr/](docs/adr/)
+- Launch readiness + gate packages: [LAUNCH_READINESS.md](docs/LAUNCH_READINESS.md) ·
+  [FTO_PACKAGE.md](docs/FTO_PACKAGE.md) · [AUDIT_PACKAGE.md](docs/AUDIT_PACKAGE.md) ·
+  [DEPLOY_HARDWARE.md](docs/DEPLOY_HARDWARE.md) · grant: [docs/grants/](docs/grants/)
 - Council verdicts: [docs/council/](docs/council/)
 
 ## Principles
@@ -71,4 +79,11 @@ Post-quantum all the way down. Govern the verb, never the eye. Decentralize
 trust, centralize accountability. Prove everything; reveal nothing unnecessary.
 No security theater — if something is only evidence, we label it evidence.
 
-License: Apache-2.0
+## License
+
+Licensed under the [Apache License, Version 2.0](LICENSE) — see [`NOTICE`](NOTICE)
+for attribution and [`third_party/`](third_party/) for the bundled third-party
+license texts. Per-file licensing follows the [REUSE](https://reuse.software)
+specification (`REUSE.toml` + SPDX headers); run `reuse lint` to verify.
+
+Copyright 2026 TRELYAN.

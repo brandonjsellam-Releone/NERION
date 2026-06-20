@@ -1,4 +1,9 @@
 #!/usr/bin/env node
+
+// SPDX-FileCopyrightText: 2026 TRELYAN
+//
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * Runs a Tier-2 governed-payment admission through a PolarSeekNode and writes a
  * PORTABLE, self-contained receipt bundle (JSON, hex-encoded) to disk, so the

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 TRELYAN
+//
+// SPDX-License-Identifier: Apache-2.0
+
 import { describe, it, expect } from 'vitest'
 import { signerFor, SUITE_IDS } from '../../crypto/src/index.js'
 import { TransparencyLog } from '../../translog/src/index.js'

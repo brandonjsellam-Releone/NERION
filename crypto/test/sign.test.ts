@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 TRELYAN
+//
+// SPDX-License-Identifier: Apache-2.0
+
 import { describe, it, expect } from 'vitest'
 import { getSigner, implementedSigIds, SIG_IDS } from '../src/sign.js'
 import { NotImplementedError } from '../src/errors.js'

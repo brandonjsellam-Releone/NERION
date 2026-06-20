@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 TRELYAN
+//
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * PolarSeek crypto error taxonomy.
  *
@@ -51,5 +55,46 @@ export class VerificationError extends PolarCryptoError {
   constructor(message: string) {
     super('E_VERIFICATION', message)
     this.name = 'VerificationError'
+  }
+}
+
+/** A crypto policy was violated (e.g. multi-tree HBS for CNSA 2.0 code signing). */
+export class PolicyError extends PolarCryptoError {
+  constructor(code: string, message: string) {
+    super(code, message)
+    this.name = 'PolicyError'
+  }
+}
+
+/** A one-time-key HBS one-time-key tree is exhausted (all 2^H leaves consumed). */
+export class OtsKeyExhaustedError extends PolarCryptoError {
+  constructor(keyId: string) {
+    super(
+      'E_OTS_EXHAUSTED',
+      `one-time-key HBS key ${keyId} exhausted; rotate to a fresh single-tree key`,
+    )
+    this.name = 'OtsKeyExhaustedError'
+  }
+}
+
+/** A one-time-key HBS signing state was cloned (two writers / a restored snapshot). */
+export class OtsStateClonedError extends PolarCryptoError {
+  constructor(keyId: string) {
+    super(
+      'E_OTS_CLONED',
+      `one-time-key HBS key ${keyId} state was cloned (conflicting writer epoch); a reused OTS index forges — refusing`,
+    )
+    this.name = 'OtsStateClonedError'
+  }
+}
+
+/** A one-time-key HBS signing state rolled back below its monotonic floor. */
+export class OtsStateRollbackError extends PolarCryptoError {
+  constructor(keyId: string) {
+    super(
+      'E_OTS_ROLLBACK',
+      `one-time-key HBS key ${keyId} state rolled back below its monotonic floor; a reused OTS index forges — refusing`,
+    )
+    this.name = 'OtsStateRollbackError'
   }
 }
