@@ -57,6 +57,6 @@ try {
   process.exit(1)
 } catch (e) {
   console.error(`✗ Azure call failed: ${(e instanceof Error ? e.message : String(e))}`)
-  console.error('  Check: the KEK exists in the vault, the SP "redacted-app" has Key Vault Crypto User, and outbound network reaches Azure.')
+  console.error('  Check: the KEK exists in the vault, the configured service principal (AZURE_CLIENT_ID) has Key Vault Crypto User, and outbound network reaches Azure.')
   process.exit(1)
 }

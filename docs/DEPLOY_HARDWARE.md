@@ -41,7 +41,7 @@ counter (the software store is provably reuse‑unsafe under restore).
 
 ## 3. Cloud KMS sealing + confidential‑compute TEE
 
-- **Azure Key Vault** — *provisioned* (tenant `redacted-vault`, app `redacted-app` w/ Crypto
+- **Azure Key Vault** — *provisioned* (a dedicated Key Vault + app registration w/ Crypto
   User; IDs only, secret in `.env`) but **never exercised end‑to‑end here**; KV has **no PQC support**
   and serves only as a **sealing KEK**. The provider is **implemented + offline‑tested with a fake
   sealer**, not run against the live KV.

@@ -27,7 +27,7 @@ export interface AzureKeyVaultConfig {
   readonly tenantId: string
   readonly clientId: string
   readonly clientSecret: string
-  /** e.g. https://redacted-vault.vault.azure.net/ */
+  /** e.g. https://<your-vault>.vault.azure.net/ */
   readonly vaultUrl: string
   /** Name of the RSA wrapping key inside the vault. */
   readonly keyName: string
