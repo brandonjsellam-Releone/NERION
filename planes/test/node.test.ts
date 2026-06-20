@@ -182,6 +182,37 @@ describe('PolarSeekNode admission', () => {
     ).toBe(false)
   })
 
+  it('the permit binds the kernel effect (expectedEffect is enforced)', () => {
+    const node = makeNode()
+    const out = node.admit({
+      intent: pay(500),
+      capabilities: [cap],
+      session,
+      audience: 'acct://treasury',
+      now: NOW,
+      observedAggregate: 0,
+    })
+    const permit = out.permit!
+    // Same effect the kernel decided: OK.
+    expect(
+      verifyPermitForAction(permit, session.sessionKey, {
+        audience: 'acct://treasury',
+        intent: pay(500),
+        now: NOW + 5,
+        expectedEffect: 'allow',
+      }).ok,
+    ).toBe(true)
+    // A resource expecting a different effect rejects (no transform<->allow confusion).
+    expect(
+      verifyPermitForAction(permit, session.sessionKey, {
+        audience: 'acct://treasury',
+        intent: pay(500),
+        now: NOW + 5,
+        expectedEffect: 'transform',
+      }).ok,
+    ).toBe(false)
+  })
+
   it('denies an over-ceiling payment and issues no permit', () => {
     const node = makeNode()
     const out = node.admit({

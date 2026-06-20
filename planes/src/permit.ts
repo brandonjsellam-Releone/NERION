@@ -37,6 +37,9 @@ export interface PermitClaims {
   readonly tier: number
   readonly exp: number
   readonly evaluator: string
+  /** Kernel decision effect ('allow' | 'transform'), MAC-bound so a resource can
+   *  enforce it from the permit alone and it cannot be silently downgraded. */
+  readonly effect: string
 }
 
 export function issueBoundPermit(
@@ -52,6 +55,9 @@ export interface PermitCheck {
   readonly intent: ActionIntent
   readonly now: number
   readonly sessionId?: string
+  /** When set, the permit's bound effect must equal this (e.g. the resource only
+   *  honors 'allow', or requires 'transform'). */
+  readonly expectedEffect?: string
 }
 
 export interface PermitVerdict {
@@ -81,6 +87,9 @@ export function verifyPermitForAction(
   }
   if (check.sessionId !== undefined && claims.sessionId !== check.sessionId) {
     reasons.push('permit session mismatch')
+  }
+  if (check.expectedEffect !== undefined && claims.effect !== check.expectedEffect) {
+    reasons.push('permit effect does not match the expected effect')
   }
   return { ok: reasons.length === 0, reasons }
 }

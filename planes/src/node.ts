@@ -89,6 +89,7 @@ export class PolarSeekNode {
       tier: decision.tier,
       exp: req.now + this.cfg.permitTtlSeconds,
       evaluator: decision.evaluatorVersion,
+      effect: decision.effect,
     }
     const permit = issueBoundPermit(claims, this.cfg.suite, req.session.sessionKey)
 

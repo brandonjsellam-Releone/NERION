@@ -37,7 +37,7 @@ crypto‑agility, CNSA 2.0‑aligned, and a **signed CycloneDX CBOM** crypto‑i
 artifact — CNSA 2.0 does not itself define a CBOM format); the open Apache‑2.0 alternative to centralized,
 classical, single‑visibility commercial designs that must see every action payload to attest it.
 
-The P0–P4 software build is complete and passes **299 test assertions** with a **21/21 conformance
+The P0–P4 software build is complete and passes **300 test assertions** with a **21/21 conformance
 report** (`npm run conformance` → 21/21 CONFORMANT) — all reproducible from the public Apache‑2.0 repo,
 published before submission so reviewers verify rather than take it on trust. The novel cryptographic compositions Nerion
 layered **on top of** already‑audited primitives (`@noble`) are, however, **UNAUDITED**. This grant funds
@@ -178,7 +178,7 @@ open‑source evidence exists at review time. Reproducible checks ship with it (
 `npm run conformance`, external receipt‑verification CLI).
 
 ## 7. Current status — the honest status (non‑negotiable; this candor is the credibility edge)
-The P0–P4 build is complete: **299 test assertions pass, 21/21 CONFORMANT**, and a Rust hot‑path foundation
+The P0–P4 build is complete: **300 test assertions pass, 21/21 CONFORMANT**, and a Rust hot‑path foundation
 compiles. That is the entirety of what code alone can close. **The protocol compositions are UNAUDITED and
 the project is PRE‑FTO.** Every security property the project asserts is a **claim, not an established
 fact**, until an external firm's report exists; passing the vectors is **KAT conformance only**, not

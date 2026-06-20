@@ -119,6 +119,41 @@ differing only in amount produce the SAME digest, while a different non-secret f
 under intent-amount-Y), only `verifyBoundAmount` (opening-holder) or the quorum/attestation layer defends —
 documented, by design.
 
+## Follow-up — enforcement boundary: `kernel/kernel.ts` + `planes/permit.ts` + `receipts/receipt.ts`
+
+Panel: DeepSeek · Grok · Hermes. The last big security-critical surface — "a denied action never executes."
+
+**Positive result — `decide()` validated fail-closed.** All three found NO fail-open: default-deny,
+denylist-before-resolve ordering is safe, the `catch` returns a tier-3 deny, and `ev` defaults to
+`+uncomputed` so an un-canonicalizable policy still denies. No input yields allow/transform without positive
+capability authorization. The enforcement core holds.
+
+**RCPT-001 (real, deployment-relevant) — the logged receipt leaks the amount.** `commitments.intent =
+SHA3(canonical(full intent))` (receipt.ts) and the receipt body IS the public transparency-log leaf. The
+intent includes the plaintext `amount`, so a log observer who knows the rest of the intent brute-forces the
+amount — the **CB-001 attack, but in the v:1 receipt that is actually logged.** SPLIT verdict, adjudicated:
+DeepSeek + Grok confirmed it; **Hermes wrongly cleared it citing SHA3 preimage-resistance** — the same error
+class as the ZKRANGE-002 false-clearers (preimage-resistance does NOT stop a brute-force over a low-entropy,
+known-structure preimage). The project already knows this class (`selective.ts`, `policyproof.ts`), but the
+receipt's intent-hash re-introduced it. **Scope:** amount-privacy *in the log* is the v:2 receipt's job
+(salted/PSP path, not yet wired); the proper fix is a salted/hiding intent commitment = a schema change
+(ADR). **Action taken now:** corrected the ASSURANCE "amount confidentiality" claim to state plainly that the
+v:1 intent-hash leaks low-entropy amounts — NOT silently left as an overclaim; salted v:2 commitment roadmapped.
+
+**PERMIT-001 (real, architectural) — symmetric-key cross-audience forgery.** The PermitToken is an HMAC under
+a per-session symmetric `sessionKey` shared issuer+resource (node.ts). The `audience` is MAC-bound, but a
+key-holding (malicious) resource can re-MAC a permit for a *different* audience. Exploitable only if the
+session key spans multiple mutually-distrusting resources, but the design does not enforce per-audience keys.
+**Fix (panel converges):** derive per-(session,audience) keys via HKDF and distribute only the derived key, or
+use asymmetric issuer signatures (trades the Plane-1 hot-path HMAC speed). Documented in ASSURANCE; the
+architectural fix is an ADR.
+
+**Fixed now — the permit binds the decision `effect`.** The permit previously carried tier + actionHash but
+NOT the kernel's effect (allow vs transform); `verifyPermitForAction` now MAC-binds `effect` and a resource
+can pin `expectedEffect`, so a transform cannot be presented/honored as a plain allow. (Transform is
+"allowed-but-flagged" today — this future-proofs it before transform becomes a real action-modification.)
++ regression test.
+
 ## Residual (unchanged, honest)
 
 Soundness remains **classical** (discrete‑log); zero‑knowledge is proven in the classical ROM, not the QROM.
