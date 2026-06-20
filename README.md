@@ -64,6 +64,7 @@ npm run build && npm run bundle && npm run verify:cli   # independent receipt ve
 
 ## Documentation
 
+- **[ASSURANCE.md](docs/ASSURANCE.md) — claim‑by‑claim evidence tiers (what's proven vs. tested vs. not yet established).**
 - [STATUS.md](docs/STATUS.md) · [THREAT_MODEL.md](docs/THREAT_MODEL.md) ·
   [CLEANROOM.md](docs/CLEANROOM.md) · [DESIGN_AROUND.md](docs/DESIGN_AROUND.md) ·
   [FTO_TODO.md](docs/FTO_TODO.md) · [PRIOR_ART_NOTES.md](docs/PRIOR_ART_NOTES.md)
