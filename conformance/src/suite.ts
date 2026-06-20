@@ -70,6 +70,9 @@ import {
   commitAmount,
   provePolicySatisfaction,
   verifyPolicySatisfaction,
+  bindAmountCommitment,
+  verifyBoundCommitment,
+  verifyBoundAmount,
 } from '../../disclosure/src/index.js'
 import { runNegativeOracle } from './negative.js'
 import { assertCnsa, signCnsaVerdict, verifyCnsaVerdict, cnsaVerdictLeaf } from './cnsa-oracle.js'
@@ -586,6 +589,32 @@ const CHECKS: Array<() => ConformanceResult> = [
         const log = new TransparencyLog()
         const { index } = log.append(supplyChainLeaf(provSig))
         return ok && badKey && checkInclusion(log.proveInclusion(index), log.root())
+      },
+    ),
+
+  () =>
+    check(
+      'C21',
+      'v:2 structural binding ties the amount commitment to its intent (rejects substitution + wrong opening)',
+      () => {
+        const intent: ActionIntent = {
+          type: 'payment.transfer',
+          resource: 'vendor-acme',
+          amount: 500,
+        }
+        const bound = bindAmountCommitment(intent)
+        const good = verifyBoundCommitment(intent, bound.commitment, bound.digest)
+        const full = verifyBoundAmount(intent, bound.commitment, bound.opening, bound.digest)
+        // a malicious issuer substituting a commitment to a different amount is rejected
+        const rejectsSub = !verifyBoundCommitment(intent, commitAmount(1n).commitment, bound.digest)
+        // a wrong opening (C does not open to the intent's amount) is rejected by the full check
+        const rejectsBadOpening = !verifyBoundAmount(
+          intent,
+          bound.commitment,
+          bound.opening + 1n,
+          bound.digest,
+        )
+        return good && full && rejectsSub && rejectsBadOpening
       },
     ),
 ]

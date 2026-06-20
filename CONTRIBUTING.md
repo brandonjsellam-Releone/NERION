@@ -19,7 +19,7 @@ All changes must pass the same gate CI enforces:
 
 ```bash
 npm run gate          # clean-room lint (F1–F8) + prettier --check + tsc --noEmit + 297 tests
-npm run conformance   # certification report → must stay 20/20 CONFORMANT
+npm run conformance   # certification report → must stay 21/21 CONFORMANT
 ```
 
 CI (`.github/workflows/ci.yml`) runs the gate **plus** a KAT‑drift check (regenerates the deterministic
@@ -71,7 +71,7 @@ have the right to submit it) under the project's open‑source license.
 ## Pull requests
 
 1. Branch from `main`, keep changes focused.
-2. `npm run gate` green + `npm run conformance` 20/20 locally.
+2. `npm run gate` green + `npm run conformance` 21/21 locally.
 3. New behavior ⇒ new tests. Crypto changes ⇒ regenerated, committed KAT vectors.
 4. Sign off your commits (DCO) and keep new files REUSE‑compliant.
 5. In the PR description, state honestly what is and isn't verified.

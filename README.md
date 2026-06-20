@@ -32,7 +32,7 @@ Risk tiers **T0–T3** select how much assurance runs synchronously.
 ## Status — P0–P4 complete + hardened ✅ (Local/Private dev-deployable)
 
 All planes are implemented in TypeScript over audited `@noble` libraries
-(ADR-0002), with **297 passing tests** and a **20/20 conformance report**.
+(ADR-0002), with **297 passing tests** and a **21/21 conformance report**.
 `crypto/`, `capabilities/`, `kernel/`, `receipts/`, `translog/`, `attest/`,
 `planes/`, `ledger/` (pure-PoS + VRF private sortition), `governance/`,
 `disclosure/` (zero-knowledge), `settlement/`, `keystore/`, and `conformance/` are
@@ -46,7 +46,7 @@ Deployment maturity is **Local/Private dev** — four external launch gates rema
 ```bash
 npm ci
 npm run gate          # clean-room lint + prettier + tsc + 297 tests
-npm run conformance   # certification report → 20/20 CONFORMANT
+npm run conformance   # certification report → 21/21 CONFORMANT
 npm run demo          # end-to-end T2 governed-payment trace
 npm run build && npm run bundle && npm run verify:cli   # independent receipt verification
 ```

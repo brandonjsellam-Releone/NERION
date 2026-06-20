@@ -1,7 +1,7 @@
 # PolarSeek — STATUS
 
 **Phase: P0–P4 software build complete; conformance ✔; Rust foundation compiles.** Updated 2026-06-20.
-**297 tests pass** (`npm run gate`). **`npm run conformance` → 20/20 CONFORMANT.**
+**297 tests pass** (`npm run gate`). **`npm run conformance` → 21/21 CONFORMANT.**
 
 ## Modules — all implemented, tested, and conformance-checked
 
@@ -20,7 +20,7 @@
 | `ledger/` | **Pure-PoS** ledger: **VRF private sortition + view-change liveness** ([ADR-0004](./adr/ADR-0004-vrf-sortition.md)) over the deprecated canonical-round mode, ≥2/3 stake finality with **equivocation detection + slashing (accountable safety)**, PQ light-client verification |
 | `settlement/` | **Non-transferable metering credits** (issuer-signed; meter-down; no transfer op; token deferred) |
 | `keystore/` | **Key-custody abstraction**: `KeyProvider` + working software backend + **HSM/KMS provider stubs** (PKCS#11, cloud KMS); keys never leave the provider |
-| `conformance/` | The certification suite — **20 checks** across every guarantee, incl. **C14 govern-the-verb negative oracle** (decision invariant to perception-shaped inputs — [ADR-0007](./adr/ADR-0007-govern-the-verb-oracle.md)) |
+| `conformance/` | The certification suite — **21 checks** across every guarantee, incl. **C14 govern-the-verb negative oracle** (decision invariant to perception-shaped inputs — [ADR-0007](./adr/ADR-0007-govern-the-verb-oracle.md)) |
 | `rust/` | **Compiler-verified** Rust hot-path: **full Plane-1 crypto** (HMAC-SHA-384 + AES-256-GCM) + **ML-DSA-87 + ML-KEM-1024** + SuiteID + SHA3 (RustCrypto). Builds + type-checks; tests compile (not executed here) |
 
 ## Runnable
@@ -28,7 +28,7 @@
 - `npm run gate` — clean-room lint + prettier + tsc + 297 tests
 - `npm run demo` — end-to-end T2 governed payment
 - `npm run build && npm run bundle && npm run verify:cli` — independent external receipt verification
-- `npm run conformance` — certification report (20/20)
+- `npm run conformance` — certification report (21/21)
 - `cd rust && cargo build && cargo test --no-run` — Rust foundation compiles + type-checks (run `cargo test` on a host that permits executing built binaries)
 
 ## Deployment maturity — Local/Private dev (honest)
