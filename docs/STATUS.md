@@ -1,7 +1,7 @@
 # PolarSeek — STATUS
 
 **Phase: P0–P4 software build complete; conformance ✔; Rust foundation compiles.** Updated 2026-06-20.
-**291 tests pass** (`npm run gate`). **`npm run conformance` → 20/20 CONFORMANT.**
+**297 tests pass** (`npm run gate`). **`npm run conformance` → 20/20 CONFORMANT.**
 
 ## Modules — all implemented, tested, and conformance-checked
 
@@ -25,7 +25,7 @@
 
 ## Runnable
 
-- `npm run gate` — clean-room lint + prettier + tsc + 291 tests
+- `npm run gate` — clean-room lint + prettier + tsc + 297 tests
 - `npm run demo` — end-to-end T2 governed payment
 - `npm run build && npm run bundle && npm run verify:cli` — independent external receipt verification
 - `npm run conformance` — certification report (20/20)
@@ -60,7 +60,7 @@ Apex upgrades that make PolarSeek categorically superior to SIGA's centralized, 
 
 All three "above the apex" upgrades are now implemented + conformance-checked.
 
-**v:2 receipt linkage — DEFERRED (adversarial verify caught it).** Wiring `commitAmount(intent.amount)` into a signed receipt does NOT close the commitment-to-intent gap against a *malicious issuer*: the receipt would carry two independent amount commitments (`commitments.intent = SHA3(intent)` and `commitments.psr = Pedersen(C_amount)`) with nothing proving they hold the same value — and Pedersen is perfectly hiding, so an issuer could commit an in-bounds amount while the intent says otherwise. Closing it needs a **Pedersen↔SHA3 ZK equality proof** (new, unaudited). The additive v:2 plumbing is sound and backward-compatible, but the soundness *claim* is gated on that equality proof. Not shipped.
+**v:2 receipt linkage — binding PRIMITIVE now IMPLEMENTED (unaudited).** The commitment-to-intent gap (a malicious issuer could carry two unlinked amount commitments — `commitments.intent = SHA3(intent)` and a perfectly-hiding `Pedersen(C_amount)` — with nothing proving they hold the same value) is closed by **structural binding** (ADR-0013, after adversarial council review replaced a heavy ZK equality circuit): `disclosure/commitbind.ts` hashes the commitment *into* the intent digest, so substitution is rejected (6 tests, incl. malicious-substitution + bad-opening). The committed value is derived from `intent.amount` with a safe-integer guard; `verifyBoundAmount` performs the full opening check. **UNAUDITED**; full v:2 receipt-body wiring + external ZK audit still pending.
 
 ## US-gov public-standards track (CNSA 2.0 / NIST / SCITT / Zero-Trust)
 

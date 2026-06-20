@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # ADR-0013 — v:2 commitment‑to‑intent equality proof (Pedersen ↔ SHA3)
 
-**Status: PROPOSED — DESIGN ONLY. Not implemented, not audited, soundness unestablished.**
+**Status: ACCEPTED — design recorded + binding PRIMITIVE IMPLEMENTED & tested (`disclosure/commitbind.ts`, 6 tests). UNAUDITED; full v:2 receipt-body wiring still pending; soundness unestablished until external audit.**
 This records the *decision about how* to close the v:2 gap; it is the funded R&D deliverable
 (grant milestones M3–M4), to be implemented and **externally audited before any soundness claim**.
 Date: 2026‑06‑20. **Revised the same day after adversarial council review (DeepSeek + Grok): the heavy

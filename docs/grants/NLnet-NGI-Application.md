@@ -1,4 +1,4 @@
-# PolarSeek — NLnet Restack Application (RESEARCH DOSSIER — not paste‑ready; the maintainer writes the final proposal himself, see 🚨)
+# Nerion — NLnet Restack Application (RESEARCH DOSSIER — not paste‑ready; the maintainer writes the final proposal himself, see 🚨)
 
 **Programme:** Open Internet Stack **"Restack"** (the EU‑Horizon‑funded successor to the NGI Zero Commons
 Fund; €7M to 2030). **Status (verified 2026‑06‑20):** Restack is *"currently being set up — coming soon,"*
@@ -23,10 +23,10 @@ the programme). **Contact:** brandon.sellam@gmail.com.
 > (NLnet cannot fund already‑completed effort); F&A/overhead ≤ 25% and generally ineligible.
 
 ## 1. Project name
-PolarSeek — an open, post‑quantum, decentralized execution‑governance protocol for AI/agent actions.
+Nerion — an open, post‑quantum, decentralized execution‑governance protocol for AI/agent actions.
 
 ## 2. Project summary
-PolarSeek governs what an autonomous AI agent is allowed to **do** — typed actions such as tool‑calls,
+Nerion governs what an autonomous AI agent is allowed to **do** — typed actions such as tool‑calls,
 API requests, and transaction intents — rather than what it perceives. Design principle: **"govern the
 verb, never the eye"** — it never touches perception (no camera frames, no object tracking, no zone
 occupancy). Three planes: (1) a stateless deterministic **Hot‑Admission kernel** issuing short‑lived,
@@ -37,9 +37,9 @@ crypto‑agility, CNSA 2.0‑aligned, and a **signed CycloneDX CBOM** crypto‑i
 artifact — CNSA 2.0 does not itself define a CBOM format); the open Apache‑2.0 alternative to centralized,
 classical, single‑visibility commercial designs that must see every action payload to attest it.
 
-The P0–P4 software build is complete and passes **291 test assertions** with a **20/20 conformance
+The P0–P4 software build is complete and passes **297 test assertions** with a **20/20 conformance
 report** (`npm run conformance` → 20/20 CONFORMANT) — all reproducible from the public Apache‑2.0 repo,
-published before submission so reviewers verify rather than take it on trust. The novel cryptographic compositions PolarSeek
+published before submission so reviewers verify rather than take it on trust. The novel cryptographic compositions Nerion
 layered **on top of** already‑audited primitives (`@noble`) are, however, **UNAUDITED**. This grant funds
 the R&D to harden and externally validate those compositions; an independent cryptography/ZK security
 audit — which NGI0 bundles as free practical support — is the central bundled deliverable, sequenced
@@ -54,7 +54,7 @@ highest‑risk‑first.
 > "can you execute" — do not leave this blank, and do **not** let AI invent credentials. This is the one place
 > the dossier cannot fill for you.**]**
 
-**AI‑assisted authorship, disclosed up front:** PolarSeek is built with heavy AI assistance under direct
+**AI‑assisted authorship, disclosed up front:** Nerion is built with heavy AI assistance under direct
 human review. Our "council" is an explicit multi‑agent, multi‑model **adversarial review** process —
 independent model lineages that critique and attempt to break each design — **not** an autonomous author.
 The council produces candidate critiques; the named human maintainer adjudicates, accepts/rejects, and is
@@ -73,15 +73,15 @@ work. We surface our own residual gaps in writing rather than hide them.
 ## 4. Why it matters / impact / NGI fit
 Three converging public‑interest needs in one protocol, mapping onto NGI's privacy, trust‑enhancing, and
 decentralization priorities. **First — post‑quantum readiness now:** agent‑action governance + its audit
-evidence are deployed today and must survive a CRQC; PolarSeek is PQ‑native, with a signed CBOM that
+evidence are deployed today and must survive a CRQC; Nerion is PQ‑native, with a signed CBOM that
 machine‑flags the remaining quantum‑vulnerable legs. **Second — provable least‑privilege AI‑action
 governance:** as agents proliferate, the unsolved problem is provable, auditable, independently verifiable
 bounds on what they can **do** — a denied tool‑call never executes; receipts are externally verifiable
 with no operator in the loop. **Third — an open standard vs. a single‑visibility commercial design:**
-PolarSeek's decentralized k‑of‑n quorum receipts (no single host can mint a receipt) and zero‑knowledge
+Nerion's decentralized k‑of‑n quorum receipts (no single host can mint a receipt) and zero‑knowledge
 policy‑satisfaction proofs (prove compliance while revealing nothing about the action) are **not available
 to** a central‑visibility design that must see every payload to attest it — a property the independent audit
-is scoped to confirm. *(We keep this contrast technical, not legal — PolarSeek is
+is scoped to confirm. *(We keep this contrast technical, not legal — Nerion is
 itself pre‑FTO and makes no legal characterization of any third party's IP; see §7.)*
 
 No adoption requirement; all outputs open‑access; Apache‑2.0 — exactly the novel, emerging, pre‑adoption
@@ -91,12 +91,12 @@ where R&D is the primary objective.
 **European Dimension (Restack hard‑criterion).** The named maintainer is a **French (EU) citizen** maintaining
 a **Paris residence** (currently also working from New York). The EU anchor is French citizenship plus an EU
 residence; **tax‑residency documentation can be provided on request**, and we intend to add an **EU‑based
-co‑maintainer** to deepen EU substance and reduce single‑maintainer risk. Beyond the applicant, PolarSeek's
+co‑maintainer** to deepen EU substance and reduce single‑maintainer risk. Beyond the applicant, Nerion's
 *substance* is squarely European: an open, vendor‑neutral, post‑quantum building block for the EU's **Open
 Internet Stack / Tech‑Sovereignty** agenda and European digital autonomy. Its most on‑point regulatory hook is
-the **EU AI Act** — PolarSeek delivers auditable, least‑privilege governance and transparency over what
+the **EU AI Act** — Nerion delivers auditable, least‑privilege governance and transparency over what
 high‑risk AI systems are permitted to *do*, the very accountability the Act targets. On the cryptographic side
-PolarSeek already ships **hybrid KEMs (ML‑KEM‑1024 + P‑384)**, matching **ENISA's hybrid PQC‑migration**
+Nerion already ships **hybrid KEMs (ML‑KEM‑1024 + P‑384)**, matching **ENISA's hybrid PQC‑migration**
 guidance rather than a pure‑PQ leap. Outputs are Apache‑2.0 European commons; standardisation will be pursued
 through IETF/W3C/ETSI/OASIS (incl. an intended work‑item on the "govern‑the‑verb" profile) and presented at
 European venues (FOSDEM, IETF, RIPE).
@@ -107,7 +107,7 @@ security proofs + security audits + test/CI setup* (the core deliverable), *stan
 including membership fees of standards bodies* (the "govern‑the‑verb" profile + COSE/RATS codepoints),
 *documentation*, and *packaging for deployability*.
 
-**Sustainability (Stage‑2 anticipates this).** PolarSeek is built to outlast the grant: an open Apache‑2.0
+**Sustainability (Stage‑2 anticipates this).** Nerion is built to outlast the grant: an open Apache‑2.0
 **standard**, not a hosted service with running costs; reproducible verification anyone can run; and a clear
 path to follow‑on Restack grants (≤€150k after a first project completes) plus EU public‑sector / enterprise
 adoption as the agent‑governance need matures. The named maintainer owns post‑grant maintenance.
@@ -177,31 +177,31 @@ open‑source evidence exists at review time. Reproducible checks ship with it (
 `npm run conformance`, external receipt‑verification CLI).
 
 ## 7. Current status — the honest status (non‑negotiable; this candor is the credibility edge)
-The P0–P4 build is complete: **291 test assertions pass, 20/20 CONFORMANT**, and a Rust hot‑path foundation
+The P0–P4 build is complete: **297 test assertions pass, 20/20 CONFORMANT**, and a Rust hot‑path foundation
 compiles. That is the entirety of what code alone can close. **The protocol compositions are UNAUDITED and
 the project is PRE‑FTO.** Every security property the project asserts is a **claim, not an established
 fact**, until an external firm's report exists; passing the vectors is **KAT conformance only**, not
-protocol security. We make **no** claim that PolarSeek is audited, production‑ready, FIPS‑validated, or
+protocol security. We make **no** claim that Nerion is audited, production‑ready, FIPS‑validated, or
 non‑infringing, and we make **no** legal characterization of any competitor's IP. Four external gates stand
 between code‑complete and any public claim — FTO (counsel), **this audit**, FIPS hardware, FIPS CMVP
 validation — **none closable by the project alone**, all prepared, none closed. *Conformant is not
-validated; built is not audited; provisioned is not in‑use; design‑around is not a legal opinion. PolarSeek
+validated; built is not audited; provisioned is not in‑use; design‑around is not a legal opinion. Nerion
 is pre‑audit — which is exactly why it needs this grant.*
 
 ## 8. Differentiation (Stage 2)
 Unlike a centralized, classical, single‑visibility commercial commit‑point gate — which depends on seeing
-every payload — PolarSeek is open, post‑quantum, decentralized, and zero‑knowledge: no single host can mint
+every payload — Nerion is open, post‑quantum, decentralized, and zero‑knowledge: no single host can mint
 a receipt, and compliance is provable without revealing the action. Unlike audit‑only programmes that need
-established, widely‑depended‑upon infrastructure, PolarSeek is **novel pre‑adoption R&D** where R&D is the
+established, widely‑depended‑upon infrastructure, Nerion is **novel pre‑adoption R&D** where R&D is the
 primary objective — NGI0's target profile — with the audit as a bundled validation deliverable, not a
 request to rubber‑stamp finished code. The funded dev work (implementing the deferred Pedersen↔SHA3
 equality proof) is genuine new cryptographic engineering.
 
-**vs. existing open efforts (Stage‑2: "how do you differ from projects U, V, W?").** PolarSeek is
+**vs. existing open efforts (Stage‑2: "how do you differ from projects U, V, W?").** Nerion is
 complementary to — and distinct from — today's building blocks: policy engines (OPA/Rego) decide
 allow/deny but are classical and emit no post‑quantum, externally‑verifiable receipt; capability systems
 (UCAN, macaroons, SPIFFE/SPIRE) convey *authority* but do not prove *policy satisfaction in zero‑knowledge*;
-supply‑chain transparency (in‑toto, SCITT, SLSA) attests *artifacts*, not *runtime agent actions*. PolarSeek
+supply‑chain transparency (in‑toto, SCITT, SLSA) attests *artifacts*, not *runtime agent actions*. Nerion
 composes these ideas into a PQ‑native, decentralized, zero‑knowledge runtime fence for what an agent may
 **do**, and deliberately *reuses* their standards (COSE, SCITT‑style logs, RATS/EAT) rather than reinventing
 them — interoperability over lock‑in, exactly Restack's thesis.

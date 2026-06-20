@@ -1,4 +1,4 @@
-# PolarSeek — ZK / cryptography auditor shortlist (for the Gate-2 quote)
+# Nerion — ZK / cryptography auditor shortlist (for the Gate-2 quote)
 
 > Companion to [AUDIT_FUNDING_OUTREACH.md](./AUDIT_FUNDING_OUTREACH.md). **You request the quote(s); the
 > assistant only shortlists + drafts.** Goal of this step (GRANT_TARGETS checklist #4): get **one indicative

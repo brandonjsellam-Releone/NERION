@@ -1,6 +1,6 @@
 # PolarSeek Launch Readiness — Code‑Complete, NOT Launch‑Cleared
 
-**Status (2026‑06‑20):** P0–P4 software build complete — **291 tests pass**, `npm run conformance` →
+**Status (2026‑06‑20):** P0–P4 software build complete — **297 tests pass**, `npm run conformance` →
 **20/20 CONFORMANT**, Rust hot‑path foundation compiles. **That is the entirety of what code can
 close.** Four independent gates stand between "code complete" and any public non‑infringement claim,
 GA launch, or paid pilot sign‑off — and **none of the four is closable by PolarSeek alone.** Each

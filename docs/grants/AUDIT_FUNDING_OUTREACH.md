@@ -1,4 +1,4 @@
-# PolarSeek — Audit‑Funding Outreach (DRAFTS — you send, I only draft)
+# Nerion — Audit‑Funding Outreach (DRAFTS — you send, I only draft)
 
 > These are the **parallel** audit‑funding paths that are open **now**, independent of the NLnet Restack
 > pause (Restack opens ≈ Sept 2026). Use them to source/co‑fund the independent ZK/crypto audit (Gate 2).
@@ -19,11 +19,11 @@
 cryptography review, co‑funded with NLnet.
 
 **DRAFT**
-> Subject: Audit interest — PolarSeek, a post‑quantum + zero‑knowledge protocol (NLnet co‑funding in progress)
+> Subject: Audit interest — Nerion, a post‑quantum + zero‑knowledge protocol (NLnet co‑funding in progress)
 >
 > Hi OSTIF team,
 >
-> I maintain **PolarSeek**, an open‑source (Apache‑2.0), post‑quantum, zero‑knowledge protocol for governing
+> I maintain **Nerion**, an open‑source (Apache‑2.0), post‑quantum, zero‑knowledge protocol for governing
 > the *actions* of AI agents — typed tool‑calls / API requests / transaction intents, not perception. The
 > codebase is complete and reproducible (291 tests, a 20/20 internal conformance report), built on audited
 > `@noble` primitives. The part I want reviewed is the layer **on top** of those primitives: bespoke
@@ -48,11 +48,11 @@ cryptography review, co‑funded with NLnet.
 internet‑freedom relevance. **Frame:** protecting at‑risk users from centralized‑visibility surveillance.
 
 **DRAFT**
-> Subject: Red Team Lab — audit interest for PolarSeek (privacy‑preserving AI‑action governance)
+> Subject: Red Team Lab — audit interest for Nerion (privacy‑preserving AI‑action governance)
 >
 > Hi OTF team,
 >
-> **PolarSeek** is an open‑source (Apache‑2.0) protocol that lets AI agents act only within provable,
+> **Nerion** is an open‑source (Apache‑2.0) protocol that lets AI agents act only within provable,
 > least‑privilege bounds, while producing **post‑quantum, zero‑knowledge** evidence that reveals nothing about
 > the action itself. Its internet‑freedom relevance: it is an open, decentralized alternative to centralized
 > "see‑every‑action" governance systems — no single host can mint a receipt, and compliance is provable

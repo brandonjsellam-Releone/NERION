@@ -3,7 +3,7 @@ SPDX-FileCopyrightText: 2026 TRELYAN
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# PolarSeek — Executive Summary
+# Nerion — Executive Summary
 
 **An open, post‑quantum, decentralized protocol for governing what AI agents are allowed to _do_.**
 
@@ -15,12 +15,12 @@ that must *see every action* (a single point of visibility, control, and failure
 signatures a cryptographically‑relevant quantum computer (CRQC) will break.
 
 ## The thesis — *govern the verb, never the eye*
-PolarSeek governs **typed actions** (the verb), never perception (the eye). A denied action never executes;
+Nerion governs **typed actions** (the verb), never perception (the eye). A denied action never executes;
 every allowed action emits a post‑quantum, externally‑verifiable receipt — with **no operator in the trust
 loop**.
 
 ## What is real today (independently reproducible from the open source)
-- **Built + verified:** **291 passing tests**, a **20/20 machine‑checked conformance report**
+- **Built + verified:** **297 passing tests**, a **20/20 machine‑checked conformance report**
   (`npm run conformance`) — reproducible by anyone from the Apache‑2.0 source.
 - **Post‑quantum‑native:** ML‑DSA‑87 / ML‑KEM‑1024 / SLH‑DSA (FIPS 203/204/205), hybrid KEMs, and a
   **CNSA 2.0 conformance oracle** that emits a signed, transparency‑log‑anchored verdict.
@@ -32,12 +32,15 @@ loop**.
   CycloneDX CBOM, SLSA / in‑toto provenance.
 
 ## Why it is categorically different from a centralized "commit‑point gate"
-| Axis | Centralized gate | **PolarSeek** |
+| Axis | Centralized gate | **Nerion** |
 |---|---|---|
 | Trust | one operator sees every action | **decentralized k‑of‑n; no operator in the loop** |
 | Crypto | classical (CRQC‑breakable) | **post‑quantum‑native, CNSA 2.0‑aligned** |
 | Privacy | must see the payload to attest | **zero‑knowledge — prove compliance, reveal nothing** |
 | Openness | proprietary | **open Apache‑2.0 standard** |
+
+*(A centralized gate can be simpler and lower‑latency; the axes above are the structural properties where an
+open, decentralized, post‑quantum design leads — not a claim that it wins on every dimension.)*
 
 ## Government fit (public standards only — no classified inputs)
 Grounded entirely in the authoritative public corpus: **NSA CNSA 2.0**, NIST **FIPS 203/204/205** + SP 800‑208,
@@ -45,12 +48,12 @@ Grounded entirely in the authoritative public corpus: **NSA CNSA 2.0**, NIST **F
 signed CBOM supports that inventory requirement). No classified material was used, accessed, or is needed.
 
 ## Institutional‑finance fit
-For agentic transaction flows, PolarSeek provides **least‑privilege authority that cannot be over‑exercised,
+For agentic transaction flows, Nerion provides **least‑privilege authority that cannot be over‑exercised,
 regulator‑ready evidence anyone can verify, and privacy‑preserving compliance proofs** — auditable governance
 of what an AI may transact, without exposing the transaction itself.
 
 ## Honest status — what is NOT yet closed
-Candor is the point — and the credibility edge. PolarSeek is **code‑complete and conformant, _not_ validated.**
+Candor is the point — and the credibility edge. Nerion is **code‑complete and conformant, _not_ validated.**
 Four external gates remain, **none closable by code alone, and none claimed closed:**
 1. **Patent FTO opinion** (counsel) — the project is pre‑FTO and makes **no** non‑infringement claim.
 2. **External cryptography / ZK audit** — the novel ZK compositions over audited primitives are **UNAUDITED**.
@@ -62,6 +65,6 @@ Four external gates remain, **none closable by code alone, and none claimed clos
 opinion.*
 
 ## The ask
-A pilot, and the funding to close gate 2 (an independent ZK / cryptography audit) — already in motion via an EU
-open‑source R&D grant. Everything claimed above is verifiable **today** from the open source; everything not yet
-closed is labeled as such.
+A pilot, and the funding to close gate 2 (an independent ZK / cryptography audit) — a grant **application** to an
+EU open‑source R&D programme (NLnet Restack) is in preparation (**not yet secured**). Everything claimed above is
+verifiable **today** from the open source; everything not yet closed is labeled as such.

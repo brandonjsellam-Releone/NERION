@@ -1,11 +1,14 @@
-# Post-Quant PolarSeek
+# Nerion
+
+_Renamed from **Post‑Quant PolarSeek** (2026‑06‑20) — same open, post‑quantum execution‑governance protocol;
+concept and FTO design‑around unchanged._
 
 **An open, post-quantum-native, decentralized execution-governance protocol for
-AI/agent _actions_.** PolarSeek lets agents act — but only within provable,
+AI/agent _actions_.** Nerion lets agents act — but only within provable,
 auditable, least-privilege boundaries, with post-quantum, regulator-ready
 evidence anyone can verify.
 
-> **Govern the verb, never the eye.** PolarSeek governs typed **actions**
+> **Govern the verb, never the eye.** Nerion governs typed **actions**
 > (tool-calls / API requests / transaction intents). It never touches
 > perception — no camera frames, no feature decomposition, no object tracking,
 > no zone occupancy. This is both the technical thesis and the design-around
@@ -29,7 +32,7 @@ Risk tiers **T0–T3** select how much assurance runs synchronously.
 ## Status — P0–P4 complete + hardened ✅ (Local/Private dev-deployable)
 
 All planes are implemented in TypeScript over audited `@noble` libraries
-(ADR-0002), with **291 passing tests** and a **20/20 conformance report**.
+(ADR-0002), with **297 passing tests** and a **20/20 conformance report**.
 `crypto/`, `capabilities/`, `kernel/`, `receipts/`, `translog/`, `attest/`,
 `planes/`, `ledger/` (pure-PoS + VRF private sortition), `governance/`,
 `disclosure/` (zero-knowledge), `settlement/`, `keystore/`, and `conformance/` are
@@ -42,7 +45,7 @@ Deployment maturity is **Local/Private dev** — four external launch gates rema
 
 ```bash
 npm ci
-npm run gate          # clean-room lint + prettier + tsc + 291 tests
+npm run gate          # clean-room lint + prettier + tsc + 297 tests
 npm run conformance   # certification report → 20/20 CONFORMANT
 npm run demo          # end-to-end T2 governed-payment trace
 npm run build && npm run bundle && npm run verify:cli   # independent receipt verification
@@ -66,8 +69,8 @@ npm run build && npm run bundle && npm run verify:cli   # independent receipt ve
   [FTO_TODO.md](docs/FTO_TODO.md) · [PRIOR_ART_NOTES.md](docs/PRIOR_ART_NOTES.md)
 - ADRs 0001–0013 — crypto suite, TS reference, VRF sortition, quorum receipts, ZK
   policy-satisfaction, govern-the-verb oracle, CNSA 2.0, CBOM, LMS/XMSS code-signing,
-  COSE/RATS, SBOM/SLSA, and the v:2 Pedersen↔SHA3 commitment-equality design (ADR-0013,
-  proposed/unimplemented): see [docs/adr/](docs/adr/)
+  COSE/RATS, SBOM/SLSA, and the v:2 commitment-binding (ADR-0013: structural binding;
+  primitive implemented + tested in `disclosure/commitbind.ts`, UNAUDITED): see [docs/adr/](docs/adr/)
 - Launch readiness + gate packages: [LAUNCH_READINESS.md](docs/LAUNCH_READINESS.md) ·
   [FTO_PACKAGE.md](docs/FTO_PACKAGE.md) · [AUDIT_PACKAGE.md](docs/AUDIT_PACKAGE.md) ·
   [DEPLOY_HARDWARE.md](docs/DEPLOY_HARDWARE.md) · grant: [docs/grants/](docs/grants/)

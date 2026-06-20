@@ -1,4 +1,4 @@
-# PolarSeek Grant Targets + Submission Steps
+# Nerion Grant Targets + Submission Steps
 
 > The assistant **drafts**; **you submit.** I can't click Submit, send these emails, or push the repo for
 > you — each step below is a manual action you perform. The application ([NLnet‑NGI‑Application.md](./NLnet-NGI-Application.md))
@@ -11,13 +11,13 @@
 (final NGI Zero Commons Fund call closed 2026‑06‑01) to take stock after a decade of NGI. **"After the summer"**
 it reopens the regular process **plus three new Open Internet Stack programmes: Restack, CodeSupply, ELFA.**
 Right now **only two pilots are open** — NGI TALER (GNU Taler *payments*) and NGI Fediversity (Nix/NixOS
-*hosting*), deadline 1 Aug 2026 — and **PolarSeek fits neither** (both are narrow single-domain pilots).
+*hosting*), deadline 1 Aug 2026 — and **Nerion fits neither** (both are narrow single-domain pilots).
 **Restack is the clean home:** per <https://nlnet.nl/restack/> it will award **€7M through 2030**, grants
 **€5k–50k (scalable significantly on proven potential)**, and is **explicitly open to "disruptive technologies
 on every layer," middleware, "norms and standards," and building blocks** — a PQC+ZK governance standard for
 AI‑agent actions fits squarely. **Bundled audit CONFIRMED** (Restack page, verbatim): *"we provide all kinds of
 help too — ranging from accessibility scans and security audits to reproducible packaging…"* — so one Restack
-grant funds **both** PolarSeek's R&D **and** the Gate‑2 crypto audit. Funded by Horizon Europe (GA 101299072);
+grant funds **both** Nerion's R&D **and** the Gate‑2 crypto audit. Funded by Horizon Europe (GA 101299072);
 part of the EU Tech‑Sovereignty package. **Plan: prep now, submit to Restack at open (~Sept 2026).** Watch the
 exact date via the NGI Zero newsletter (<https://lists.ngi-0.eu/subscribe/ngizero-newsletter>) and the Restack
 "Guide for Applicants" + FAQ (preliminary versions already linked from the Restack page). Submit at
@@ -38,7 +38,7 @@ only, with a deliberate mission framing.** Apply: <https://www.opentech.fund/lab
 
 **4. Sovereign Tech Agency — Bug Resilience. ← DEFER.**
 Weak fit now: eligibility hinges on being a **vital, widely‑relied‑upon** base technology with real
-dependents. PolarSeek has zero dependents today → out of scope. **Revisit post‑adoption.**
+dependents. Nerion has zero dependents today → out of scope. **Revisit post‑adoption.**
 
 ## Pre‑submission checklist (do BEFORE pasting into any form)
 
@@ -63,4 +63,4 @@ candor is the credibility edge. 10. Submit; save the reference number.
 
 ## After NLnet (only as needed)
 11. Want an auditor sourced/managed? Contact OSTIF (stating NLnet funding secured). 12. Internet‑freedom
-audit path? OTF Red Team Lab. 13. **Do NOT apply to Sovereign Tech** until PolarSeek has real dependents.
+audit path? OTF Red Team Lab. 13. **Do NOT apply to Sovereign Tech** until Nerion has real dependents.

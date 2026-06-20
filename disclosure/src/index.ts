@@ -29,9 +29,12 @@ export {
 } from './policyproof.js'
 export type { PolicyBounds, PolicySatisfactionProof, AmountCommitment } from './policyproof.js'
 export {
+  intentAmount,
   boundIntentDigest,
   boundIntentDigestHex,
   verifyBoundCommitment,
-  bindDecidedAmount,
+  verifyBoundAmount,
+  bindAmountCommitment,
+  CommitBindError,
 } from './commitbind.js'
 export type { BoundAmount } from './commitbind.js'
