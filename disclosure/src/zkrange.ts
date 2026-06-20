@@ -241,12 +241,18 @@ export function proveBelow(amount: bigint, r: bigint, threshold: bigint, n = 32)
  *
  * `n` is the VERIFIER's expected bit-length (a protocol constant, default 32) —
  * it is NOT taken from the proof. A proof whose `n` differs is rejected, and `n`
- * is hard-capped at 252 so that 2^n < L (preventing modular wraparound). This
- * closes ZKRANGE-001: an attacker could otherwise pick a large `proof.n` so that
- * 2^n ≥ L and wrap a false range claim around the group order.
+ * is hard-capped at **251** so that 2^(n+1) ≤ L. Both `amount` and
+ * `diff = threshold-1-amount` are proven in [0, 2^n); soundness requires their
+ * value ranges not to alias across the group order L.
+ *   - ZKRANGE-001: a large `proof.n` with 2^n ≥ L would wrap a false claim around L
+ *     (closed by capping n and by `proof.n === n`).
+ *   - ZKRANGE-002 (off-by-one, found by the Team Apex multi-model code audit
+ *     2026-06-21): at n=252, a negative `diff` wraps to L-|diff| ∈ [0, 2^n) — since
+ *     L = 2^252 + d with d ≈ 2^124.7 — so a huge `amount` (≈2^124) falsely proves
+ *     `< threshold`. The n ≤ 251 cap (2^(n+1) ≤ L) closes it.
  */
 export function verifyBelow(commitment: Pt, threshold: bigint, proof: RangeProof, n = 32): boolean {
-  if (!Number.isInteger(n) || n < 1 || n > 252) return false
+  if (!Number.isInteger(n) || n < 1 || n > 251) return false
   if (proof.n !== n) return false
   const bound = 1n << BigInt(n)
   if (threshold < 1n || threshold > bound) return false
