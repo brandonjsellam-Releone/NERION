@@ -49,10 +49,11 @@ highest‑risk‑first.
 **Named accountable lead:** Brandon Sellam (brandon.sellam@gmail.com) — maintainer; **French (EU) citizen**
 (Paris residence; currently also working from New York); owns audit‑remediation and post‑grant maintenance.
 
-> **[TODO — Brandon writes 2–3 sentences of real background here:** prior cryptography / security / protocol /
-> open‑source work, roles, or public contributions that show ability to execute. NLnet Stage‑2 explicitly weighs
-> "can you execute" — do not leave this blank, and do **not** let AI invent credentials. This is the one place
-> the dossier cannot fill for you.**]**
+> **[Brandon — expand in your own words (NLnet Stage‑2 weighs "can you execute"). Confirmed credentials to
+> cite:** **OWASP member** (security community); Nerion implements the **OWASP CycloneDX** CBOM standard and
+> targets agentic‑AI risks tracked by OWASP's **GenAI Security Project**. Add your prior cryptography / security /
+> protocol / open‑source work + roles. Honesty note: OWASP individual membership is community standing, **not** a
+> certification — cite it as mission alignment, not as expertise that vets the crypto.**]**
 
 **AI‑assisted authorship, disclosed up front:** Nerion is built with heavy AI assistance under direct
 human review. Our "council" is an explicit multi‑agent, multi‑model **adversarial review** process —

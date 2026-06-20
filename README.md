@@ -67,6 +67,10 @@ npm run build && npm run bundle && npm run verify:cli   # independent receipt ve
 - **`tools/cleanroom-lint.mjs`** — CI gate rejecting forbidden perception/stateful
   signals (CLEANROOM F1–F8) in the admission path.
 - **`docs/`** — threat model, clean-room map, design-around strategy, ADRs, FTO.
+- **Standards & ecosystem** — public standards throughout (FIPS 203/204/205, NSA CNSA 2.0, RFC 9052 COSE,
+  RFC 6962, RATS/EAT, SCITT-style logs); the signed CBOM uses **OWASP CycloneDX**, and Nerion targets the
+  agentic-AI risks tracked by **OWASP's GenAI Security Project** (maintainer is an OWASP member — community
+  standing, not a certification).
 
 ## Documentation
 
