@@ -3,6 +3,10 @@
 _Renamed from **Post‑Quant PolarSeek** (2026‑06‑20) — same open, post‑quantum execution‑governance protocol;
 concept and FTO design‑around unchanged._
 
+[![CI](https://github.com/brandonjsellam-Releone/NERION/actions/workflows/ci.yml/badge.svg)](https://github.com/brandonjsellam-Releone/NERION/actions/workflows/ci.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+&nbsp;297 tests · 21/21 conformance · UNAUDITED (see [ASSURANCE.md](docs/ASSURANCE.md))
+
 **An open, post-quantum-native, decentralized execution-governance protocol for
 AI/agent _actions_.** Nerion lets agents act — but only within provable,
 auditable, least-privilege boundaries, with post-quantum, regulator-ready
