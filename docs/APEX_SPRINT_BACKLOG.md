@@ -89,3 +89,6 @@ The keystone: every Rust-parity/KAT item (A13/A16/A21/A23/A24/A25/A29/A41) is si
 
 ## Dependency edges
 A1 gates A13/A16/A21/A23/A24/A25/A29/A41. A23 gates A21. A30 depends on B3's ADR. A20 reuses A12's fixtures.
+
+## Frontier additions (2026-06-21, from docs/FRONTIER.md council scan)
+- **B12 -- Standards-binding profile (ADR-0025)** [value 5]: Action Manifest (dCBOR) + PermitToken <-> W3C-VC / eIDAS-2.0 / IETF agent-auth-token projection + PQ `did:key` (ML-DSA/SLH-DSA). **Phase-A is buildable-now, additive, NO new crypto**; Phase-B ZK delegation-chain attenuation is a flagged research-bet (`allowUnauditedZk`, audit-gated). The frontier's #1 buildable direction + strongest NLnet European-Dimension differentiator (eIDAS / EU AI Act hook). DoD: Phase-A Action Manifest + VC/DID projection shipped additively, gate + conformance green, v:1 KAT freeze (SuiteID `Ps1`, ps-*.json) untouched.
