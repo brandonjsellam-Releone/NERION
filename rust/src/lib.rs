@@ -19,16 +19,16 @@
 //! `…/lib/rustlib/x86_64-pc-windows-gnu/bin/self-contained/`; put that dir on
 //! PATH if the build can't find `dlltool.exe`.
 
-use ml_dsa::signature::{Signer, Verifier};
-use ml_dsa::{B32, Keypair, MlDsa87, Signature, SigningKey};
-use ml_kem::kem::TryDecapsulate;
-use ml_kem::{B32 as KemB32, DecapsulationKey, MlKem1024, Seed};
-use sha3::{Digest, Sha3_256};
 use aes_gcm::aead::{Aead, Payload};
 use aes_gcm::{Aes256Gcm, Nonce};
 use hmac::digest::KeyInit;
 use hmac::{Hmac, Mac};
+use ml_dsa::signature::{Signer, Verifier};
+use ml_dsa::{B32, Keypair, MlDsa87, Signature, SigningKey};
+use ml_kem::kem::TryDecapsulate;
+use ml_kem::{B32 as KemB32, DecapsulationKey, MlKem1024, Seed};
 use sha2::Sha384;
+use sha3::{Digest, Sha3_256};
 
 type HmacSha384 = Hmac<Sha384>;
 
@@ -59,6 +59,19 @@ pub fn sha3_256(data: &[u8]) -> [u8; 32] {
     let mut h = Sha3_256::new();
     h.update(data);
     h.finalize().into()
+}
+
+/// SHAKE256 extendable-output function — mirrors the TS reference
+/// (`crypto/src/symmetric.ts` `SHA3_SHAKE256.xof`, i.e. @noble's
+/// `shake256(message, { dkLen })`). Returns exactly `out_len` bytes.
+pub fn shake256(data: &[u8], out_len: usize) -> Vec<u8> {
+    use shake::{ExtendableOutput, Shake256, Update, XofReader};
+    let mut x = Shake256::default();
+    x.update(data);
+    let mut reader = x.finalize_xof();
+    let mut out = vec![0u8; out_len];
+    reader.read(&mut out);
+    out
 }
 
 /// An ML-DSA-87 (FIPS 204) signing key.
@@ -133,7 +146,9 @@ pub fn aes256gcm_seal(key: &[u8; 32], nonce: &[u8; 12], pt: &[u8], aad: &[u8]) -
 /// AES-256-GCM open; returns None on tag/AAD mismatch (never panics on bad input).
 pub fn aes256gcm_open(key: &[u8; 32], nonce: &[u8; 12], ct: &[u8], aad: &[u8]) -> Option<Vec<u8>> {
     let cipher = <Aes256Gcm as aes_gcm::KeyInit>::new_from_slice(key).expect("32-byte key");
-    cipher.decrypt(Nonce::from_slice(nonce), Payload { msg: ct, aad }).ok()
+    cipher
+        .decrypt(Nonce::from_slice(nonce), Payload { msg: ct, aad })
+        .ok()
 }
 
 #[cfg(test)]
@@ -200,7 +215,10 @@ mod tests {
         let pt = b"hot-path payload";
         let aad = b"suite=PS-5";
         let ct = aes256gcm_seal(&key, &nonce, pt, aad);
-        assert_eq!(aes256gcm_open(&key, &nonce, &ct, aad).as_deref(), Some(&pt[..]));
+        assert_eq!(
+            aes256gcm_open(&key, &nonce, &ct, aad).as_deref(),
+            Some(&pt[..])
+        );
         let mut bad = ct.clone();
         bad[0] ^= 0xff;
         assert!(aes256gcm_open(&key, &nonce, &bad, aad).is_none());
@@ -216,8 +234,12 @@ mod tests {
     /// byte for byte.
     #[test]
     fn ts_kat_vectors_reproduce() {
-        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../conformance/vectors/ps-kat.json");
-        let raw = std::fs::read_to_string(path).expect("read ps-kat.json (run `npm run kat` first)");
+        let path = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../conformance/vectors/ps-kat.json"
+        );
+        let raw =
+            std::fs::read_to_string(path).expect("read ps-kat.json (run `npm run kat` first)");
         let v: serde_json::Value = serde_json::from_str(&raw).expect("parse KAT json");
         assert_eq!(v["version"].as_str(), Some("PS-KAT-1"));
 
@@ -241,10 +263,14 @@ mod tests {
         }
 
         for it in v["aead"]["aes_256_gcm"].as_array().unwrap() {
-            let key: [u8; 32] =
-                hex::decode(it["keyHex"].as_str().unwrap()).unwrap().try_into().unwrap();
-            let nonce: [u8; 12] =
-                hex::decode(it["nonceHex"].as_str().unwrap()).unwrap().try_into().unwrap();
+            let key: [u8; 32] = hex::decode(it["keyHex"].as_str().unwrap())
+                .unwrap()
+                .try_into()
+                .unwrap();
+            let nonce: [u8; 12] = hex::decode(it["nonceHex"].as_str().unwrap())
+                .unwrap()
+                .try_into()
+                .unwrap();
             let aad = hex::decode(it["aadHex"].as_str().unwrap()).unwrap();
             let pt = hex::decode(it["ptHex"].as_str().unwrap()).unwrap();
             assert_eq!(
@@ -259,10 +285,16 @@ mod tests {
         // is intentionally NOT cross-checked — this crate stores it in seed form,
         // @noble in expanded form: different representations of the same key.
         let mldsa = &v["sig"]["ML-DSA-87"];
-        let seed: [u8; 32] =
-            hex::decode(mldsa["seedHex"].as_str().unwrap()).unwrap().try_into().unwrap();
+        let seed: [u8; 32] = hex::decode(mldsa["seedHex"].as_str().unwrap())
+            .unwrap()
+            .try_into()
+            .unwrap();
         let pk = MlDsaKeypair::from_seed(seed).public_key_bytes();
-        assert_eq!(pk.len() as u64, mldsa["publicKeyLen"].as_u64().unwrap(), "ML-DSA pk length");
+        assert_eq!(
+            pk.len() as u64,
+            mldsa["publicKeyLen"].as_u64().unwrap(),
+            "ML-DSA pk length"
+        );
         assert_eq!(
             hex::encode(sha3_256(&pk)),
             mldsa["publicKeySha3"].as_str().unwrap(),
