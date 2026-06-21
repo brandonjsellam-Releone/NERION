@@ -10,6 +10,10 @@ export default defineConfig({
       '{crypto,capabilities,kernel,receipts,translog,attest,planes,sdks,governance,conformance,disclosure,ledger,settlement,keystore,ops}/**/test/**/*.test.ts',
     ],
     environment: 'node',
+    // ZK range/VRF/SLH-DSA/conformance tests are legitimately slow; vitest 4
+    // enforces a 5s default, so set explicit generous timeouts.
+    testTimeout: 60000,
+    hookTimeout: 60000,
     coverage: {
       provider: 'v8',
       include: [
