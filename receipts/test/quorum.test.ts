@@ -119,6 +119,24 @@ describe('quorum receipts (decentralized k-of-n issuance)', () => {
     expect(verifyQuorumReceiptByStake(r, sset, 4, epoch).ok).toBe(false)
   })
 
+  it('LEDGER-PRECISION-003: stake summed/compared as BigInt (no float round-up across threshold)', () => {
+    // Two validators whose EXACT stake sum is 2^53+3 = 9007199254740995. Each stake is a
+    // representable integer; a float `stake += ...` rounds the running sum UP to 2^53+4.
+    const big = [kp(11), kp(12)]
+    const sset: ValidatorSet = {
+      validators: [
+        { pubkey: bytesToHex(big[0]!.publicKey), stake: 9007199254740991 }, // 2^53 - 1
+        { pubkey: bytesToHex(big[1]!.publicKey), stake: 4 },
+      ],
+    }
+    const r = buildQuorumReceipt(body, sset, 2, epoch, [big[0]!, big[1]!], suite)
+    // Threshold 2^53+4 is ABOVE the exact sum (2^53+3) -> must REJECT. The old float sum rounded
+    // to exactly 2^53+4 and wrongly accepted (2^53+4 < 2^53+4 === false).
+    expect(verifyQuorumReceiptByStake(r, sset, 9007199254740996, epoch).ok).toBe(false)
+    // Threshold 2^53+2 is below the exact sum -> must ACCEPT (the fix is exact, not over-rejecting).
+    expect(verifyQuorumReceiptByStake(r, sset, 9007199254740994, epoch).ok).toBe(true)
+  })
+
   it('quorumSetId is order-independent but stake/k/epoch sensitive', () => {
     const id = quorumSetId(set, k, epoch)
     expect(quorumSetId({ validators: [...set.validators].reverse() }, k, epoch)).toBe(id)
