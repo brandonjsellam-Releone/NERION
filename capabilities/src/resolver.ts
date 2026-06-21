@@ -29,6 +29,7 @@ export function resolve(
   candidates: readonly Capability[],
   trustedRoots: readonly Bytes[],
   ctx: EvalContext,
+  revoked: ReadonlySet<string> = new Set(),
 ): ResolveResult {
   // Holder binding is mandatory: without an authenticated requester we cannot
   // bind a capability to its subject, so we fail closed (PS-CAP-03).
@@ -36,6 +37,12 @@ export function resolve(
 
   for (const cap of candidates) {
     if (!verifyChain(cap, trustedRoots)) continue
+
+    // A revoked capability never authorizes — checked at EVERY chain link, not just
+    // the tail, so revoking a ROOT id also denies every chain delegated from it (and
+    // a holder cannot re-delegate to a fresh subject to outrun revocation). Governance
+    // revocation enters as the explicit `revoked` input (REVOKE-ENFORCE-001 / -CHILD-002).
+    if (cap.chain.some((link) => revoked.has(link.grant.id))) continue
 
     // The requester must be the subject the capability was ultimately granted to.
     if (effectiveGrant(cap).subject !== ctx.holder) continue

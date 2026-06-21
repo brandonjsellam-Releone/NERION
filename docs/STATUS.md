@@ -1,7 +1,7 @@
 # PolarSeek — STATUS
 
 **Phase: P0–P4 software build complete; conformance ✔; Rust foundation compiles.** Updated 2026-06-20.
-**313 tests pass** (`npm run gate`). **`npm run conformance` → 23/23 CONFORMANT.**
+**365 tests pass** (`npm run gate`). **`npm run conformance` → 23/23 CONFORMANT.**
 
 ## Modules — all implemented, tested, and conformance-checked
 
@@ -25,7 +25,7 @@
 
 ## Runnable
 
-- `npm run gate` — clean-room lint + prettier + tsc + 313 tests
+- `npm run gate` — clean-room lint + prettier + tsc + 365 tests
 - `npm run demo` — end-to-end T2 governed payment
 - `npm run build && npm run bundle && npm run verify:cli` — independent external receipt verification
 - `npm run conformance` — certification report (23/23)

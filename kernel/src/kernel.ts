@@ -58,7 +58,13 @@ export function decide(input: KernelInput): Decision {
       ...(input.holder !== undefined ? { holder: input.holder } : {}),
     }
 
-    const res = resolve(input.intent, input.capabilities, input.trustedRoots, ctx)
+    const res = resolve(
+      input.intent,
+      input.capabilities,
+      input.trustedRoots,
+      ctx,
+      new Set(input.revoked ?? []),
+    )
     if (!res.authorized) {
       return { effect: 'deny', tier, reasons: [res.reason], obligations: [], evaluatorVersion: ev }
     }

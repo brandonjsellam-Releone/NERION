@@ -17,7 +17,7 @@
 
 ```bash
 npm ci                 # install (from the committed lockfile)
-npm run gate           # clean-room lint + prettier + tsc + 313 tests
+npm run gate           # clean-room lint + prettier + tsc + 365 tests
 npm run demo           # end-to-end T2 governed-payment trace (in-process)
 ```
 

@@ -112,4 +112,9 @@ const path = new URL('../polarseek-receipt-bundle.json', import.meta.url)
 writeFileSync(path, JSON.stringify(bundle, null, 2) + '\n')
 console.log('wrote portable receipt bundle ->', path.pathname)
 console.log(`decision=${out.decision.effect} tier=${out.decision.tier} logRoot=${bundle.gossipedRootHex.slice(0, 16)}…`)
-console.log('verify it independently with:  npm run verify:cli')
+// The verifier must pin the issuer key + log root OUT OF BAND (VERIFY-CLI-001) — in a
+// real deployment from the issuer's published key + an independent gossip of the root.
+console.log('\nverify it independently (zero operator trust) with:')
+console.log(
+  `  NERION_ISSUER_PK=${bundle.issuerPublicKeyHex} NERION_LOG_ROOT=${bundle.gossipedRootHex} npm run verify:cli`,
+)

@@ -18,10 +18,20 @@ import {
   type Bytes,
   type KeyPair,
 } from '../../crypto/src/index.js'
+import { bytesToHex } from '@noble/hashes/utils.js'
 import type { AppraisalPolicy, AppraisalResult, AttestationClaims, Evidence } from './types.js'
 import type { QuoteVerifierRegistry } from './verifiers.js'
 
 const HARDWARE_FORMATS = new Set(['tdx', 'sev-snp', 'cca', 'tpm'])
+
+// Domain-separated signing message that BINDS the suite into the evidence signature
+// (algorithm-downgrade / cross-suite confusion — ATTEST-SUITE-001, Team Apex 2026-06-21) and
+// separates attestation signatures from any other ML-DSA use of the attester key. Changing the
+// unsigned envelope `suite` now breaks verification rather than silently re-routing the verifier.
+const ATTEST_CONTEXT = 'polarseek/attest/evidence/v1'
+function attestSigningMessage(suite: string, claims: AttestationClaims): Bytes {
+  return encodeCanonical([ATTEST_CONTEXT, suite, claims])
+}
 
 export class SoftwareAttester {
   constructor(
@@ -42,7 +52,10 @@ export class SoftwareAttester {
       nonce,
       notAfter,
     }
-    const sig = signerFor(this.suite).sign(encodeCanonical(claims), this.key.secretKey)
+    const sig = signerFor(this.suite).sign(
+      attestSigningMessage(this.suite, claims),
+      this.key.secretKey,
+    )
     return {
       claims,
       format: 'software-dev',
@@ -65,15 +78,27 @@ export function appraise(
 ): AppraisalResult {
   const reasons: string[] = []
 
-  if (!policy.acceptedFormats.includes(evidence.format)) {
-    reasons.push(`format "${evidence.format}" not accepted by policy`)
+  // The signature binds ONLY evidence.claims (see produce()/the verify below);
+  // the top-level evidence.format is an UNSIGNED wire field. Gating policy
+  // acceptance or TEE-quote routing on it let an attacker relabel a genuine,
+  // signed hardware quote (claims.format='tdx') as 'software-dev' to skip the
+  // quote/measurement verifier entirely while still returning claims.format='tdx'
+  // downstream. Bind to the SIGNED format and reject any envelope/claims
+  // disagreement (ATTEST-FMT-001, Team Apex 2026-06-21).
+  const format = evidence.claims.format
+  if (evidence.format !== format) {
+    reasons.push('format mismatch between unsigned envelope and signed claims')
   }
-  if (HARDWARE_FORMATS.has(evidence.format)) {
-    const verifier = verifiers?.get(evidence.format)
+
+  if (!policy.acceptedFormats.includes(format)) {
+    reasons.push(`format "${format}" not accepted by policy`)
+  }
+  if (HARDWARE_FORMATS.has(format)) {
+    const verifier = verifiers?.get(format)
     if (!verifier) {
       reasons.push(
-        `TEE quote verification for "${evidence.format}" is not implemented ` +
-          `(CONNECT: ${evidence.format} attestation verification SDK)`,
+        `TEE quote verification for "${format}" is not implemented ` +
+          `(CONNECT: ${format} attestation verification SDK)`,
       )
     } else {
       const verdict = verifier.verify(evidence, policy.expectedMeasurements ?? [])
@@ -86,7 +111,7 @@ export function appraise(
   if (
     !signerFor(evidence.suite).verify(
       evidence.sig,
-      encodeCanonical(evidence.claims),
+      attestSigningMessage(evidence.suite, evidence.claims),
       evidence.attesterPublicKey,
     )
   ) {
@@ -95,7 +120,13 @@ export function appraise(
   if (evidence.claims.nonce !== policy.expectedNonce) {
     reasons.push('nonce mismatch (stale or replayed attestation)')
   }
-  if (policy.now > evidence.claims.notAfter) {
+  // Fail-closed on a non-finite clock / expiry: a NaN `policy.now` (or a non-finite signed
+  // `notAfter`) makes `now > notAfter` false and would SILENTLY skip the expiry check
+  // (ATTEST-TIME-001, the same class as the fixed KERNEL-TIME-001). Treat either as
+  // uncheckable and reject, rather than fail open on freshness.
+  if (!Number.isSafeInteger(policy.now) || !Number.isFinite(evidence.claims.notAfter)) {
+    reasons.push('attestation expiry uncheckable (non-finite clock or notAfter)')
+  } else if (policy.now > evidence.claims.notAfter) {
     reasons.push('attestation has expired')
   }
 
@@ -105,8 +136,10 @@ export function appraise(
 }
 
 /**
- * N-of-M heterogeneous appraisal for high tiers: valid iff at least `n`
- * evidences from DISTINCT formats appraise valid.
+ * N-of-M heterogeneous appraisal for high tiers: valid iff the valid evidences cover
+ * at least `n` DISTINCT formats AND at least `n` DISTINCT attester keys (independent
+ * roots of trust). Counting formats alone let a single trusted attester satisfy the
+ * quorum across relabeled formats (ATTEST-NOFM-001, Team Apex 2026-06-21).
  */
 export function appraiseNofM(
   evidences: readonly Evidence[],
@@ -114,14 +147,25 @@ export function appraiseNofM(
   n: number,
   verifiers?: QuoteVerifierRegistry,
 ): AppraisalResult {
-  const valid = evidences.map((e) => appraise(e, policy, verifiers)).filter((r) => r.valid)
-  const formats = new Set(valid.map((r) => r.claims!.format))
-  if (formats.size >= n) {
-    return { valid: true, reasons: [], claims: valid[0]!.claims }
+  // A non-positive / non-integer threshold would make the size checks below trivially true
+  // (size >= 0) and index an empty `valid` array — fail closed (ATTEST-NOFM-002, Team Apex).
+  if (!Number.isSafeInteger(n) || n < 1) {
+    return { valid: false, reasons: ['n-of-m threshold must be a positive integer'], claims: null }
+  }
+  const valid = evidences
+    .map((e) => ({ e, r: appraise(e, policy, verifiers) }))
+    .filter((x) => x.r.valid)
+  const formats = new Set(valid.map((x) => x.r.claims!.format))
+  const attesters = new Set(valid.map((x) => bytesToHex(x.e.attesterPublicKey)))
+  if (formats.size >= n && attesters.size >= n) {
+    return { valid: true, reasons: [], claims: valid[0]!.r.claims }
   }
   return {
     valid: false,
-    reasons: [`require ${n} heterogeneous valid attestations, got ${formats.size}`],
+    reasons: [
+      `require ${n} heterogeneous valid attestations from distinct attesters, got ` +
+        `${formats.size} format(s) / ${attesters.size} attester(s)`,
+    ],
     claims: null,
   }
 }

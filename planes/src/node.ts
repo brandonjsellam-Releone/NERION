@@ -62,6 +62,13 @@ export interface AdmissionRequest {
   readonly audience: string
   readonly now: number
   readonly observedAggregate: number
+  /**
+   * Capability ids revoked by governance (the explicit revocation input). The
+   * caller sources these from its `RevocationRegistry` (`revokedIds()`); a
+   * candidate whose chain contains a revoked id is denied at admission
+   * (REVOKE-ENFORCE-001, Team Apex 2026-06-21). Omit/empty when none are revoked.
+   */
+  readonly revoked?: readonly string[]
 }
 
 export interface AdmissionOutcome {
@@ -84,6 +91,9 @@ export class PolarSeekNode {
       now: req.now,
       observedAggregate: req.observedAggregate,
       holder: req.session.claims.sessionPublicKey,
+      // Include only when non-empty so a no-revocation admission encodes byte-
+      // identically to before (replay/receipt hashes unchanged) — REVOKE-ENFORCE-001.
+      ...(req.revoked && req.revoked.length > 0 ? { revoked: req.revoked } : {}),
     }
 
     const decision = decide(input)

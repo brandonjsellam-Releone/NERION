@@ -41,6 +41,12 @@ export function constantTimeEqual(a: Bytes, b: Bytes): boolean {
   return diff === 0
 }
 
+// SECURITY (Team Apex 2026-06-21): AES-GCM is catastrophic under (key, nonce) REUSE — a single
+// repeated nonce under the same key voids BOTH confidentiality and authentication. `seal` takes a
+// CALLER-supplied 12-byte nonce and does NOT enforce uniqueness; any production caller MUST
+// guarantee a unique nonce per key (a fresh `randomBytes(12)` or a never-repeating counter).
+// There is currently NO production caller of this AEAD (used only in tests / KAT vectors), so no
+// nonce-reuse path exists today; this warning gates any future wiring.
 export const AES_256_GCM: Aead = {
   id: 'AES-256-GCM',
   keyLength: 32,

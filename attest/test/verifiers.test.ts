@@ -13,6 +13,12 @@ const NONCE = 'beadfeed'
 const NOW = 2000
 const MEASUREMENT = 'a'.repeat(64)
 
+// Mirror the (private) attestSigningMessage in software.ts: the evidence signature is
+// suite-bound + domain-separated (ATTEST-SUITE-001), so hand-crafted evidence must sign
+// over the same structure for appraise() to accept it.
+const ATTEST_CONTEXT = 'polarseek/attest/evidence/v1'
+const attMsg = (c: unknown): Uint8Array => encodeCanonical([ATTEST_CONTEXT, suite, c])
+
 // Hand-build a TDX-format quote (in reality this comes from the TEE).
 const claims = {
   format: 'tdx' as const,
@@ -26,7 +32,7 @@ const teeEvidence: Evidence = {
   claims,
   format: 'tdx',
   attesterPublicKey: attesterKey.publicKey,
-  sig: signerFor(suite).sign(encodeCanonical(claims), attesterKey.secretKey),
+  sig: signerFor(suite).sign(attMsg(claims), attesterKey.secretKey),
   suite,
 }
 

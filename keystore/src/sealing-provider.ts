@@ -24,9 +24,23 @@
  * Secret hygiene: the transient seed is zeroized on every path (including errors),
  * replacing an unlocked id zeroizes the superseded secret key, `provision()`
  * verifies the seal round-trips before persisting (so a non-decryptable blob fails
- * loudly at creation), and `load()` verifies the re-derived public key against
- * `sealed.publicKey` so a corrupted or swapped blob fails loudly instead of
- * yielding a silently wrong key.
+ * loudly at creation), and `load()` re-derives the public key from the unwrapped
+ * seed and checks it.
+ *
+ * INTEGRITY vs AUTHENTICITY (CUSTODY-SEAL-001, Team Apex 2026-06-21). The
+ * `load()` re-derived-key check against `sealed.publicKey` detects a CORRUPTED /
+ * wrong-key-unwrapped blob, but it does NOT by itself detect a consistent
+ * SUBSTITUTION: both the wrapped seed and the public key come from the same
+ * (possibly attacker-controlled) at-rest blob. With a PUBLIC-KEY wrap — e.g. Azure
+ * Key Vault RSA-OAEP — anyone who knows the (public) KEK can craft a valid
+ * `wrappedSeed` for a chosen seed OFFLINE, set `publicKey` to match, and overwrite
+ * a replicated blob to substitute a chosen signing key under any id. (A SYMMETRIC
+ * AEAD wrap like AWS KMS Encrypt is not forgeable without the Encrypt grant, so it
+ * is not exposed to the offline variant.) Defense: when the at-rest store is not
+ * integrity-trusted, pass `load(sealed, { trustedPublicKey })` with the key's
+ * out-of-band-trusted public key (e.g. the value `provision()` returned, kept in an
+ * integrity-protected record) — `load()` then rejects any blob whose re-derived key
+ * differs. Use an authenticated/symmetric wrap and an integrity-protected store too.
  */
 
 import {
@@ -110,16 +124,39 @@ export class SealingKeyProvider implements KeyProvider {
     }
   }
 
-  /** Unwrap a previously sealed key (async; hits the backend) and unlock it. */
-  async load(sealed: SealedKey): Promise<KeyRef> {
+  /**
+   * Unwrap a previously sealed key (async; hits the backend) and unlock it.
+   *
+   * Pass `opts.trustedPublicKey` (the key's out-of-band-trusted public key, e.g. the
+   * value `provision()` returned, kept in an integrity-protected record) whenever the
+   * at-rest blob store is not integrity-trusted — it is the defense against a
+   * substituted blob under a public-key wrap (CUSTODY-SEAL-001).
+   */
+  async load(sealed: SealedKey, opts: { trustedPublicKey?: Bytes } = {}): Promise<KeyRef> {
     const scheme = signerFor(sealed.suite)
     const seed = await this.sealer.unwrap(sealed.wrappedSeed)
     try {
       const kp = scheme.keygen(seed)
+      // (1) Corruption check: re-derived key must match the blob's own field. Catches a garbled
+      // blob / wrong-key unwrap — but NOT a consistent substitution (both values are from the
+      // attacker-controllable blob). See CUSTODY-SEAL-001 in the module docstring.
       if (!constantTimeEqual(kp.publicKey, sealed.publicKey)) {
         kp.secretKey.fill(0)
         throw new Error(
           `sealed key "${sealed.id}" failed integrity check: re-derived public key does not match sealed.publicKey`,
+        )
+      }
+      // (2) Authenticity check (CUSTODY-SEAL-001 fix): if the caller supplies the out-of-band
+      // trusted public key, the re-derived key MUST equal it — this rejects a substituted blob
+      // that a public-key (e.g. Azure RSA-OAEP) wrap would otherwise admit.
+      if (
+        opts.trustedPublicKey !== undefined &&
+        !constantTimeEqual(kp.publicKey, opts.trustedPublicKey)
+      ) {
+        kp.secretKey.fill(0)
+        throw new Error(
+          `sealed key "${sealed.id}" failed authenticity check: re-derived public key does not match ` +
+            'the trusted public key (possible blob substitution — CUSTODY-SEAL-001)',
         )
       }
       this.lock(sealed.id) // zeroize any key previously held under this id

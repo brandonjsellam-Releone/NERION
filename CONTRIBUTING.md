@@ -18,7 +18,7 @@ npm ci
 All changes must pass the same gate CI enforces:
 
 ```bash
-npm run gate          # clean-room lint (F1–F8) + prettier --check + tsc --noEmit + 313 tests
+npm run gate          # clean-room lint (F1–F8) + prettier --check + tsc --noEmit + 365 tests
 npm run conformance   # certification report → must stay 23/23 CONFORMANT
 ```
 

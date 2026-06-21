@@ -81,6 +81,47 @@ describe('accountable finality safety (LEDGER-001)', () => {
     }
     expect(verifyEquivocationProof(bogus, set)).toBe(false)
   })
+
+  it('does NOT slash an honest validator for attestations at DIFFERENT heights (LEDGER-EQUIV-001)', () => {
+    const ledger = new Ledger(set, suite)
+    const vHex = bytesToHex(keys[0]!.publicKey)
+
+    // Height 0: finalize a block to advance the chain.
+    const b0 = ledger.propose('a0'.repeat(32), 0, 1000, leaderKey(GENESIS_PREV, 0))
+    const atts0 = keys.map((k) => ledger.attest(b0, k))
+    ledger.submit(b0, atts0) // -> chain height 1
+    const attH0 = atts0.find((a) => a.validator === vHex)!
+
+    // Height 1: a genuine attestation by the SAME validator on the next block.
+    const b1 = ledger.propose('a1'.repeat(32), 0, 2000, leaderKey(ledger.headHash(), 0))
+    const attH1 = ledger.attest(b1, keys[0]!)
+
+    // Two HONEST attestations, different blocks at DIFFERENT heights — the normal
+    // behavior of any validator. An attacker submits them as an "equivocation".
+    expect(attH0.height).not.toBe(attH1.height) // 0 vs 1
+    const forged = {
+      validator: vHex,
+      height: attH0.height,
+      blockHashA: attH0.blockHash,
+      blockHashB: attH1.blockHash,
+      attA: attH0,
+      attB: attH1,
+    }
+    // Cross-height is NOT equivocation: the honest validator must not be slashable.
+    expect(verifyEquivocationProof(forged, set)).toBe(false)
+  })
+
+  it('rejects a block with a negative round (LEDGER-VRF-001 grind guard)', () => {
+    const ledger = new Ledger(set, suite)
+    const block = ledger.propose('ab'.repeat(32), 0, 1000, leaderKey(GENESIS_PREV, 0))
+    const atts = keys.map((k) => ledger.attest(block, k))
+    // A negative round must be rejected outright — it would otherwise skip the VRF
+    // view-change-cert requirement (gated on round > 0) and enable a sub-1/3 grind.
+    const negRound = { ...block, header: { ...block.header, round: -1 } }
+    const v = verifyFinalized(negRound, atts, set, GENESIS_PREV)
+    expect(v.ok).toBe(false)
+    expect(v.reasons.join(' ')).toMatch(/round must be a non-negative integer/)
+  })
 })
 
 describe('grind-resistance (LEDGER-002): non-canonical round rejected', () => {

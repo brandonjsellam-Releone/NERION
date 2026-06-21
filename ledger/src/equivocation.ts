@@ -31,7 +31,7 @@ function safeVerifyAtt(a: Attestation): boolean {
   try {
     return signerFor(a.suite).verify(
       a.sig,
-      attestMessage(a.suite, a.blockHash),
+      attestMessage(a.suite, a.height, a.blockHash),
       hexToBytes(a.validator),
     )
   } catch {
@@ -84,6 +84,14 @@ export function verifyEquivocationProof(proof: EquivocationProof, set: Validator
     return false
   if (proof.attA.blockHash !== proof.blockHashA || proof.attB.blockHash !== proof.blockHashB)
     return false
+  // Equivocation is double-signing at the SAME height. Honest validators attest
+  // one block per height, i.e. many distinct hashes ACROSS heights; without this
+  // check two genuine cross-height attestations forge an "equivocation" and slash
+  // an HONEST validator — an accountable-safety inversion (LEDGER-EQUIV-001, Team
+  // Apex 2026-06-21). Height is bound into each attestation's signature, so a
+  // forged height fails safeVerifyAtt below.
+  if (proof.attA.height !== proof.attB.height) return false
+  if (proof.height !== proof.attA.height) return false
   if (stakeOf(set, proof.validator) <= 0) return false
   return safeVerifyAtt(proof.attA) && safeVerifyAtt(proof.attB)
 }

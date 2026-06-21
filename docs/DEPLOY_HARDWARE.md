@@ -7,7 +7,7 @@
 
 ## 0. Honest starting point
 
-PolarSeek is **Local/Private dev**: software unit‑ and conformance‑tested **with fakes** (313 tests,
+PolarSeek is **Local/Private dev**: software unit‑ and conformance‑tested **with fakes** (365 tests,
 23/23 conformance) — **no hardware/integration/audit coverage**. The custody/attestation **adapter
 seams are built and offline‑tested with fakes; none has been exercised against live silicon or a live
 cloud KMS.** "Framework built" ≠ "custody works on real hardware."

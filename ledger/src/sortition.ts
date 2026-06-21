@@ -41,14 +41,18 @@ export function selectLeader(set: ValidatorSet, prevHash: string, round: number)
   const total = totalStake(set)
   if (total <= 0) throw new Error('validator set has no stake')
   const seed = SHA3_SHAKE256.digest(encodeCanonical(['polarseek-sortition-v1', prevHash, round]))
-  const x = Number(BigInt('0x' + bytesToHex(seed)) % BigInt(total))
+  // BigInt cumulative walk (LEDGER-PRECISION-001, Team Apex 2026-06-21): a Number() cast of the
+  // modulo plus a Number `acc` lose precision once total stake exceeds 2^53, skewing leader
+  // selection. Plain bigint keeps it exact. (Residual: totalStake()'s Number sum still bounds
+  // total to ~2^53; a full bigint-stake migration is tracked in docs/STATUS.md.)
+  const x = BigInt('0x' + bytesToHex(seed)) % BigInt(total)
   // Sort by pubkey so the cumulative interval is order-independent.
   const sorted = [...set.validators].sort((a, b) =>
     a.pubkey < b.pubkey ? -1 : a.pubkey > b.pubkey ? 1 : 0,
   )
-  let acc = 0
+  let acc = 0n
   for (const v of sorted) {
-    acc += v.stake
+    acc += BigInt(v.stake)
     if (x < acc) return v.pubkey
   }
   return sorted[sorted.length - 1]!.pubkey

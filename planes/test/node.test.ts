@@ -321,6 +321,34 @@ describe('PolarSeekNode admission', () => {
     expect(out.receipt).toBeNull()
   })
 
+  it('denies a REVOKED capability at admission (REVOKE-ENFORCE-001)', () => {
+    const node = makeNode()
+    const revokedId = cap.chain[0]!.grant.id
+    // Without revocation: allowed.
+    expect(
+      node.admit({
+        intent: pay(500),
+        capabilities: [cap],
+        session,
+        audience: 'acct://treasury',
+        now: NOW,
+        observedAggregate: 0,
+      }).decision.effect,
+    ).toBe('allow')
+    // With the capability revoked (the explicit governance input): denied, no permit.
+    const out = node.admit({
+      intent: pay(500),
+      capabilities: [cap],
+      session,
+      audience: 'acct://treasury',
+      now: NOW,
+      observedAggregate: 0,
+      revoked: [revokedId],
+    })
+    expect(out.decision.effect).toBe('deny')
+    expect(out.permit).toBeNull()
+  })
+
   it('admits a T0 read with a permit but no nearline receipt', () => {
     const node = makeNode()
     const out = node.admit({

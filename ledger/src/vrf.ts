@@ -150,6 +150,17 @@ export function prove(seed: Bytes, alpha: Bytes): VrfOutput {
 }
 
 /**
+ * A VRF point (public key or Gamma) must be a NON-IDENTITY member of the prime-order
+ * subgroup. This is RFC 9381 ECVRF_validate_key (§5.4.5) strengthened to full
+ * torsion-freeness (§7.4, "full uniqueness"): @noble's decode rejects non-canonical
+ * encodings, but small-order / torsion-carrying points have canonical encodings and would
+ * otherwise be accepted — breaking VRF uniqueness (VRF-001).
+ */
+function isValidVrfPoint(pt: InstanceType<typeof P>): boolean {
+  return !pt.is0() && pt.isTorsionFree()
+}
+
+/**
  * ECVRF_verify (RFC 9381 §5.3). Returns β on success or null on ANY failure
  * (never throws — it sits behind a stateless consensus verifier).
  */
@@ -157,7 +168,16 @@ export function verify(publicKey: Bytes, alpha: Bytes, proof: Bytes): Bytes | nu
   try {
     if (proof.length !== PROOF_LEN) return null
     const Y = P.fromBytes(publicKey)
+    // ECVRF_validate_key (RFC 9381 §5.4.5 / §7.4): reject a public key not in the prime-order
+    // subgroup. Without it a malicious validator could register a small-order / torsion key
+    // that admits MULTIPLE valid outputs for the same input and grind leader sortition. The
+    // 128-bit Fiat-Shamir challenge already blocks forgery; this closes the UNIQUENESS gap
+    // (VRF-001, Team Apex post-fix verification 2026-06-21).
+    if (!isValidVrfPoint(Y)) return null
     const Gamma = P.fromBytes(proof.slice(0, 32))
+    // Same validation on Gamma: a torsion component would otherwise admit distinct proofs
+    // (the cofactor clearing in proofToHash hides it in β, not in the verify relation).
+    if (!isValidVrfPoint(Gamma)) return null
     const c = os2ipLE(proof.slice(32, 48))
     const s = os2ipLE(proof.slice(48, 80))
     if (s >= L) return null

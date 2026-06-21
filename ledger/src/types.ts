@@ -58,6 +58,13 @@ export interface Block {
 
 export interface Attestation {
   readonly blockHash: string
+  /**
+   * Block height this attestation is for. Bound into the signed attestation
+   * message so the equivocation verifier can require SAME-height double-signing
+   * without the block headers — an honest validator attesting different blocks
+   * across DIFFERENT heights is not slashable (LEDGER-EQUIV-001).
+   */
+  readonly height: number
   readonly validator: string
   readonly suite: string
   readonly sig: Bytes

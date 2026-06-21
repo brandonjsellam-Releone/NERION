@@ -335,11 +335,11 @@ const CHECKS: Array<() => ConformanceResult> = [
       const p: Proposal = { id: proposalId(base), ...base }
       const two = enact(
         p,
-        [approve(p, SUITE, members[0]!), approve(p, SUITE, members[1]!)],
+        [approve(p, SUITE, members[0]!, quorum), approve(p, SUITE, members[1]!, quorum)],
         quorum,
         NOW,
       ).enacted
-      const one = enact(p, [approve(p, SUITE, members[0]!)], quorum, NOW).enacted
+      const one = enact(p, [approve(p, SUITE, members[0]!, quorum)], quorum, NOW).enacted
       return two && !one
     }),
 

@@ -103,4 +103,47 @@ describe('MCP tool-call adapter', () => {
     const r = await guarded('pay', { to: 'mallory', amount: 100 }, ctx)
     expect(r.allowed).toBe(false)
   })
+
+  it('does NOT run the handler on a transform decision (MCP-TRANSFORM-001)', async () => {
+    // A deployer configures payment.transfer as transform-gated (admitted only in
+    // modified form). The kernel returns effect:'transform'; this adapter has no
+    // transform applier, so it must refuse to run the original handler rather than
+    // silently execute the un-attenuated action.
+    const transformClient = new PolarSeekClient(
+      new PolarSeekNode({
+        suite,
+        policy: { ...DEFAULT_POLICY, transformActions: ['payment.transfer'] },
+        trustedRoots: [authority.publicKey],
+        issuer,
+        log: new TransparencyLog(),
+        jurisdiction: 'US',
+        permitTtlSeconds: 30,
+      }),
+    )
+    let calls = 0
+    const guarded = guardTool(transformClient, mapIntent, async (_t, a: PayArgs) => {
+      calls++
+      return { ok: true, paid: a.amount }
+    })
+    const r = await guarded('pay', { to: 'vendor-acme', amount: 500 }, ctx)
+    expect(r.decision.effect).toBe('transform')
+    expect(r.allowed).toBe(false)
+    expect(r.result).toBeNull()
+    expect(calls).toBe(0) // the un-transformed action never ran
+  })
+
+  it('enforces governance revocation through the guard (SDK-REVOKE-001)', async () => {
+    let calls = 0
+    const guarded = guardTool(client, mapIntent, async () => {
+      calls++
+      return { ok: true }
+    })
+    // Without revocation: allowed (sanity).
+    expect((await guarded('pay', { to: 'vendor-acme', amount: 500 }, ctx)).allowed).toBe(true)
+    // Revoke the capability's root id and pass it via the guard context.
+    const revokedCtx: GuardContext = { ...ctx, revoked: [cap.chain[0]!.grant.id] }
+    const r = await guarded('pay', { to: 'vendor-acme', amount: 500 }, revokedCtx)
+    expect(r.allowed).toBe(false)
+    expect(calls).toBe(1) // only the first (non-revoked) call ran
+  })
 })

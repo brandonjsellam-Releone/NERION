@@ -103,5 +103,11 @@ export function verifyViewChangeCert(
     counted.add(v.validator)
     stake += s
   }
-  return stake * finalityDen >= finalityNum * total
+  // BigInt cross-multiply — stake/total are unbounded PoS weights; in IEEE-754
+  // `number`, `stake * finalityDen` or `finalityNum * total` past 2^53 lose
+  // precision and the inequality can flip (a sub-2/3 view-change cert accepted, or
+  // a legit >=2/3 cert rejected). Parity with the finality check in chain.ts
+  // (LEDGER-PRECISION-001) — this quorum site was missed by that sweep
+  // (LEDGER-PRECISION-002, Team Apex 2026-06-21).
+  return BigInt(stake) * BigInt(finalityDen) >= BigInt(finalityNum) * BigInt(total)
 }

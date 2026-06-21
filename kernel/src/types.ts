@@ -53,6 +53,15 @@ export interface KernelInput {
   readonly observedAggregate: number
   /** hex of the requesting holder's public key. */
   readonly holder?: string
+  /**
+   * Capability ids revoked by governance — the EXPLICIT, signed revocation input.
+   * Revocation is time-varying, but enters as DATA (a list), never as memory held
+   * across decisions, so the kernel stays a pure function. A candidate is denied if
+   * ANY grant in its chain has a revoked id, so revoking a root also revokes its
+   * delegated children (REVOKE-ENFORCE-001 / REVOKE-CHILD-002, Team Apex 2026-06-21).
+   * Omitted (not `[]`) when unused, so a no-revocation input is byte-identical to before.
+   */
+  readonly revoked?: readonly string[]
 }
 
 export interface Decision {

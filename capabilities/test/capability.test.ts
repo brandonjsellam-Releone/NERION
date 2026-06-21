@@ -4,9 +4,9 @@
 
 import { describe, it, expect } from 'vitest'
 import { bytesToHex } from '@noble/hashes/utils.js'
-import { signerFor, SUITE_IDS, encodeCanonical } from '../../crypto/src/index.js'
+import { signerFor, SUITE_IDS, encodeCanonical, SHA3_SHAKE256 } from '../../crypto/src/index.js'
 import { issueRoot, attenuate, verifyChain, resolve, AttenuationError } from '../src/index.js'
-import type { ActionIntent, Capability, EvalContext } from '../src/index.js'
+import type { ActionIntent, Capability, EvalContext, RiskTier } from '../src/index.js'
 
 const suite = SUITE_IDS.PS_5
 const signer = signerFor(suite)
@@ -111,6 +111,42 @@ describe('default-deny resolver', () => {
     const noHolder: EvalContext = { now: 1000, tier: 2, observedAggregate: 0 }
     expect(resolve(pay(500), [root], trustedRoots, noHolder).authorized).toBe(false)
   })
+
+  it('a non-finite `now` cannot bypass the validity window (KERNEL-TIME-001 fail-closed)', () => {
+    // A capability whose validity window has already expired at a normal clock.
+    const expired = issueRoot(
+      {
+        subject: holderHex,
+        actions: ['payment.transfer'],
+        perActionCeiling: 1000,
+        aggregateCap: 5000,
+        counterparties: ['alice'],
+        maxTier: 2,
+        notBefore: 0,
+        notAfter: 500,
+        delegable: true,
+      },
+      suite,
+      authority,
+    )
+    // Sanity: a finite clock past notAfter denies.
+    expect(resolve(pay(500), [expired], trustedRoots, baseCtx({ now: 1000 })).authorized).toBe(
+      false,
+    )
+    // A non-finite clock (NaN / ±Infinity) makes both `<`/`>` window comparisons
+    // false; it must NOT slip past the expiry — fail closed.
+    expect(
+      resolve(pay(500), [expired], trustedRoots, baseCtx({ now: Number.NaN })).authorized,
+    ).toBe(false)
+    expect(
+      resolve(pay(500), [expired], trustedRoots, baseCtx({ now: Number.POSITIVE_INFINITY }))
+        .authorized,
+    ).toBe(false)
+    // And a non-finite clock denies even an otherwise-valid, non-expired grant.
+    expect(resolve(pay(500), [root], trustedRoots, baseCtx({ now: Number.NaN })).authorized).toBe(
+      false,
+    )
+  })
 })
 
 describe('attenuating delegation', () => {
@@ -144,5 +180,122 @@ describe('attenuating delegation', () => {
     }
     // Signature is valid, but it broadens authority -> chain verification rejects it.
     expect(verifyChain(forged, trustedRoots)).toBe(false)
+  })
+
+  it('rejects an onward delegation from a NON-delegable parent (CAP-DELEG-001)', () => {
+    // Replicate the module's private id derivation + suite-bound signing message so
+    // the forged child has a CORRECT content-hash id and a valid signature — the
+    // only thing wrong with it is that its parent forbade onward delegation.
+    const CAP_CONTEXT = 'polarseek/capability/grant/v2'
+    const deriveId = (body: object): string =>
+      bytesToHex(SHA3_SHAKE256.digest(encodeCanonical(body))).slice(0, 24)
+    const selfSign = (parentSubject: string): Capability['chain'][number] => {
+      const childBody = {
+        issuer: parentSubject, // = holder
+        subject: delegateeHex,
+        actions: ['payment.transfer'],
+        perActionCeiling: 200, // strictly narrower
+        aggregateCap: 5000,
+        counterparties: ['alice'],
+        maxTier: 2 as RiskTier,
+        notBefore: 0,
+        notAfter: 10_000_000_000,
+        delegable: false,
+      }
+      const grant = { id: deriveId(childBody), ...childBody }
+      const sig = signer.sign(encodeCanonical([CAP_CONTEXT, suite, grant]), holder.secretKey)
+      return { grant, suite, signerPublicKey: holder.publicKey, sig }
+    }
+
+    // Issue a root the holder may USE but NOT delegate.
+    const nonDelegable = issueRoot(
+      {
+        subject: holderHex,
+        actions: ['payment.transfer'],
+        perActionCeiling: 1000,
+        aggregateCap: 5000,
+        counterparties: ['alice'],
+        maxTier: 2,
+        notBefore: 0,
+        notAfter: 10_000_000_000,
+        delegable: false,
+      },
+      suite,
+      authority,
+    )
+    expect(verifyChain(nonDelegable, trustedRoots)).toBe(true)
+
+    const forged: Capability = {
+      chain: [nonDelegable.chain[0]!, selfSign(nonDelegable.chain[0]!.grant.subject)],
+    }
+    // Strict attenuation, valid id + signature, but the parent is non-delegable.
+    expect(verifyChain(forged, trustedRoots)).toBe(false)
+
+    // Control: the IDENTICAL construction under a DELEGABLE parent verifies, proving
+    // the rejection is specifically the delegable-flag enforcement, not a bad id/sig.
+    const ctrl: Capability = {
+      chain: [root.chain[0]!, selfSign(root.chain[0]!.grant.subject)],
+    }
+    expect(verifyChain(ctrl, trustedRoots)).toBe(true)
+  })
+})
+
+describe('CAP-001 hardening — Team Apex audit', () => {
+  it('a grant signature binds the suite + domain tag (an unbound sig is rejected)', () => {
+    const link0 = root.chain[0]!
+    // A signature over the bare grant (pre-CAP-001 format, no suite/context binding)...
+    const unboundSig = signer.sign(encodeCanonical(link0.grant), authority.secretKey)
+    const spoofed: Capability = { chain: [{ ...link0, sig: unboundSig }] }
+    // ...is rejected: verifyChain now binds the suite + domain tag into the signed message.
+    expect(verifyChain(spoofed, trustedRoots)).toBe(false)
+  })
+
+  it('a tampered grant id is rejected (id must be the body content-hash)', () => {
+    const link0 = root.chain[0]!
+    const tamperedId: Capability = {
+      chain: [{ ...link0, grant: { ...link0.grant, id: 'deadbeefdeadbeefdeadbeef' } }],
+    }
+    expect(verifyChain(tamperedId, trustedRoots)).toBe(false)
+  })
+
+  it('an invalid (negative / non-integer) tier fails closed', () => {
+    expect(
+      resolve(pay(500), [root], trustedRoots, baseCtx({ tier: -1 as RiskTier })).authorized,
+    ).toBe(false)
+    expect(
+      resolve(pay(500), [root], trustedRoots, baseCtx({ tier: 1.5 as RiskTier })).authorized,
+    ).toBe(false)
+  })
+})
+
+describe('capability revocation enforcement (REVOKE-ENFORCE-001 / REVOKE-CHILD-002)', () => {
+  const revChild = attenuate(root, { perActionCeiling: 200 }, delegateeHex, holder)
+  const rootId = root.chain[0]!.grant.id
+  const childId = revChild.chain[revChild.chain.length - 1]!.grant.id
+
+  it('a revoked capability no longer authorizes (closes the admission fail-open)', () => {
+    // Not revoked -> authorized.
+    expect(resolve(pay(500), [root], trustedRoots, baseCtx()).authorized).toBe(true)
+    // Revoked (id in the explicit revoked set) -> denied.
+    expect(resolve(pay(500), [root], trustedRoots, baseCtx(), new Set([rootId])).authorized).toBe(
+      false,
+    )
+  })
+
+  it('revoking a ROOT also revokes its delegated children, and re-delegation cannot outrun it', () => {
+    const ctx = baseCtx({ holder: delegateeHex })
+    // The delegated child authorizes normally...
+    expect(resolve(pay(100), [revChild], trustedRoots, ctx).authorized).toBe(true)
+    // ...but revoking the ROOT id denies the child too (the root id is in its chain).
+    expect(resolve(pay(100), [revChild], trustedRoots, ctx, new Set([rootId])).authorized).toBe(
+      false,
+    )
+    // Revoking only the child id denies the child but not independent use of the root.
+    expect(resolve(pay(100), [revChild], trustedRoots, ctx, new Set([childId])).authorized).toBe(
+      false,
+    )
+    expect(resolve(pay(500), [root], trustedRoots, baseCtx(), new Set([childId])).authorized).toBe(
+      true,
+    )
   })
 })

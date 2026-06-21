@@ -68,11 +68,14 @@ function blockSignMessage(suite: string, hash: string): Bytes {
 }
 
 /**
- * Message a VALIDATOR attests: binds the cipher suite + block identity. Exported
- * so the equivocation verifier recovers the exact same preimage (no drift).
+ * Message a VALIDATOR attests: binds the cipher suite + block HEIGHT + block
+ * identity. Exported so the equivocation verifier recovers the exact same
+ * preimage (no drift). Height is bound so an "equivocation" can be required to be
+ * a SAME-height double-sign — an honest validator's distinct attestations across
+ * different heights must not be slashable (LEDGER-EQUIV-001, Team Apex 2026-06-21).
  */
-export function attestMessage(suite: string, hash: string): Bytes {
-  return encodeCanonical(['polarseek-attest-v1', suite, hash])
+export function attestMessage(suite: string, height: number, hash: string): Bytes {
+  return encodeCanonical(['polarseek-attest-v1', suite, height, hash])
 }
 
 export class Ledger {
@@ -129,6 +132,12 @@ export class Ledger {
   ): Block {
     const proposerHex = bytesToHex(proposer.publicKey)
     const prevHash = this.headHash()
+    // A round must be a non-negative integer: the cert requirement is gated on
+    // `round > 0`, so a NEGATIVE round would skip the view-change cert while still
+    // seeding a distinct VRF draw — a sub-1/3 grind (LEDGER-VRF-001).
+    if (!Number.isSafeInteger(round) || round < 0) {
+      throw new LedgerError('round must be a non-negative integer')
+    }
     const { beta, proof } = vrfProve(vrfSecret, vrfAlpha(prevHash, round))
     if (!vrfLeaderEligible(this.set, proposerHex, beta)) {
       throw new LedgerError('proposer is not VRF-eligible for this round')
@@ -168,8 +177,18 @@ export class Ledger {
   /** A validator attests (signs) a block hash. */
   attest(block: Block, validator: KeyPair): Attestation {
     const h = blockHash(block.header)
-    const sig = signerFor(this.suite).sign(attestMessage(this.suite, h), validator.secretKey)
-    return { blockHash: h, validator: bytesToHex(validator.publicKey), suite: this.suite, sig }
+    const height = block.header.height
+    const sig = signerFor(this.suite).sign(
+      attestMessage(this.suite, height, h),
+      validator.secretKey,
+    )
+    return {
+      blockHash: h,
+      height,
+      validator: bytesToHex(validator.publicKey),
+      suite: this.suite,
+      sig,
+    }
   }
 
   /** Validate a block + attestations and, if it reaches finality, append it. */
@@ -226,6 +245,22 @@ function safeVerify(suite: string, sig: Bytes, msg: Bytes, pub: Bytes): boolean 
 }
 
 /**
+ * Verify an attestation's signature (binds suite + height + block hash). Used by
+ * the gossip ingress filter so ONLY attestations the safety verifier would count
+ * are pooled — otherwise a zero-stake gossiper floods garbage-signed attestations
+ * that occupy each (blockHash, validator) slot first and censor finalization
+ * (GOSSIP-CENSOR-001, Team Apex 2026-06-21).
+ */
+export function verifyAttestationSig(att: Attestation): boolean {
+  return safeVerify(
+    att.suite,
+    att.sig,
+    attestMessage(att.suite, att.height, att.blockHash),
+    hexToBytesLocal(att.validator),
+  )
+}
+
+/**
  * Stateless PQ light-client verification of a (claimed) finalized block:
  * correct sortition leader, valid proposer signature, valid distinct
  * attestations, and attesting stake >= finality fraction of total stake.
@@ -259,6 +294,13 @@ export function verifyFinalized(
   }
   if (block.header.prevHash !== expectedPrev)
     reasons.push('prevHash does not extend the expected head')
+  // A block's round must be a non-negative integer. Without this the VRF branch's
+  // view-change-cert requirement (gated on `round > 0`) is skipped for round <= 0,
+  // letting a sub-1/3 proposer GRIND negative round values through vrfAlpha until
+  // VRF-eligible and publish a cert-less block (LEDGER-VRF-001, Team Apex 2026-06-21).
+  if (!Number.isSafeInteger(block.header.round) || block.header.round < 0) {
+    reasons.push('block round must be a non-negative integer')
+  }
   // Leader eligibility. The MODE is fixed by the VALIDATOR SET, never per block: a
   // set whose validators all carry a VRF key is VRF-mode (ADR-0004), and a
   // proof-less legacy block is rejected as a DOWNGRADE — so the predictable
@@ -334,6 +376,9 @@ export function verifyFinalized(
   let attestingStake = 0
   for (const a of attestations) {
     if (a.blockHash !== h) continue
+    // The attestation must be for THIS block's height (it is bound into the signed
+    // message); a height mismatch is not a valid attestation for this block.
+    if (a.height !== block.header.height) continue
     // Count only attestations under the block's OWN declared suite. Together with the
     // suite-bound proposer signature this closes cross-suite confusion even when a
     // standalone light client omits opts.expectedSuite (council/audit hardening).
@@ -342,14 +387,25 @@ export function verifyFinalized(
     if (opts.expectedSuite !== undefined && a.suite !== opts.expectedSuite) continue
     const stake = stakeOf(set, a.validator)
     if (stake <= 0) continue
-    if (!safeVerify(a.suite, a.sig, attestMessage(a.suite, h), hexToBytesLocal(a.validator))) {
+    if (
+      !safeVerify(
+        a.suite,
+        a.sig,
+        attestMessage(a.suite, block.header.height, h),
+        hexToBytesLocal(a.validator),
+      )
+    ) {
       continue
     }
     counted.add(a.validator)
     attestingStake += stake
   }
 
-  const finalized = total > 0 && attestingStake * finalityDen >= finalityNum * total
+  // BigInt comparison (LEDGER-PRECISION-001, Team Apex 2026-06-21): `attestingStake * finalityDen`
+  // can exceed 2^53 even when total <= 2^53, silently corrupting the finality threshold under
+  // IEEE-754. Cross-multiply in bigint so the >=2/3-stake check is exact.
+  const finalized =
+    total > 0 && BigInt(attestingStake) * BigInt(finalityDen) >= BigInt(finalityNum) * BigInt(total)
   if (!finalized)
     reasons.push(
       `attesting stake ${attestingStake}/${total} below finality ${finalityNum}/${finalityDen}`,

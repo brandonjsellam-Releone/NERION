@@ -101,4 +101,29 @@ describe('pure-PoS ledger', () => {
     expect(() => verifyFinalized(bogus, [], set, GENESIS_PREV)).not.toThrow()
     expect(verifyFinalized(bogus, [], set, GENESIS_PREV).ok).toBe(false)
   })
+
+  it('LEDGER-PRECISION-001: finality threshold is exact at large stakes (no IEEE-754 false-finalize)', () => {
+    // Attesting stake A = 2^52+1 is exactly ONE unit below 2/3 of total: 3*A < 2*total by 1.
+    // But Number(3*A) rounds UP to equal Number(2*total), so the old `*`-in-Number check would
+    // FALSELY finalize (a safety violation). The BigInt cross-multiply must report NOT finalized.
+    const A = 4503599627370497 // 2^52 + 1 (attesting)
+    const B = 2251799813685249 // non-attesting; total = 6755399441055746
+    const total = A + B
+    expect(A * 3 >= 2 * total).toBe(true) // IEEE-754 false-positive (the bug we fixed)
+    expect(BigInt(A) * 3n >= 2n * BigInt(total)).toBe(false) // exact: correctly below 2/3
+    const k2 = [s.keygen(), s.keygen()]
+    const bigSet: ValidatorSet = {
+      validators: [
+        { pubkey: bytesToHex(k2[0]!.publicKey), stake: A },
+        { pubkey: bytesToHex(k2[1]!.publicKey), stake: B },
+      ],
+    }
+    const ledger = new Ledger(bigSet, suite)
+    const leaderHex = selectLeader(bigSet, GENESIS_PREV, 0)
+    const proposer = k2.find((k) => bytesToHex(k.publicKey) === leaderHex)!
+    const block = ledger.propose('a1'.repeat(32), 0, 1000, proposer)
+    const attA = ledger.attest(block, k2[0]!) // only the just-below-2/3 validator attests
+    const verdict = verifyFinalized(block, [attA], bigSet, GENESIS_PREV)
+    expect(verdict.finalized).toBe(false)
+  })
 })

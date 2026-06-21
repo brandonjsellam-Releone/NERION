@@ -17,7 +17,16 @@ export function authorizesIntent(
   ctx: EvalContext,
 ): boolean {
   if (!grant.actions.includes(intent.type)) return false
+  // Fail closed on a malformed clock at the trust boundary: `now` is caller-
+  // supplied (the kernel reads no clock), and a non-finite value (NaN/±Infinity)
+  // makes BOTH window comparisons false, silently skipping the notBefore/notAfter
+  // gate so an expired or not-yet-valid grant would authorize. Guard it like
+  // tier/amount/aggregate already are (KERNEL-TIME-001, Team Apex 2026-06-21).
+  if (!Number.isSafeInteger(ctx.now)) return false
   if (ctx.now < grant.notBefore || ctx.now > grant.notAfter) return false
+  // Defense in depth at the trust boundary: an undefined/negative/non-integer tier
+  // would make `ctx.tier > maxTier` false and skip the cap (CAP-001, Team Apex).
+  if (!(Number.isSafeInteger(ctx.tier) && ctx.tier >= 0)) return false
   if (ctx.tier > grant.maxTier) return false
 
   if (grant.counterparties !== null) {

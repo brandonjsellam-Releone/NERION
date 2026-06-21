@@ -53,6 +53,25 @@ export function guardTool<A, R>(
         reasons: [...outcome.decision.reasons],
       }
     }
+    // A 'transform' decision admits the action ONLY in modified form (e.g. a
+    // capped amount or a redacted field). The kernel returns the obligation, not
+    // a rewritten intent, and this reference adapter has no transform applier —
+    // so invoking the handler with the ORIGINAL args would execute the
+    // un-attenuated, over-authorized action. Refuse to run it rather than
+    // silently over-authorize (MCP-TRANSFORM-001, Team Apex 2026-06-21). An
+    // integrator that can apply the obligation should re-submit a modified intent
+    // that the kernel admits as 'allow'.
+    if (outcome.decision.effect !== 'allow') {
+      return {
+        allowed: false,
+        result: null,
+        decision: outcome.decision,
+        receipt,
+        reasons: [
+          `effect "${outcome.decision.effect}" requires the transform obligation to be applied before execution; handler not run`,
+        ],
+      }
+    }
     if (!client.checkPermit(outcome, ctx, intent)) {
       return {
         allowed: false,

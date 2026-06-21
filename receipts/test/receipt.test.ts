@@ -120,4 +120,24 @@ describe('receipts', () => {
     // Binding intact: a tampered amount (same salt) is rejected.
     expect(verifyIntentDisclosure(r, { ...intent, amount: 501 })).toBe(false)
   })
+
+  // ── RCPT-002: the replay input/decision hashes are ALSO salted ─────────────
+  it('salts the input/decision-hash commitments so the leaf cannot re-leak the amount', () => {
+    // The raw replay inputHash/decisionHash are SHA3 over the amount-bearing
+    // KernelInput; published raw they re-leak the amount even though `intent` is
+    // salted. They must be committed as salted, hiding values in the public leaf.
+    const salt = new Uint8Array(INTENT_SALT_BYTES).fill(0xcd)
+    const r = buildReceipt(params({ inputHash: 'aa', decisionHash: 'bb', intentSalt: salt }))
+    expect(r.body.commitments.inputHash).toBe(commitField('aa', salt))
+    expect(r.body.commitments.inputHash).not.toBe('aa') // not the raw replay hash
+    expect(r.body.commitments.inputHash).not.toBe(commitField('aa')) // not the unsalted hash
+    expect(r.body.commitments.decisionHash).toBe(commitField('bb', salt))
+    expect(r.body.commitments.decisionHash).not.toBe('bb')
+
+    // Fresh salt per receipt -> the same decision yields UNLINKABLE commitments.
+    const r1 = buildReceipt(params({ inputHash: 'aa', decisionHash: 'bb' }))
+    const r2 = buildReceipt(params({ inputHash: 'aa', decisionHash: 'bb' }))
+    expect(r1.body.commitments.inputHash).not.toBe(r2.body.commitments.inputHash)
+    expect(r1.body.commitments.decisionHash).not.toBe(r2.body.commitments.decisionHash)
+  })
 })

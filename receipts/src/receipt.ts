@@ -44,7 +44,16 @@ export interface ReceiptCommitments {
   readonly intent: string
   readonly capability: string
   readonly policy: string
+  /**
+   * SALTED, HIDING commitment to the replay input hash — `commitField(replayInputHash,
+   * salt)`. The raw replay hash is SHA3 over the whole KernelInput (which holds the
+   * low-entropy `amount`), so publishing it raw would re-leak the amount from the
+   * public leaf even though `intent` is salted (RCPT-002). The salt is off-leaf.
+   */
   readonly inputHash: string
+  /** SALTED, HIDING commitment to the replay decision hash (`commitField(receiptHash,
+   *  salt)`); raw it transitively re-leaks the amount via the embedded input hash
+   *  (RCPT-002). Off-leaf salt. */
   readonly decisionHash: string
 }
 
@@ -118,8 +127,14 @@ export function buildReceipt(p: BuildReceiptParams): Receipt {
       intent: commitField(p.intent, intentSalt),
       capability: p.capability === null ? 'none' : hashHex(p.capability),
       policy: hashHex(p.policy),
-      inputHash: p.inputHash,
-      decisionHash: p.decisionHash,
+      // The replay input/decision hashes are SHA3 over the full KernelInput, which
+      // contains the low-entropy `amount`. Published RAW, they re-leak the amount
+      // from the PUBLIC leaf by brute-force — bypassing the salted `intent`
+      // commitment (RCPT-002, Team Apex 2026-06-21). Salt them with the same
+      // off-leaf intentSalt so the WHOLE leaf is hiding; an authorized auditor with
+      // the salt + replay bundle recomputes commitField(replay().inputHash, salt).
+      inputHash: commitField(p.inputHash, intentSalt),
+      decisionHash: commitField(p.decisionHash, intentSalt),
     },
   }
   const sig = signerFor(p.suite).sign(encodeCanonical(body), p.issuerSecretKey)

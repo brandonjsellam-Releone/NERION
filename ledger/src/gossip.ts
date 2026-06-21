@@ -19,7 +19,7 @@
 
 import { bytesToHex } from '@noble/hashes/utils.js'
 import type { KeyPair } from '../../crypto/src/index.js'
-import { Ledger, blockHash } from './chain.js'
+import { Ledger, blockHash, verifyAttestationSig } from './chain.js'
 import { selectLeader, stakeOf, canonicalRound } from './sortition.js'
 import type { Attestation, Block, ValidatorSet } from './types.js'
 
@@ -30,9 +30,22 @@ export type GossipMessage =
 type Handler = (m: GossipMessage) => void
 
 /** Don't buffer blocks more than this many heights ahead — a node needs the
- *  intermediate heights first anyway, and this bounds pendingBlocks against an
- *  adversarial flood of far-future blocks (a real transport would also expire them). */
+ *  intermediate heights first anyway; this bounds the buffered height RANGE
+ *  (a real transport would also expire them). */
 const MAX_FUTURE_HEIGHTS = 64
+
+/** Cap distinct buffered blocks PER future height. The height-range cap alone does NOT
+ *  bound how many distinct blocks an adversary can flood at a single future height (each
+ *  unique hash is buffered without verification); this bounds that — and the flood
+ *  amplification with it (GOSSIP-BUFFER-001, Team Apex 2026-06-21). Generous vs. honest
+ *  load (a few blocks/height); a real transport would also expire buffered blocks. */
+const MAX_PENDING_PER_HEIGHT = 64
+
+/** Cap distinct block hashes the attestation pool tracks (GOSSIP-DOS-001). A valid
+ *  attestation needs a real staked validator's signature, so this only bites a
+ *  misbehaving staked validator; combined with the live-height window + sub-head
+ *  pruning it bounds the orphan-attestation pool. */
+const MAX_ATTESTED_HASHES = MAX_FUTURE_HEIGHTS * MAX_PENDING_PER_HEIGHT
 
 /** Deterministic in-process broadcast network with optional partitions. */
 export class GossipBus {
@@ -112,6 +125,13 @@ export class GossipNode {
   attestationsFor(hash: string): Attestation[] {
     return [...(this.attestations.get(hash)?.values() ?? [])]
   }
+  /** Total blocks currently buffered for future heights — bounded per height by
+   *  MAX_PENDING_PER_HEIGHT (GOSSIP-BUFFER-001). Exposed for DoS-bound assertions. */
+  pendingBlockCount(): number {
+    let n = 0
+    for (const list of this.pendingBlocks.values()) n += list.length
+    return n
+  }
 
   /** If this node is the canonical leader for its current head, propose + gossip. */
   proposeIfLeader(payloadRoot: string, timestamp: number): Block | undefined {
@@ -157,20 +177,39 @@ export class GossipNode {
 
   /** Hold a block whose height is ahead of ours; replayed once we catch up. */
   private bufferFuture(block: Block): void {
-    // Ignore blocks too far ahead: we need the intermediate heights first anyway,
-    // and this bounds pendingBlocks against an adversarial far-future flood.
+    // Ignore blocks too far ahead: we need the intermediate heights first anyway; this
+    // bounds the buffered height RANGE.
     if (block.header.height > this.height() + MAX_FUTURE_HEIGHTS) return
     const list = this.pendingBlocks.get(block.header.height) ?? []
     const h = blockHash(block.header)
     if (list.some((b) => blockHash(b.header) === h)) return // dedup
+    // Bound the per-height buffer (and the flood amplification with it): drop distinct
+    // blocks beyond the cap rather than let an adversary exhaust memory at a single future
+    // height (GOSSIP-BUFFER-001). Honest load is a few blocks/height, far below the cap.
+    if (list.length >= MAX_PENDING_PER_HEIGHT) return
     list.push(block)
     this.pendingBlocks.set(block.header.height, list)
     this.bus.broadcast(this.id, { kind: 'block', block }) // still flood so peers receive it
   }
 
   private onAttestation(att: Attestation): void {
+    // Ingress validation (GOSSIP-CENSOR-001): only pool an attestation the safety
+    // verifier would actually count. Without this, the pool is first-writer-wins,
+    // so a zero-stake gossiper floods garbage-signed attestations that occupy every
+    // (blockHash, validator) slot first — the genuine attestation then hits the
+    // dedup below, is dropped AND not re-flooded, and finalization is censored
+    // network-wide. A garbage entry can never occupy a slot now.
+    if (att.suite !== this.suite) return
+    if (stakeOf(this.set, att.validator) <= 0) return
+    if (!verifyAttestationSig(att)) return
+    // Only retain attestations for the live height window (att.height is now
+    // signature-bound, so it is authentic). Sub-head entries are pruned in
+    // drainBuffered; this bounds the orphan-attestation pool (GOSSIP-DOS-001).
+    if (att.height < this.height() || att.height > this.height() + MAX_FUTURE_HEIGHTS) return
+
     let byValidator = this.attestations.get(att.blockHash)
     if (!byValidator) {
+      if (this.attestations.size >= MAX_ATTESTED_HASHES) return // bound distinct hashes
       byValidator = new Map()
       this.attestations.set(att.blockHash, byValidator)
     }
@@ -210,6 +249,13 @@ export class GossipNode {
           this.knownBlocks.delete(h)
           this.attestations.delete(h)
         }
+      }
+      // Prune sub-head attestation entries INCLUDING orphans (attestations for a
+      // block we never received): att.height is signature-bound, so this bounds the
+      // orphan-attestation pool by the live-height window (GOSSIP-DOS-001).
+      for (const [h, byV] of [...this.attestations]) {
+        const some = byV.values().next().value
+        if (some !== undefined && some.height < height) this.attestations.delete(h)
       }
       for (const k of [...this.pendingBlocks.keys()]) if (k < height) this.pendingBlocks.delete(k)
       const due = this.pendingBlocks.get(height)

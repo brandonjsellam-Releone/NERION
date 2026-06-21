@@ -155,6 +155,39 @@ describe('networked ledger — equivocation safety (accountable finality)', () =
     expect(nodes.some((n) => n.hasFinalized(hB))).toBe(false) // B never did
     expect(nodes.every((n) => n.observedConflicts.length > 0)).toBe(true)
   })
+
+  it('a garbage-attestation flood cannot censor finalization (GOSSIP-CENSOR-001)', () => {
+    const { keys, set, leaderIdx } = fixture()
+    const bus = new GossipBus()
+    const nodes = keys.map((k) => new GossipNode(k, set, suite, bus))
+
+    // Build the block out-of-band so the attacker knows its hash before any node.
+    const builder = new Ledger(set, suite)
+    const block = builder.propose('deadbeefroot', 0, 1000, keys[leaderIdx]!)
+    const hash = blockHash(block.header)
+
+    // A ZERO-STAKE attacker floods garbage-signed attestations FIRST, trying to
+    // occupy every (blockHash, validator) slot before the genuine ones arrive.
+    for (const k of keys) {
+      bus.broadcast('attacker', {
+        kind: 'attestation',
+        attestation: {
+          blockHash: hash,
+          height: 0,
+          validator: bytesToHex(k.publicKey),
+          suite,
+          sig: new Uint8Array(64), // not a valid signature
+        },
+      })
+    }
+    // Then the real block is gossiped.
+    bus.broadcast('proposer', { kind: 'block', block })
+    bus.run()
+
+    // Ingress validation drops the garbage, so the genuine attestations still pool
+    // and the block finalizes network-wide despite the flood.
+    for (const n of nodes) expect(n.hasFinalized(hash)).toBe(true)
+  })
 })
 
 describe('networked ledger — suite binding (anti cross-suite confusion)', () => {

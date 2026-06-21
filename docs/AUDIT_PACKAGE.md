@@ -10,11 +10,17 @@ For: a Trail of Bits / NCC Group / Cure53‑grade cryptographic‑protocol engag
 **protocol compositions PolarSeek wrote on top of the audited `@noble` primitives** — the group and
 hash primitives (ristretto255, ML‑DSA‑87, SHAKE256, AES‑256) are audited; the **compositions are not.**
 
+**Findings map (read first):** [SECURITY_FINDINGS.md](./SECURITY_FINDINGS.md) indexes every issue the
+internal **Team Apex** multi‑model audit found + fixed (31 findings — ZKRANGE‑002, CB‑001, RCPT‑001,
+PERMIT‑001, and the LEDGER / ATTEST / GOV / CAP classes — with severity + status) plus the known
+residuals and the `zkrange` 3‑lens deep‑dive verdict. These are **internal leads, not an external
+audit** — confirm or refute each independently; do not treat the project's self‑found fixes as verified.
+
 ## 1. In‑scope components (five compositions)
 
 | # | Component | File | Self‑flagged status |
 |---|---|---|---|
-| A | ZK range proof — Pedersen/ristretto255 + bit‑decomposition + Chaum‑Pedersen OR‑proofs, SHAKE256 Fiat‑Shamir, dual‑range, n≤252 cap | `disclosure/zkrange.ts` | "audited group, **UNAUDITED protocol**" |
+| A | ZK range proof — Pedersen/ristretto255 + bit‑decomposition + Chaum‑Pedersen OR‑proofs, SHAKE256 Fiat‑Shamir, dual‑range, **n≤251 cap (ZKRANGE‑002 fix)** | `disclosure/zkrange.ts` | "audited group, **UNAUDITED protocol**" |
 | B | Policy‑satisfaction composition (hidden‑amount ≤ ceiling / aggregate ≤ cap) | `disclosure/policyproof.ts` | UNAUDITED |
 | C | ECVRF (RFC 9381 suite 0x03, ed25519‑TAI) | `ledger/vrf.ts` | classical VRF (PQ caveat) |
 | D | k‑of‑n independent‑signature quorum receipts | `receipts/quorum.ts` | composition unaudited |
@@ -24,9 +30,11 @@ hash primitives (ristretto255, ML‑DSA‑87, SHAKE256, AES‑256) are audited; 
 
 - **A:** the project **claims** the dual‑range construction (prove `amount∈[0,2^n)` AND
   `threshold‑1‑amount∈[0,2^n)`) with strong Fiat‑Shamir (statement‑binding challenge) is sound and
-  closes the Frozen‑Heart/weak‑FS class, and that the n≤252 cap is **intended** to prevent modular
-  wraparound. **Verify** the soundness, the OR‑proof simulation/special‑soundness, and the generator‑H
-  nothing‑up‑my‑sleeve provenance.
+  closes the Frozen‑Heart/weak‑FS class, and that the **n≤251** cap is **intended** to prevent modular
+  wraparound (corrected from 252 after the internal audit found a mod‑L aliasing at n=252 — ZKRANGE‑002;
+  an internal 3‑lens deep‑dive then concluded the corrected construction sound — a *lead*, see
+  SECURITY_FINDINGS.md). **Verify** the soundness, the OR‑proof simulation/special‑soundness, and the
+  generator‑H nothing‑up‑my‑sleeve provenance.
 - **B:** the project **claims** the amount's confidentiality is information‑theoretic (Pedersen perfect
   hiding) as a *primitive* property; whether **this composition** preserves it (correct generators, no
   transcript leakage) and whether soundness reduces to discrete‑log is **the auditor's to confirm** —

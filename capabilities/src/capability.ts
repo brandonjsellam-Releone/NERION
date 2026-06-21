@@ -38,6 +38,15 @@ function deriveId(body: GrantBody): string {
   return bytesToHex(SHA3_SHAKE256.digest(encodeCanonical(body))).slice(0, 24)
 }
 
+// Domain-separated signing message that BINDS the suite into the signature, so a
+// grant signed under one suite cannot be re-presented under another (algorithm
+// downgrade / cross-suite confusion) — Team Apex audit 2026-06-21 (CAP-001). The
+// tag also separates capability signatures from any other ML-DSA use of the key.
+const CAP_CONTEXT = 'polarseek/capability/grant/v2'
+function grantSigningMessage(suite: string, grant: CapabilityGrant): Bytes {
+  return encodeCanonical([CAP_CONTEXT, suite, grant])
+}
+
 export interface RootGrantSpec {
   /** hex of the holder/delegatee public key. */
   readonly subject: string
@@ -66,7 +75,7 @@ export function issueRoot(spec: RootGrantSpec, suite: string, authority: KeyPair
     delegable: spec.delegable,
   }
   const grant: CapabilityGrant = { id: deriveId(body), ...body }
-  const sig = signerFor(suite).sign(encodeCanonical(grant), authority.secretKey)
+  const sig = signerFor(suite).sign(grantSigningMessage(suite, grant), authority.secretKey)
   return { chain: [{ grant, suite, signerPublicKey: authority.publicKey, sig }] }
 }
 
@@ -106,7 +115,7 @@ export function attenuate(
   }
 
   const suite = parentTail.suite
-  const sig = signerFor(suite).sign(encodeCanonical(grant), delegator.secretKey)
+  const sig = signerFor(suite).sign(grantSigningMessage(suite, grant), delegator.secretKey)
   return { chain: [...parent.chain, { grant, suite, signerPublicKey: delegator.publicKey, sig }] }
 }
 
@@ -122,8 +131,16 @@ export function verifyChain(cap: Capability, trustedRoots: readonly Bytes[]): bo
 
     // The grant's issuer must be the key that signed this link.
     if (link.grant.issuer !== signerHex) return false
+    // The id must be the content hash of the body (CAP-001): tamper-evident, and it
+    // keeps any id-keyed layer (revocation / cache) honest.
+    const { id: _id, ...body } = link.grant
+    if (link.grant.id !== deriveId(body)) return false
     if (
-      !signerFor(link.suite).verify(link.sig, encodeCanonical(link.grant), link.signerPublicKey)
+      !signerFor(link.suite).verify(
+        link.sig,
+        grantSigningMessage(link.suite, link.grant),
+        link.signerPublicKey,
+      )
     ) {
       return false
     }
@@ -133,6 +150,12 @@ export function verifyChain(cap: Capability, trustedRoots: readonly Bytes[]): bo
     } else {
       const prev = cap.chain[i - 1]
       if (prev === undefined) return false
+      // The parent must permit onward delegation. `delegable:false` is a signed
+      // issuer constraint ("you may use this but not delegate it"); enforcing it
+      // only in the attenuate() helper let a holder self-sign a strictly-narrowed
+      // onward delegation to a fresh subject that verifyChain would then accept —
+      // a confused-deputy authority spread (CAP-DELEG-001, Team Apex 2026-06-21).
+      if (!prev.grant.delegable) return false
       // The delegator must hold the previous link's subject key…
       if (signerHex !== prev.grant.subject) return false
       // …and the grant must strictly attenuate its parent.
