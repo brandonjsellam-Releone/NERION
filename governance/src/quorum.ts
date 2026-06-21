@@ -102,6 +102,16 @@ export function enact(
   // the caller's clock; governance reads no clock of its own.
   if (!Number.isSafeInteger(now)) {
     reasons.push('enactment clock is non-finite or unsafe')
+  } else if (
+    !Number.isSafeInteger(p.notBefore) ||
+    !Number.isSafeInteger(p.notAfter) ||
+    p.notAfter < p.notBefore
+  ) {
+    // GOV-WINDOW-001 (Team Apex sweep): the window bounds are author-supplied. A non-finite
+    // notAfter (NaN/Infinity) makes `now > p.notAfter` false, silently disabling expiry — so a
+    // time-boxed proposal would never expire. Fail closed on a malformed/inverted window, same
+    // discipline as the clock guard above.
+    reasons.push('proposal validity window is malformed (non-finite or inverted bounds)')
   } else if (now < p.notBefore || now > p.notAfter) {
     reasons.push('proposal is outside its validity window')
   }
