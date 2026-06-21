@@ -130,7 +130,7 @@ export class PolarSeekNode {
     // from a verified attestation (via establishSession). Otherwise a caller could
     // fabricate a Session with a self-chosen key + claims and mint a valid permit.
     if (this.cfg.requireAttestedSession) {
-      const denied = this.checkAttestedSession(req.session)
+      const denied = this.checkAttestedSession(req.session, req.now)
       if (denied) return denied
     }
 
@@ -229,7 +229,7 @@ export class PolarSeekNode {
   }
 
   /** Deny (return an outcome) if `session` is not bound to a verified attestation. */
-  private checkAttestedSession(session: Session): AdmissionOutcome | null {
+  private checkAttestedSession(session: Session, now: number): AdmissionOutcome | null {
     let reason: string | null = null
     if (this.cfg.sessionRootSecret === undefined) {
       reason = 'requireAttestedSession is set but the node has no sessionRootSecret'
@@ -237,6 +237,20 @@ export class PolarSeekNode {
       const expected = deriveSessionKey(this.cfg.sessionRootSecret, session.claims)
       if (!constantTimeEqual(session.sessionKey, expected)) {
         reason = 'session is not bound to a verified attestation (ATTEST-BIND-001)'
+      }
+    }
+    // ATTEST-EXP-001 (Team Apex 2026-06-21): a correctly-BOUND session must also be FRESH.
+    // Enforce the attestation's validity window (`claims.notAfter`) at admit time, fail-closed
+    // on a non-finite admit clock / notAfter — otherwise an attested session is usable
+    // indefinitely past its notAfter, defeating re-attestation / revocation. (The key still
+    // matches; it is the EXPIRY, not the binding, that rejects here.)
+    if (reason === null) {
+      if (!Number.isSafeInteger(now) || !Number.isFinite(session.claims.notAfter)) {
+        reason =
+          'attested session freshness uncheckable: non-finite admit clock or notAfter (ATTEST-EXP-001)'
+      } else if (now > session.claims.notAfter) {
+        reason =
+          'attested session expired: admit time is past the attestation notAfter (ATTEST-EXP-001)'
       }
     }
     if (reason === null) return null
