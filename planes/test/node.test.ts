@@ -13,7 +13,7 @@ import {
   receiptLeaf,
   verifyIntentDisclosure,
 } from '../../receipts/src/index.js'
-import { SoftwareAttester, appraise } from '../../attest/src/index.js'
+import { SoftwareAttester, appraise, type AppraisalPolicy } from '../../attest/src/index.js'
 import {
   PolarSeekNode,
   verifyPermitForAction,
@@ -355,7 +355,7 @@ describe('PolarSeekNode admission', () => {
       expectedNonce: NONCE,
       now: NOW,
       trustedAttesters: [attesterKey.publicKey],
-      acceptedFormats: ['software-dev'],
+      acceptedFormats: ['software-dev'] as const,
     }
     const attNode = new PolarSeekNode({
       suite,
