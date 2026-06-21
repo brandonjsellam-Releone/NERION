@@ -157,6 +157,18 @@ export function appraiseNofM(
     .filter((x) => x.r.valid)
   const formats = new Set(valid.map((x) => x.r.claims!.format))
   const attesters = new Set(valid.map((x) => bytesToHex(x.e.attesterPublicKey)))
+  // ATTEST-NOFM-003 (Team Apex sweep): all n independent attestations must corroborate the SAME
+  // session. Without this, n distinct roots each vouching for a DIFFERENT sessionPublicKey form a
+  // valid n-of-m quorum that certifies whichever session is first (valid[0]) — cross-session
+  // corroboration forgery. Pin the quorum to a single session identity.
+  const sessions = new Set(valid.map((x) => x.r.claims!.sessionPublicKey))
+  if (sessions.size > 1) {
+    return {
+      valid: false,
+      reasons: ['n-of-m attestations corroborate different sessions (must agree on one)'],
+      claims: null,
+    }
+  }
   if (formats.size >= n && attesters.size >= n) {
     return { valid: true, reasons: [], claims: valid[0]!.r.claims }
   }

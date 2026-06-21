@@ -102,4 +102,28 @@ describe('attestation hardening (ATTEST-TIME-001 / ATTEST-NOFM-001)', () => {
     const tdxB = tdxEvidence(B) // tdx by B -> 2 formats, 2 attesters
     expect(appraiseNofM([swA, tdxB], basePolicy(), 2, verifiers).valid).toBe(true)
   })
+
+  it('ATTEST-NOFM-003: n-of-m attestations for DIFFERENT sessions do NOT form a quorum', () => {
+    const sessionY = signerFor(suite).keygen()
+    const claimsY: AttestationClaims = {
+      format: 'tdx',
+      sessionId: 's',
+      sessionPublicKey: bytesToHex(sessionY.publicKey), // a DIFFERENT session than evidenceA
+      nonce: NONCE,
+      notAfter: NOW + 300,
+    }
+    const tdxBdiff: Evidence = {
+      claims: claimsY,
+      format: 'tdx',
+      attesterPublicKey: B.publicKey,
+      sig: signerFor(suite).sign(attMsg(claimsY), B.secretKey),
+      suite,
+    }
+    // Each is individually valid, with 2 formats + 2 distinct attesters — but they corroborate
+    // DIFFERENT sessions, so the n-of-m quorum must NOT certify either (cross-session forgery).
+    expect(appraise(tdxBdiff, basePolicy(), verifiers).valid).toBe(true)
+    expect(appraiseNofM([evidenceA, tdxBdiff], basePolicy(), 2, verifiers).valid).toBe(false)
+    // Regression guard: the SAME session by 2 distinct attesters still forms a valid 2-of-2.
+    expect(appraiseNofM([evidenceA, tdxEvidence(B)], basePolicy(), 2, verifiers).valid).toBe(true)
+  })
 })
