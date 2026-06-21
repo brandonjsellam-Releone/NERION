@@ -359,6 +359,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "sha3 0.12.0",
+ "shake",
  "subtle",
 ]
 

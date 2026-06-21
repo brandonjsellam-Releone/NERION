@@ -31,6 +31,25 @@ jobs:
       # Regenerate KAT vectors and fail if they drift from the committed file.
       - run: node crypto/vectors/_gen.mjs && git diff --exit-code crypto/vectors/deterministic-kat.json
 
+  # Rust hot-path gate (backlog A1, the keystone): fmt + clippy + the committed
+  # KAT reproduction. `cargo test` byte-matches conformance/vectors/ps-kat.json,
+  # so a Rust regression or an accidental vector edit turns this job red.
+  gate-rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Pinned to a 40-char commit SHA (supply-chain hygiene); `stable` channel.
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable (v1)
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+      - run: cargo fmt --check
+        working-directory: rust
+      - run: cargo clippy --all-targets -- -D warnings
+        working-directory: rust
+      - run: cargo test
+        working-directory: rust
+
   # Placeholder for the multi-model council gate (docs/council/). Wired to the
   # TRELYAN council MCP seats in the dev environment; see docs/STATUS.md.
   council:
