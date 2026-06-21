@@ -38,8 +38,12 @@ export function signTreeHead(
 ): SignedTreeHead {
   const operatorHex = bytesToHex(operator.publicKey)
   const rootHex = bytesToHex(root)
+  // STH-SUITE-001 (Team Apex sweep): fold `suite` into the signed message. Otherwise the suite
+  // label rides along unbound — and since PS-1/PS-5/PS-5-HQC share the ML-DSA-87 signer, a relayed
+  // STH could be relabeled to another shared-signature suite and still verify (suite-provenance /
+  // downgrade forgery). Parity with attestMessage/blockSignMessage/viewChangeMessage.
   const sig = signerFor(suite).sign(
-    encodeCanonical([STH_CONTEXT, operatorHex, size, rootHex]),
+    encodeCanonical([STH_CONTEXT, operatorHex, suite, size, rootHex]),
     operator.secretKey,
   )
   return { operator: operatorHex, size, rootHex, suite, sig }
@@ -49,7 +53,7 @@ export function verifyTreeHead(sth: SignedTreeHead, operatorPublicKey: Bytes): b
   if (bytesToHex(operatorPublicKey) !== sth.operator) return false
   return signerFor(sth.suite).verify(
     sth.sig,
-    encodeCanonical([STH_CONTEXT, sth.operator, sth.size, sth.rootHex]),
+    encodeCanonical([STH_CONTEXT, sth.operator, sth.suite, sth.size, sth.rootHex]),
     operatorPublicKey,
   )
 }
