@@ -39,3 +39,44 @@ review — **none yet**) · `Validated` (accredited/formal, e.g. FIPS CMVP — *
 
 *Conformant is not validated; built is not audited; provisioned is not in‑use; a design‑around is not a legal
 opinion. This matrix is reviewed by an adversarial multi‑model panel ("Team Apex") and updated as tiers change.*
+
+---
+
+## Guarantee × artifact matrix (A39)
+
+The claims table above answers *"what does Nerion say, and how true is it?"* This second matrix answers the
+narrower engineering question: **for each security guarantee, what mechanism delivers it, what concrete
+in‑repo artifact substantiates it, and at what assurance level?** It exists so a reviewer can jump from a
+guarantee directly to the file/test/KAT that backs it — and see, in the same row, exactly how far that
+evidence reaches.
+
+**Assurance levels used in this matrix:**
+
+- **`tested`** — exercised by example‑based automated tests (specific cases pass).
+- **`property‑checked`** — exercised by *randomized property tests* (the invariant holds across a generated
+  input space, not just hand‑picked cases). Stronger than `tested`, still not a proof.
+- **`conformance‑checked (Cn)`** — passes Nerion's in‑repo certification suite (`npm run conformance`, 23/23)
+  against **Nerion's own spec**. **Conformant is *not* validated:** the suite checks self‑consistency with the
+  protocol's own vectors, not security against an external standard.
+- **`UNAUDITED`** — no independent external review exists. Applies to the bespoke ZK constructions in
+  particular; their soundness is **classical (discrete‑log), proven in the classical ROM, not the QROM**.
+- **`pre‑FTO`** — the govern‑the‑verb design‑around is engineering intent, **not** a legal non‑infringement
+  opinion; freedom‑to‑operate review has not been completed.
+
+| Guarantee | Mechanism | Substantiation (test / KAT / property) | Assurance level |
+|---|---|---|---|
+| **Capability attenuation never amplifies authority** — a delegated (narrowed) grant authorizes only a subset of its parent, across every dimension. | `capabilities/src/grant.ts` — `narrow()` / `isAttenuationOf()` / `authorizesIntent()`; monotone subset checks on actions, ceilings, caps, counterparties, tier, validity window. | `capabilities/test/attenuation.property.test.ts` — randomized property *"child authorizes ⇒ parent authorizes"* over generated grant/attenuation/intent/context spaces; plus a broadened‑ceiling rejection case. | **property‑checked** · tested |
+| **Default‑deny admission (fail‑closed)** — anything not positively authorized is denied; any unexpected condition denies, never fails open. | `kernel/src/kernel.ts` — `decide()` returns `deny` unless a verified capability authorized the intent; a `try/catch` safe‑fallback denies at the highest tier (tier 3) on any throw, incl. a policy that cannot be canonicalized (PS‑KERNEL‑02). | `kernel/test/kernel.test.ts`; conformance **C8** (action enforcement); Team Apex 2026‑06‑21 validated `decide()` has **no fail‑open path**. | **tested · conformance‑checked (C8)** |
+| **ZK range proof + policy‑satisfaction** — hidden‑amount `amount ≤ ceiling` and `aggregate + amount ≤ cap` without revealing the amount. | `disclosure/src/zkrange.ts`, `disclosure/src/policyproof.ts` — bespoke Bulletproof‑style range proof over Pedersen commitments; bit‑length capped **n ≤ 251** after the ZKRANGE‑002 wraparound fix. | `disclosure/test/zkrange.property.test.ts`, `zkrange.test.ts`, `policyproof.test.ts`; conformance **C11 / C13**. | **UNAUDITED** · property‑checked · conformance‑checked (C11/C13) — soundness **classical/ROM, not QROM**; internal multi‑model review ≠ external audit |
+| **k‑of‑n quorum receipts** — a receipt finalizes iff ≥ k distinct valid member signatures over a fixed signer set. | `receipts/src/quorum.ts`, `receipts/src/receipt.ts` — threshold aggregation bound to a named signer set (ADR‑0005). | `receipts/test/quorum.property.test.ts` — randomized *"finalizes IFF ≥ k distinct valid MEMBER sigs"* + set‑substitution rejection; conformance **C12**. | **property‑checked · conformance‑checked (C12)** — proves a quorum *signed*, **not** that signers are independent / Sybil‑resistant or the action safe |
+| **Transparency‑log inclusion** — every logged decision is provably included in an append‑only Merkle log; tampering and split‑views are detectable. | `translog/src/` — RFC‑6962‑style Merkle log; `proveInclusion`/`checkInclusion`, `proveConsistency`/`checkConsistency`, STH signing. | `translog/test/log.test.ts` (inclusion + tamper rejection + append‑only consistency), `merkle-soundness.test.ts` (forged‑root rejected for all 0 < m < n); conformance **C10**. | **tested · conformance‑checked (C10)** — single‑operator log unless externally gossiped; split‑view *detection*, not prevention |
+| **Govern‑the‑verb invariance** — the admission decision is byte‑identical under injection of any perception‑shaped side‑data ("govern the verb, never the eye"). | `conformance/src/negative.ts` — runtime **negative oracle**: injects perception primitives (from `conformance/vectors/ps-negative.json`) into `intent.params` and fingerprints `decide()`; asserts the fingerprint is invariant, field‑by‑field and all‑at‑once. | `conformance/test/negative.test.ts` — allow + deny cases invariant; **non‑vacuous** (a deliberately leaky kernel is *caught*); conformance **C14**. | **tested · conformance‑checked (C14) · pre‑FTO** — invariance is the design‑around's runtime fence, **not** a legal non‑infringement claim |
+| **Decoder robustness** — the bytes Nerion hashes and signs are unambiguous: one logical value ⇒ exactly one canonical encoding, stable across encode→decode→encode and across SDKs. | `crypto/src/cbor.ts` — deterministic (dCBOR) profile: sorted map keys, shortest‑form ints, definite‑length items, canonical floats; `canonicalRoundTrip()` throws on any re‑encode drift. Closes T‑SER‑1 (serialization‑ambiguity / parser‑differential) via M‑SER in the threat model. | `crypto/test/cbor-determinism.test.ts` — key‑order independence at every nesting level, byte‑stability, **injectivity** (distinct values ⇒ distinct bytes), re‑encode equality; `crypto/test/cbor.test.ts`. | **property‑checked · tested** — no fuzzing/differential‑across‑real‑SDK harness yet; cross‑SDK exactness is a vector‑pinned guarantee, not an audited one |
+| **KAT / conformance — 23/23** — implementation matches Nerion's pinned vectors and passes every certification check. | Pinned crypto KAT vectors (`crypto/vectors/`, `crypto/test/kat.test.ts`) + the certification suite `conformance/src/suite.ts` (checks **C1–C23**) run via `npm run conformance`. | `npm run gate` (365 tests) + `npm run conformance` → **23/23 CONFORMANT**; `conformance/test/conformance.test.ts`, `kat.test.ts`. | **tested · conformance‑checked (23/23)** — demonstrates **implementation consistency with Nerion's own spec**, **NOT** external security validation, formal proof, fuzzing, or coverage guarantees |
+
+**Reading this matrix honestly.** A `conformance‑checked` row means the implementation agrees with the
+protocol's *own* vectors — **conformant is not validated.** A `property‑checked` row means an invariant
+survived a randomized input space — that is evidence, **not a proof**. Every ZK row is **UNAUDITED** and its
+soundness is **classical, not post‑quantum**. The govern‑the‑verb row is **pre‑FTO**: it is the runtime
+expression of an engineering design‑around, never a legal opinion. In one line: **conformant is not
+validated; built is not audited; property‑checked is not proven; a design‑around is not freedom‑to‑operate.**
