@@ -373,6 +373,7 @@ export function verifyFinalized(
   }
 
   const counted = new Set<string>()
+  const attempted = new Set<string>()
   let attestingStake = 0n
   for (const a of attestations) {
     if (a.blockHash !== h) continue
@@ -387,6 +388,11 @@ export function verifyFinalized(
     if (opts.expectedSuite !== undefined && a.suite !== opts.expectedSuite) continue
     const stake = stakeOf(set, a.validator)
     if (stake <= 0) continue
+    // DOS-VERIFY-001 (round-2 sweep): one PQ verify per distinct validator — duplicate garbage-sig
+    // attestations for a staked validator otherwise each ran a fresh ML-DSA-87 verify (O(N) CPU on
+    // attacker-controlled, uncapped peer input to this light-client export).
+    if (attempted.has(a.validator)) continue
+    attempted.add(a.validator)
     if (
       !safeVerify(
         a.suite,

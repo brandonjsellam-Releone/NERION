@@ -125,9 +125,15 @@ function countDistinctValid(
   // Must match buildQuorumReceipt's domain-separated message exactly.
   const msg = encodeCanonical([QUORUM_CONTEXT, receipt.body])
   const seen = new Set<string>()
+  const attempted = new Set<string>()
   for (const a of receipt.attestations) {
     if (a.suite !== q.suite) continue // bind to the quorum's committed suite
     if (!isMember(a.validator) || seen.has(a.validator)) continue
+    // DOS-VERIFY-001 (round-2 sweep): cap PQ verification to ONE per distinct member. `seen` is
+    // populated only on a VALID sig, so duplicate garbage-sig attestations for a known member each
+    // ran a fresh ML-DSA-87 verify — O(N) attacker-controlled CPU. Skip a member already attempted.
+    if (attempted.has(a.validator)) continue
+    attempted.add(a.validator)
     let valid = false
     try {
       valid = signerFor(a.suite).verify(a.sig, msg, hexToBytes(a.validator))

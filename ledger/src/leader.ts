@@ -91,6 +91,7 @@ export function verifyViewChangeCert(
   const total = totalStake(set)
   if (total <= 0) return false
   const counted = new Set<string>()
+  const attempted = new Set<string>()
   let stake = 0n
   for (const v of cert.votes) {
     if (v.suite !== suite) continue // bind to the block's suite (cross-suite hardening)
@@ -98,6 +99,10 @@ export function verifyViewChangeCert(
     if (counted.has(v.validator)) continue
     const s = stakeOf(set, v.validator)
     if (s <= 0) continue
+    // DOS-VERIFY-001 (round-2 sweep): one PQ verify per distinct validator — duplicate garbage-sig
+    // votes for a staked validator otherwise each ran a fresh ML-DSA-87 verify (O(N) attacker CPU).
+    if (attempted.has(v.validator)) continue
+    attempted.add(v.validator)
     const msg = viewChangeMessage(v.suite, height, prevHash, certRound)
     if (!safeVerifyTimeout(v.suite, v.sig, msg, hexToBytes(v.validator))) continue
     counted.add(v.validator)

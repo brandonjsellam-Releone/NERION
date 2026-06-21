@@ -86,4 +86,17 @@ describe('Merkle hardening — Team Apex audit (TLOG-001/002)', () => {
     // verifyInclusion swallows the range error as false (fail-closed).
     expect(verifyInclusion(0, big, entry(0), [], merkleRoot(tree(4)))).toBe(false)
   })
+
+  it('TLOG-DOS-001: rejects an over-length consistency proof (bounded hashing)', () => {
+    const es = tree(8)
+    const m = 5
+    const oldRoot = merkleRoot(es.slice(0, m))
+    const newRoot = merkleRoot(es)
+    const honest = consistencyProof(es, m, 8)
+    expect(verifyConsistency(m, 8, honest, oldRoot, newRoot)).toBe(true)
+    // Padding the genuine proof with junk must be rejected by the EXACT-length guard before the
+    // O(proof.length) border-hash chain (a crafted multi-million-element proof took ~a minute).
+    const padded = [...honest, ...Array.from({ length: 5000 }, () => new Uint8Array(32))]
+    expect(verifyConsistency(m, 8, padded, oldRoot, newRoot)).toBe(false)
+  })
 })
