@@ -85,3 +85,52 @@ See **[LAUNCH_READINESS.md](./LAUNCH_READINESS.md)** + the counsel/auditor/vendo
 (accredited lab). PolarSeek has *prepared* each to accelerate the external party; it has *closed* none,
 and must never imply otherwise. Conformant ≠ validated; built ≠ audited; provisioned ≠ in-use;
 design-around ≠ legal opinion.
+
+## Consensus caveats (for auditors)
+
+Honest, not-yet-closed limitations of the pure-PoS ledger consensus (`ledger/`). These are
+**known and unfixed**; they are recorded here so an auditor sees them stated plainly rather than
+having to rediscover them. None is claimed resolved. The first is also tracked in
+[ADR-0004](./adr/ADR-0004-vrf-sortition.md) (LEDGER-007); the other two are surfaced here.
+
+1. **View-change cert proves only round `r-1`, not a chain from round 0 — round-skip fairness gap
+   (LEDGER-007).** A round-`r` block carries a ≥2/3-stake view-change certificate proving that round
+   `r-1` timed out, and nothing more (`verifyFinalized` / `proposeVrf` in `ledger/src/chain.ts` call
+   `verifyViewChangeCert` with `block.header.round - 1`; the cert message in `ledger/src/leader.ts`
+   binds only `(suite, height, prevHash, round)`). Because no cert *chains* back to round 0, a **≥2/3
+   coalition** can publish a single cert for some round `r-1` and jump straight to an arbitrary round
+   `r`, re-drawing the VRF leader among themselves. This is a **fairness weakening only** —
+   exploitable solely by a quorum that already controls liveness — and **safety is unaffected**: each
+   block still needs its own independent 2/3 attestations to finalize. The rigorous fix (a cert chain,
+   each cert referencing the prior) is future work; it is **not implemented**.
+
+2. **Validator-set identity / epoch is NOT bound into view-change votes, attestations, or
+   equivocation proofs — cross-epoch consent-transfer risk.** The signed messages bind suite, height,
+   `prevHash`, and round, but **no validator-set id or epoch number**: `attestMessage` (`chain.ts`),
+   `viewChangeMessage` (`leader.ts`), and the `EquivocationProof`/`TimeoutVote` structures
+   (`equivocation.ts`, `types.ts`) all omit any set/epoch tag. Consequently a vote or attestation
+   produced under one validator-set configuration could be **replayed against a different set** that
+   happens to share the same `(height, prevHash, round, suite)` — e.g. across a membership/stake
+   rotation — letting consent given under one epoch be transferred to another. Today verification is
+   always performed against a caller-supplied `ValidatorSet`, so this is latent rather than
+   demonstrated in the single-set test harness; it becomes a live risk under any epoch transition or
+   reconfiguration. Binding an explicit set/epoch identifier into every consensus signature is the
+   intended fix and is **not yet implemented**.
+
+3. **Equivocation is DETECTED but slashing is NOT enforced end-to-end (LEDGER-006).**
+   `ledger/src/equivocation.ts` provides `detectEquivocations` (builds a slashable proof when a
+   validator double-signs two distinct blocks at the same height), `verifyEquivocationProof`, and
+   `slash` (returns a new set with the offender's stake forfeit). These are sound as **pure helpers
+   and are exercised only by tests** — the live ledger path (`Ledger.submit` / `appraise` /
+   `verifyFinalized` in `chain.ts`) **never calls them**: it does not gather conflicting attestations,
+   build proofs, or apply a slash. So the accountable-safety *evidence* primitive exists, but there is
+   **no wired pipeline** from detection to stake forfeiture, no equivocation-report ingress, and no
+   persistence of slashing across blocks (`chain.ts` itself notes "Equivocation slashing is deferred
+   (LEDGER-006)"). An auditor should read "equivocation detection + slashing" as **detection
+   implemented, enforcement deferred**, not as a running slashing protocol. (A related guard,
+   LEDGER-EQUIV-001, ensures the detector cannot be abused to slash an honest validator for legitimate
+   cross-height attestations.)
+
+These caveats concern **liveness fairness, cross-epoch replay, and enforcement wiring** — not the
+core ≥2/3 stake-finality safety property, which is unaffected. They remain open pending the external
+crypto/consensus audit and are **not** closable by the claims in the rest of this document.
