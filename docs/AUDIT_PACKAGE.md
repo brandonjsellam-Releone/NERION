@@ -59,7 +59,7 @@ hash primitives (ristretto255, ML‑DSA‑87, SHAKE256, AES‑256) are audited; 
 - **Threat model:** [THREAT_MODEL.md](./THREAT_MODEL.md).
 - **Runnable vectors (KAT conformance ONLY — not a security assurance):** RFC 9381 VRF KATs
   (`ledger/test/vrf-rfc9381.test.ts`); 3‑language SHA3/HMAC conformance KATs; `npm run gate`;
-  `npm run conformance` → 20/20.
+  `npm run conformance` → 23/23.
 - **Eight auditor questions:** Frozen‑Heart/weak‑FS; OR‑proof simulation soundness; generator‑H
   provenance; commitment‑to‑intent linkage; VRF malleability; quorum‑vs‑threshold semantics; COSE
   canonicalization; the PQ‑vs‑classical split (state the *primitive* property and the *composition*

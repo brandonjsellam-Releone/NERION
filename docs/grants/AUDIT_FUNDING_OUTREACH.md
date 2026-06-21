@@ -25,7 +25,7 @@ cryptography review, co‑funded with NLnet.
 >
 > I maintain **Nerion**, an open‑source (Apache‑2.0), post‑quantum, zero‑knowledge protocol for governing
 > the *actions* of AI agents — typed tool‑calls / API requests / transaction intents, not perception. The
-> codebase is complete and reproducible (291 tests, a 20/20 internal conformance report), built on audited
+> codebase is complete and reproducible (313 tests, a 23/23 internal conformance report), built on audited
 > `@noble` primitives. The part I want reviewed is the layer **on top** of those primitives: bespoke
 > zero‑knowledge constructions that are currently **unaudited** —
 > - a Pedersen/ristretto255 **range proof** (bit‑decomposition + Chaum‑Pedersen OR‑proofs, SHAKE256

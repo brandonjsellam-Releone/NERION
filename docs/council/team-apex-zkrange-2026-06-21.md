@@ -138,7 +138,16 @@ known-structure preimage). The project already knows this class (`selective.ts`,
 receipt's intent-hash re-introduced it. **Scope:** amount-privacy *in the log* is the v:2 receipt's job
 (salted/PSP path, not yet wired); the proper fix is a salted/hiding intent commitment = a schema change
 (ADR). **Action taken now:** corrected the ASSURANCE "amount confidentiality" claim to state plainly that the
-v:1 intent-hash leaks low-entropy amounts — NOT silently left as an overclaim; salted v:2 commitment roadmapped.
+v:1 intent-hash leaks low-entropy amounts — NOT silently left as an overclaim; salted commitment roadmapped.
+**Resolved:** implemented as a salted, hiding **v:1** intent commitment — `commitments.intent =
+SHA3(canonical{domain, salt, intent})` with a high-entropy per-receipt salt that is carried **off-leaf** on the
+`Receipt` (never in the signed body / log leaf) and revealed only to authorized verifiers for selective
+disclosure (`verifyIntentDisclosure` / `verifyDisclosure(…, salt)`). The published leaf no longer leaks the
+low-entropy amount, and a fresh salt per receipt also removes cross-receipt linkage. This is the log-leaf
+**hiding** fix; full amount-privacy-*with-proofs* (reveal nothing, prove a predicate) remains the v:2
+PSP/Pedersen path, with which the salted leaf composes. Conformance **C23** + receipt/selective/node
+regression tests; ASSURANCE row updated. See
+[../adr/ADR-0014-salted-intent-commitment.md](../adr/ADR-0014-salted-intent-commitment.md).
 
 **PERMIT-001 (real, architectural) — symmetric-key cross-audience forgery.** The PermitToken is an HMAC under
 a per-session symmetric `sessionKey` shared issuer+resource (node.ts). The `audience` is MAC-bound, but a
@@ -146,7 +155,12 @@ key-holding (malicious) resource can re-MAC a permit for a *different* audience.
 session key spans multiple mutually-distrusting resources, but the design does not enforce per-audience keys.
 **Fix (panel converges):** derive per-(session,audience) keys via HKDF and distribute only the derived key, or
 use asymmetric issuer signatures (trades the Plane-1 hot-path HMAC speed). Documented in ASSURANCE; the
-architectural fix is an ADR.
+architectural fix is an ADR. **Resolved:** implemented as per-(session,audience) HKDF-SHA-384 derivation —
+the issuer holds the session secret and derives a key per audience; each resource is provisioned with ONLY
+`deriveAudiencePermitKey(sessionKey, audience)`, and `verifyPermitForAction` verifies under that derived key,
+so a key-holding resource can no longer re-MAC a different-audience permit. Conformance **C22** + regression
+tests; the asymmetric option was kept as an opt-in to preserve the Plane-1 hot-path HMAC. See
+[../adr/ADR-0015-per-audience-permit-keys.md](../adr/ADR-0015-per-audience-permit-keys.md).
 
 **Fixed now — the permit binds the decision `effect`.** The permit previously carried tier + actionHash but
 NOT the kernel's effect (allow vs transform); `verifyPermitForAction` now MAC-binds `effect` and a resource

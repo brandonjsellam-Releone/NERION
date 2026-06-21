@@ -14,7 +14,7 @@
 
 Claims read on what is actually **made, used, sold, or offered**. As of 2026‑06‑20 PolarSeek's software
 build is complete (P0–P4: crypto, capabilities, kernel, receipts, translog, attest, planes, ledger,
-governance, disclosure, settlement, keystore, conformance — **291 tests pass, 20/20 conformance**).
+governance, disclosure, settlement, keystore, conformance — **313 tests pass, 23/23 conformance**).
 Counsel must compare against the **as‑built** implementation, not a description or an intended design.
 
 ## 1. Target patent family to clear

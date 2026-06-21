@@ -4,13 +4,24 @@
 
 import { describe, it, expect } from 'vitest'
 import { bytesToHex } from '@noble/hashes/utils.js'
-import { signerFor, SUITE_IDS, randomBytes } from '../../crypto/src/index.js'
+import { signerFor, SUITE_IDS, randomBytes, issuePermit } from '../../crypto/src/index.js'
 import { issueRoot, type ActionIntent } from '../../capabilities/src/index.js'
 import { DEFAULT_POLICY } from '../../kernel/src/index.js'
 import { TransparencyLog } from '../../translog/src/index.js'
-import { verifyReceiptInclusion } from '../../receipts/src/index.js'
+import {
+  verifyReceiptInclusion,
+  receiptLeaf,
+  verifyIntentDisclosure,
+} from '../../receipts/src/index.js'
 import { SoftwareAttester, appraise } from '../../attest/src/index.js'
-import { PolarSeekNode, verifyPermitForAction, type Session } from '../src/index.js'
+import {
+  PolarSeekNode,
+  verifyPermitForAction,
+  deriveAudiencePermitKey,
+  actionHash,
+  type Session,
+  type PermitClaims,
+} from '../src/index.js'
 
 const suite = SUITE_IDS.PS_5
 const s = signerFor(suite)
@@ -124,6 +135,26 @@ describe('PolarSeekNode admission', () => {
     expect(verdict.ok).toBe(true)
   })
 
+  it('carries a hiding intent salt on the receipt, disclosable by an authorized verifier (RCPT-001)', () => {
+    const node = makeNode()
+    const intent = pay(500)
+    const out = node.admit({
+      intent,
+      capabilities: [cap],
+      session,
+      audience: 'acct://treasury',
+      now: NOW,
+      observedAggregate: 0,
+    })
+    expect(out.receipt).not.toBeNull()
+    // The node mints a high-entropy salt; it rides on the receipt, NOT in the log leaf.
+    expect(out.receipt!.intentSalt.length).toBeGreaterThanOrEqual(32)
+    expect(bytesToHex(receiptLeaf(out.receipt!))).not.toContain(bytesToHex(out.receipt!.intentSalt))
+    // An authorized verifier with the salt discloses the intent; a tampered amount is rejected.
+    expect(verifyIntentDisclosure(out.receipt!, intent)).toBe(true)
+    expect(verifyIntentDisclosure(out.receipt!, pay(501))).toBe(false)
+  })
+
   it('the permit verifies for the exact bound action only (replay defense)', () => {
     const node = makeNode()
     const out = node.admit({
@@ -135,10 +166,12 @@ describe('PolarSeekNode admission', () => {
       observedAggregate: 0,
     })
     const permit = out.permit!
+    // The treasury resource is provisioned with ONLY its audience-scoped key.
+    const treasuryKey = deriveAudiencePermitKey(session.sessionKey, 'acct://treasury')
 
     // Correct action + audience + time: OK.
     expect(
-      verifyPermitForAction(permit, session.sessionKey, {
+      verifyPermitForAction(permit, treasuryKey, {
         audience: 'acct://treasury',
         intent: pay(500),
         now: NOW + 5,
@@ -147,16 +180,18 @@ describe('PolarSeekNode admission', () => {
 
     // Different action (amount) -> not bound.
     expect(
-      verifyPermitForAction(permit, session.sessionKey, {
+      verifyPermitForAction(permit, treasuryKey, {
         audience: 'acct://treasury',
         intent: pay(600),
         now: NOW + 5,
       }).ok,
     ).toBe(false)
 
-    // Different resource (audience) -> rejected.
+    // Different resource (audience): its key cannot verify the treasury permit
+    // (the MAC, not just the claim, binds the audience now).
+    const otherKey = deriveAudiencePermitKey(session.sessionKey, 'acct://other')
     expect(
-      verifyPermitForAction(permit, session.sessionKey, {
+      verifyPermitForAction(permit, otherKey, {
         audience: 'acct://other',
         intent: pay(500),
         now: NOW + 5,
@@ -165,14 +200,14 @@ describe('PolarSeekNode admission', () => {
 
     // Expired -> rejected.
     expect(
-      verifyPermitForAction(permit, session.sessionKey, {
+      verifyPermitForAction(permit, treasuryKey, {
         audience: 'acct://treasury',
         intent: pay(500),
         now: NOW + 999,
       }).ok,
     ).toBe(false)
 
-    // Wrong session key -> rejected.
+    // Wrong key -> rejected.
     expect(
       verifyPermitForAction(permit, randomBytes(48), {
         audience: 'acct://treasury',
@@ -193,9 +228,10 @@ describe('PolarSeekNode admission', () => {
       observedAggregate: 0,
     })
     const permit = out.permit!
+    const treasuryKey = deriveAudiencePermitKey(session.sessionKey, 'acct://treasury')
     // Same effect the kernel decided: OK.
     expect(
-      verifyPermitForAction(permit, session.sessionKey, {
+      verifyPermitForAction(permit, treasuryKey, {
         audience: 'acct://treasury',
         intent: pay(500),
         now: NOW + 5,
@@ -204,11 +240,68 @@ describe('PolarSeekNode admission', () => {
     ).toBe(true)
     // A resource expecting a different effect rejects (no transform<->allow confusion).
     expect(
-      verifyPermitForAction(permit, session.sessionKey, {
+      verifyPermitForAction(permit, treasuryKey, {
         audience: 'acct://treasury',
         intent: pay(500),
         now: NOW + 5,
         expectedEffect: 'transform',
+      }).ok,
+    ).toBe(false)
+  })
+
+  it('PERMIT-001: a key-holding resource cannot forge a permit for another audience', () => {
+    const node = makeNode()
+    const out = node.admit({
+      intent: pay(500),
+      capabilities: [cap],
+      session,
+      audience: 'acct://treasury',
+      now: NOW,
+      observedAggregate: 0,
+    })
+    const permit = out.permit!
+
+    // Each resource is provisioned with ONLY its own audience-scoped key.
+    const treasuryKey = deriveAudiencePermitKey(session.sessionKey, 'acct://treasury')
+    const malloryKey = deriveAudiencePermitKey(session.sessionKey, 'acct://mallory')
+    // Distinct audiences derive distinct, independent keys.
+    expect(bytesToHex(treasuryKey)).not.toBe(bytesToHex(malloryKey))
+
+    // The treasury permit verifies for treasury, and NOT under mallory's key.
+    expect(
+      verifyPermitForAction(permit, treasuryKey, {
+        audience: 'acct://treasury',
+        intent: pay(500),
+        now: NOW + 5,
+      }).ok,
+    ).toBe(true)
+    expect(
+      verifyPermitForAction(permit, malloryKey, {
+        audience: 'acct://mallory',
+        intent: pay(500),
+        now: NOW + 5,
+      }).ok,
+    ).toBe(false)
+
+    // The attack: a malicious resource holding ONLY mallory's key re-MACs a
+    // permit claiming the treasury audience. It can only sign under malloryKey,
+    // so the treasury resource (holding treasuryKey) rejects the forgery.
+    const forgedClaims: PermitClaims = {
+      sessionId: session.sessionId,
+      nonce: session.claims.nonce,
+      audience: 'acct://treasury',
+      actionHash: actionHash(pay(500)),
+      tier: 2,
+      exp: NOW + 30,
+      evaluator: out.decision.evaluatorVersion,
+      effect: 'allow',
+    }
+    const forged = issuePermit(forgedClaims, suite, malloryKey)
+    expect(
+      verifyPermitForAction(forged, treasuryKey, {
+        audience: 'acct://treasury',
+        intent: pay(500),
+        now: NOW + 5,
       }).ok,
     ).toBe(false)
   })

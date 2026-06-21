@@ -14,11 +14,12 @@
 
 import { gcm } from '@noble/ciphers/aes.js'
 import { hmac } from '@noble/hashes/hmac.js'
+import { hkdf } from '@noble/hashes/hkdf.js'
 import { sha384 } from '@noble/hashes/sha2.js'
 import { sha3_256, shake256 } from '@noble/hashes/sha3.js'
 import { randomBytes as nodeRandomBytes } from 'node:crypto'
 
-import type { Aead, Bytes, HashFn, Mac } from './types.js'
+import type { Aead, Bytes, HashFn, Kdf, Mac } from './types.js'
 import { VerificationError } from './errors.js'
 
 /** Cryptographically secure random bytes (CSPRNG via Node's crypto). */
@@ -65,6 +66,13 @@ export const HMAC_SHA384: Mac = {
   },
   verify(key, message, tag) {
     return constantTimeEqual(hmac(sha384, key, message), tag)
+  },
+}
+
+export const HKDF_SHA384: Kdf = {
+  id: 'HKDF-SHA-384',
+  derive(ikm, salt, info, length) {
+    return hkdf(sha384, ikm, salt, info, length)
   },
 }
 

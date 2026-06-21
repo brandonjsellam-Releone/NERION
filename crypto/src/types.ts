@@ -69,6 +69,17 @@ export interface Mac {
   verify(key: Bytes, message: Bytes, tag: Bytes): boolean
 }
 
+/**
+ * Key derivation function (HKDF-SHA-384, RFC 5869). Used to derive per-audience
+ * Plane-1 PermitToken keys from the session secret so a key-holding resource
+ * cannot forge a permit for a different audience (ADR-0015). `info` binds the
+ * derived key to its usage context; `salt` may be empty per RFC 5869 §2.2.
+ */
+export interface Kdf {
+  readonly id: string
+  derive(ikm: Bytes, salt: Bytes, info: Bytes, length: number): Bytes
+}
+
 /** Cryptographic hash / XOF (SHA3-256 fixed digest, SHAKE256 extendable). */
 export interface HashFn {
   readonly id: string

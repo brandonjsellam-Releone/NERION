@@ -22,6 +22,12 @@ const H = (b: Bytes): Bytes => SHA3_SHAKE256.digest(b)
 const LEAF_PREFIX = Uint8Array.of(0x00)
 const NODE_PREFIX = Uint8Array.of(0x01)
 
+// JS bitwise ops in the verifier (chainInner `index>>i`, `1<<shift`, `m^(n-1)`) are 32-bit,
+// so verification is only sound for sizes < 2^31 (TLOG-002, Team Apex 2026-06-21). The
+// generator is unaffected; lifting this cap needs BigInt index arithmetic (tracked follow-up).
+// Verifiers fail CLOSED above the bound rather than computing over a wrong tree shape.
+const MAX_TREE_SIZE = 2 ** 31 - 1
+
 export const emptyRoot = (): Bytes => H(new Uint8Array(0))
 export const leafHash = (data: Bytes): Bytes => H(concatBytes(LEAF_PREFIX, data))
 export const nodeHash = (l: Bytes, r: Bytes): Bytes => H(concatBytes(NODE_PREFIX, l, r))
@@ -112,6 +118,7 @@ export function rootFromInclusion(
   proof: readonly Bytes[],
 ): Bytes {
   if (m >= n) throw new RangeError('index >= size')
+  if (n > MAX_TREE_SIZE) throw new RangeError('tree size exceeds 32-bit-safe bound (TLOG-002)')
   const inner = bitLength(m ^ (n - 1))
   const border = popcount(m >> inner)
   if (proof.length !== inner + border) throw new Error('malformed inclusion proof length')
@@ -161,11 +168,16 @@ export function verifyConsistency(
 ): boolean {
   try {
     if (m > n) return false
+    if (n > MAX_TREE_SIZE) return false // 32-bit-safe verification bound (TLOG-002)
     if (m === n) return proof.length === 0 && bytesEqual(root1, root2)
-    if (m === 0) return proof.length === 0
+    // m === 0: the empty tree is a prefix of any tree, but root1 MUST be the empty-tree
+    // root — else a signed size-0 STH with a BOGUS root would pass append-only checks
+    // (TLOG-001, Team Apex audit 2026-06-21).
+    if (m === 0) return proof.length === 0 && bytesEqual(root1, emptyRoot())
     let inner = bitLength((m - 1) ^ (n - 1))
     const shift = trailingZeros(m)
     inner -= shift
+    if (inner < 0) return false // defensive: malformed (m, n)
 
     let seed: Bytes
     let start: number

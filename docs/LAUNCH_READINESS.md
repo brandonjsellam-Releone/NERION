@@ -1,7 +1,7 @@
 # PolarSeek Launch Readiness — Code‑Complete, NOT Launch‑Cleared
 
-**Status (2026‑06‑20):** P0–P4 software build complete — **300 tests pass**, `npm run conformance` →
-**20/20 CONFORMANT**, Rust hot‑path foundation compiles. **That is the entirety of what code can
+**Status (2026‑06‑20):** P0–P4 software build complete — **313 tests pass**, `npm run conformance` →
+**23/23 CONFORMANT**, Rust hot‑path foundation compiles. **That is the entirety of what code can
 close.** Four independent gates stand between "code complete" and any public non‑infringement claim,
 GA launch, or paid pilot sign‑off — and **none of the four is closable by PolarSeek alone.** Each
 requires an external party (patent counsel, a crypto/ZK audit firm, a hardware/cloud vendor, an
@@ -80,7 +80,7 @@ party), what the external party **must do**, and what stays **blocked** until do
 ## Gate 4 — FIPS 140‑3 CMVP validation
 
 - **Prepared:** PolarSeek **emits the surrounding evidence** a validator consumes — signed CNSA 2.0
-  verdict (C16), signed CBOM (C17), COSE_Sign1/RATS (C19), `npm run conformance` → 20/20, and the
+  verdict (C16), signed CBOM (C17), COSE_Sign1/RATS (C19), `npm run conformance` → 23/23, and the
   standalone receipt verifier — all signed + log‑anchored + externally verifiable.
 - **Critical honesty constraint:** assembling this evidence and **consuming** a CMVP‑validated HSM/CSP
   boundary **does NOT make PolarSeek FIPS 140‑3 validated**; PolarSeek's in‑process ML‑DSA/ML‑KEM

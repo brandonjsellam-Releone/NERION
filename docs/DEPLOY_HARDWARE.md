@@ -7,8 +7,8 @@
 
 ## 0. Honest starting point
 
-PolarSeek is **Local/Private dev**: software unit‑ and conformance‑tested **with fakes** (291 tests,
-20/20 conformance) — **no hardware/integration/audit coverage**. The custody/attestation **adapter
+PolarSeek is **Local/Private dev**: software unit‑ and conformance‑tested **with fakes** (313 tests,
+23/23 conformance) — **no hardware/integration/audit coverage**. The custody/attestation **adapter
 seams are built and offline‑tested with fakes; none has been exercised against live silicon or a live
 cloud KMS.** "Framework built" ≠ "custody works on real hardware."
 
@@ -71,6 +71,6 @@ CMVP validation; never conflate the two.
 
 Signed CNSA 2.0 verdict (`conformance/cnsa-oracle.ts`, C16); signed CBOM (`cbom.ts`, C17); COSE_Sign1 +
 RATS/EAT (`crypto/cose.ts`, C19); signed SBOM + SLSA provenance (`supplychain.ts`, C20); the standalone
-external receipt verifier (`npm run verify:cli`); `npm run conformance` → 20/20. All signed,
+external receipt verifier (`npm run verify:cli`); `npm run conformance` → 23/23. All signed,
 transparency‑log‑anchored, externally verifiable — and **none confers FIPS validation, audit, or
 non‑infringement status.**

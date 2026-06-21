@@ -11,9 +11,11 @@
  */
 
 import type { ActionIntent, Capability } from '../../../capabilities/src/index.js'
+import type { Bytes } from '../../../crypto/src/index.js'
 import {
   PolarSeekNode,
   verifyPermitForAction,
+  deriveAudiencePermitKey,
   type AdmissionOutcome,
   type Session,
 } from '../../../planes/src/index.js'
@@ -24,6 +26,14 @@ export interface GuardContext {
   readonly audience: string
   readonly now: number
   readonly observedAggregate?: number
+  /**
+   * A standalone (out-of-process) resource is provisioned with ONLY its
+   * audience-scoped key, `deriveAudiencePermitKey(sessionKey, audience)`, never
+   * the raw session secret (PERMIT-001 / ADR-0015). When set, `checkPermit`
+   * verifies under it. In single-process Local mode (one trust domain) it is
+   * omitted and the key is derived on the fly from the in-process session.
+   */
+  readonly audienceKey?: Bytes
 }
 
 export class PolarSeekClient {
@@ -47,7 +57,9 @@ export class PolarSeekClient {
    */
   checkPermit(outcome: AdmissionOutcome, ctx: GuardContext, intent: ActionIntent): boolean {
     if (outcome.permit === null) return false
-    return verifyPermitForAction(outcome.permit, ctx.session.sessionKey, {
+    const audienceKey =
+      ctx.audienceKey ?? deriveAudiencePermitKey(ctx.session.sessionKey, ctx.audience)
+    return verifyPermitForAction(outcome.permit, audienceKey, {
       audience: ctx.audience,
       intent,
       now: ctx.now,

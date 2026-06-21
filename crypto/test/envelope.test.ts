@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { describe, it, expect } from 'vitest'
+import { bytesToHex } from '@noble/hashes/utils.js'
 import {
   signEnvelope,
   verifyEnvelope,
@@ -10,6 +11,7 @@ import {
   issuePermit,
   verifyPermit,
   readPermit,
+  deriveAudiencePermitKey,
 } from '../src/envelope.js'
 import { signerFor, SUITE_IDS } from '../src/suites.js'
 import { randomBytes } from '../src/symmetric.js'
@@ -71,5 +73,39 @@ describe('PermitToken (hot plane, HMAC-SHA-384)', () => {
   it('rejects a SuiteID swap', () => {
     const token = issuePermit(claims, SUITE_IDS.PS_5, sessionKey)
     expect(verifyPermit({ ...token, suite: SUITE_IDS.PS_1 }, sessionKey)).toBe(false)
+  })
+})
+
+describe('per-audience permit-key derivation (HKDF-SHA-384, ADR-0015)', () => {
+  const sessionKey = randomBytes(48)
+  const claims = { tier: 1, audience: 'acct://A', exp: 1750000000, nonce: 'abc' }
+
+  it('derives a 48-byte key, deterministically, distinct per audience', () => {
+    const a1 = deriveAudiencePermitKey(sessionKey, 'acct://A')
+    const a2 = deriveAudiencePermitKey(sessionKey, 'acct://A')
+    const b = deriveAudiencePermitKey(sessionKey, 'acct://B')
+    expect(a1.length).toBe(48)
+    // Deterministic for the same (session, audience).
+    expect(bytesToHex(a1)).toBe(bytesToHex(a2))
+    // Independent across audiences, and never equal to the raw session secret.
+    expect(bytesToHex(a1)).not.toBe(bytesToHex(b))
+    expect(bytesToHex(a1)).not.toBe(bytesToHex(sessionKey))
+  })
+
+  it('a permit MAC-bound to one audience key does not verify under another', () => {
+    const keyA = deriveAudiencePermitKey(sessionKey, 'acct://A')
+    const keyB = deriveAudiencePermitKey(sessionKey, 'acct://B')
+    const token = issuePermit(claims, SUITE_IDS.PS_5, keyA)
+    expect(verifyPermit(token, keyA)).toBe(true)
+    expect(verifyPermit(token, keyB)).toBe(false)
+  })
+
+  it('PERMIT-001: a holder of only one audience key cannot forge for another', () => {
+    const keyA = deriveAudiencePermitKey(sessionKey, 'acct://A')
+    const keyB = deriveAudiencePermitKey(sessionKey, 'acct://B')
+    // Attacker holds keyB only; re-MACs claims that name audience A.
+    const forged = issuePermit({ ...claims, audience: 'acct://A' }, SUITE_IDS.PS_5, keyB)
+    // The audience-A resource (keyA) rejects it: the MAC was not made under keyA.
+    expect(verifyPermit(forged, keyA)).toBe(false)
   })
 })

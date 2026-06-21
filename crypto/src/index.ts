@@ -18,6 +18,7 @@ export {
   constantTimeEqual,
   AES_256_GCM,
   HMAC_SHA384,
+  HKDF_SHA384,
   SHA3_SHAKE256,
 } from './symmetric.js'
 export { encodeCanonical, decodeCbor, canonicalRoundTrip } from './cbor.js'
@@ -62,5 +63,6 @@ export {
   issuePermit,
   verifyPermit,
   readPermit,
+  deriveAudiencePermitKey,
 } from './envelope.js'
 export type { SignedEnvelope, PermitToken } from './envelope.js'

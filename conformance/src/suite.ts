@@ -26,6 +26,7 @@ import {
   decodeCoseSign1,
   signEatResult,
   COSE_ALG,
+  issuePermit,
 } from '../../crypto/src/index.js'
 import {
   issueRoot,
@@ -54,7 +55,13 @@ import {
   verifyQuorumReceipt,
 } from '../../receipts/src/index.js'
 import { SoftwareAttester } from '../../attest/src/index.js'
-import { PolarSeekNode, verifyPermitForAction, type Session } from '../../planes/src/index.js'
+import {
+  PolarSeekNode,
+  verifyPermitForAction,
+  deriveAudiencePermitKey,
+  actionHash,
+  type Session,
+} from '../../planes/src/index.js'
 import {
   proposalId,
   approve,
@@ -64,6 +71,8 @@ import {
 } from '../../governance/src/index.js'
 import {
   commit,
+  commitField,
+  verifyDisclosure,
   proveBelow,
   verifyBelow,
   randomScalar,
@@ -295,12 +304,14 @@ const CHECKS: Array<() => ConformanceResult> = [
         observedAggregate: 0,
       })
       if (out.permit === null) return false
-      const ok = verifyPermitForAction(out.permit, session.sessionKey, {
+      // The resource is provisioned with ONLY its audience-scoped key (ADR-0015).
+      const audienceKey = deriveAudiencePermitKey(session.sessionKey, 'acct://x')
+      const ok = verifyPermitForAction(out.permit, audienceKey, {
         audience: 'acct://x',
         intent,
         now: NOW + 1,
       }).ok
-      const replayDifferent = verifyPermitForAction(out.permit, session.sessionKey, {
+      const replayDifferent = verifyPermitForAction(out.permit, audienceKey, {
         audience: 'acct://x',
         intent: { ...intent, amount: 600 },
         now: NOW + 1,
@@ -615,6 +626,123 @@ const CHECKS: Array<() => ConformanceResult> = [
           bound.digest,
         )
         return good && full && rejectsSub && rejectsBadOpening
+      },
+    ),
+
+  () =>
+    check(
+      'C22',
+      'Plane-1 permits are per-audience key-bound (cross-audience forgery rejected)',
+      () => {
+        const s = signerFor(SUITE)
+        const authority = s.keygen()
+        const agent = s.keygen()
+        const issuer = s.keygen()
+        const attesterKey = s.keygen()
+        const agentHex = bytesToHex(agent.publicKey)
+        const ev = new SoftwareAttester(SUITE, attesterKey).produce('s', agentHex, 'n', NOW + 300)
+        const session: Session = {
+          sessionId: 's',
+          sessionKey: new Uint8Array(48).fill(9),
+          claims: ev.claims,
+        }
+        const cap = issueRoot(
+          {
+            subject: agentHex,
+            actions: ['payment.transfer'],
+            perActionCeiling: 1000,
+            aggregateCap: null,
+            counterparties: null,
+            maxTier: 2,
+            notBefore: 0,
+            notAfter: NOW + 1000,
+            delegable: false,
+          },
+          SUITE,
+          authority,
+        )
+        const node = new PolarSeekNode({
+          suite: SUITE,
+          policy: DEFAULT_POLICY,
+          trustedRoots: [authority.publicKey],
+          issuer,
+          log: new TransparencyLog(),
+          jurisdiction: 'US',
+          permitTtlSeconds: 30,
+        })
+        const intent: ActionIntent = { type: 'payment.transfer', resource: 'acct://A', amount: 500 }
+        const out = node.admit({
+          intent,
+          capabilities: [cap],
+          session,
+          audience: 'acct://A',
+          now: NOW,
+          observedAggregate: 0,
+        })
+        if (out.permit === null) return false
+
+        // Each resource holds ONLY its own derived key; distinct audiences differ.
+        const keyA = deriveAudiencePermitKey(session.sessionKey, 'acct://A')
+        const keyB = deriveAudiencePermitKey(session.sessionKey, 'acct://B')
+        const distinct = bytesToHex(keyA) !== bytesToHex(keyB)
+        const okA = verifyPermitForAction(out.permit, keyA, {
+          audience: 'acct://A',
+          intent,
+          now: NOW + 1,
+        }).ok
+        // B's resource cannot verify A's permit (the MAC binds the audience).
+        const rejectedUnderB = !verifyPermitForAction(out.permit, keyB, {
+          audience: 'acct://B',
+          intent,
+          now: NOW + 1,
+        }).ok
+
+        // PERMIT-001 attacker holds ONLY keyB and re-MACs a permit claiming
+        // audience A; A's resource (keyA) rejects the forgery.
+        const forged = issuePermit(
+          {
+            sessionId: 's',
+            nonce: ev.claims.nonce,
+            audience: 'acct://A',
+            actionHash: actionHash(intent),
+            tier: out.decision.tier,
+            exp: NOW + 30,
+            evaluator: out.decision.evaluatorVersion,
+            effect: out.decision.effect,
+          },
+          SUITE,
+          keyB,
+        )
+        const forgeryRejected = !verifyPermitForAction(forged, keyA, {
+          audience: 'acct://A',
+          intent,
+          now: NOW + 1,
+        }).ok
+
+        return distinct && okA && rejectedUnderB && forgeryRejected
+      },
+    ),
+
+  () =>
+    check(
+      'C23',
+      'v:1 intent commitment is salted/hiding (low-entropy fields not brute-forceable from the leaf)',
+      () => {
+        const intent: ActionIntent = {
+          type: 'payment.transfer',
+          resource: 'acct://A',
+          amount: 500,
+        }
+        const salt = new Uint8Array(16).fill(0x5a)
+        const salted = commitField(intent, salt)
+        const unsalted = commitField(intent) // legacy, binding-only
+        // Salting changes the digest, so the public commitment is no longer the
+        // brute-forceable unsalted hash of the same (low-entropy) intent (RCPT-001 / ADR-0014).
+        const hides = salted !== unsalted
+        const discloses = verifyDisclosure(salted, intent, salt) // authorized verifier with the salt
+        const needsSalt = !verifyDisclosure(salted, intent) // attacker without the salt fails
+        const wrongSalt = !verifyDisclosure(salted, intent, new Uint8Array(16).fill(0x6b))
+        return hides && discloses && needsSalt && wrongSalt
       },
     ),
 ]

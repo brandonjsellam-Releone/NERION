@@ -6,7 +6,14 @@
  * @polarseek/receipts — PQ-signed, log-anchored, externally-verifiable receipts.
  */
 
-export { buildReceipt, receiptLeaf, verifyReceipt, verifyReceiptInclusion } from './receipt.js'
+export {
+  buildReceipt,
+  receiptLeaf,
+  verifyReceipt,
+  verifyReceiptInclusion,
+  verifyIntentDisclosure,
+  INTENT_SALT_BYTES,
+} from './receipt.js'
 export type {
   Receipt,
   ReceiptBody,

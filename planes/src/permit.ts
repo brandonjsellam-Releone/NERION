@@ -18,6 +18,7 @@ import {
   issuePermit,
   verifyPermit,
   readPermit,
+  deriveAudiencePermitKey,
   type Bytes,
   type PermitToken,
 } from '../../crypto/src/index.js'
@@ -42,12 +43,20 @@ export interface PermitClaims {
   readonly effect: string
 }
 
+/**
+ * Issuer-side: mint a permit bound to `claims.audience`, MAC'd under the
+ * audience-scoped key derived from the session secret. The issuer (kernel/node)
+ * holds the session secret and derives per audience; each resource is
+ * provisioned only with its own derived key, so a key-holding resource cannot
+ * forge a permit for a different audience (PERMIT-001 / ADR-0015).
+ */
 export function issueBoundPermit(
   claims: PermitClaims,
   suite: string,
   sessionKey: Bytes,
 ): PermitToken {
-  return issuePermit(claims, suite, sessionKey)
+  const audienceKey = deriveAudiencePermitKey(sessionKey, claims.audience)
+  return issuePermit(claims, suite, audienceKey)
 }
 
 export interface PermitCheck {
@@ -65,14 +74,23 @@ export interface PermitVerdict {
   readonly reasons: string[]
 }
 
-/** Resource-side: verify a permit is valid AND bound to this exact action. */
+/**
+ * Resource-side: verify a permit is valid AND bound to this exact action.
+ *
+ * `audienceKey` is THIS resource's audience-scoped key — the only permit key it
+ * is provisioned with, `deriveAudiencePermitKey(sessionKey, itsAudience)`. It is
+ * NOT the raw session secret: the MAC, not just the `audience` claim, now binds
+ * the permit to this audience, so a permit minted for another audience fails the
+ * MAC check here regardless of its claims (PERMIT-001 / ADR-0015). The
+ * `audience` equality check below is retained as defense-in-depth.
+ */
 export function verifyPermitForAction(
   token: PermitToken,
-  sessionKey: Bytes,
+  audienceKey: Bytes,
   check: PermitCheck,
 ): PermitVerdict {
-  if (!verifyPermit(token, sessionKey)) {
-    return { ok: false, reasons: ['permit MAC invalid (wrong session key or tampered)'] }
+  if (!verifyPermit(token, audienceKey)) {
+    return { ok: false, reasons: ['permit MAC invalid (wrong audience key or tampered)'] }
   }
   const claims = readPermit(token) as PermitClaims
   const reasons: string[] = []

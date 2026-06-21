@@ -10,6 +10,7 @@ import {
   consistencyProof,
   verifyConsistency,
   leafHash,
+  emptyRoot,
 } from '../src/merkle.js'
 
 const entry = (i: number): Uint8Array => new TextEncoder().encode(`entry-${i}`)
@@ -67,5 +68,22 @@ describe('Merkle consistency (append-only) proofs', () => {
     const bad = [...proof]
     bad[0] = leafHash(entry(123))
     expect(verifyConsistency(m, 8, bad, merkleRoot(es.slice(0, m)), newRoot)).toBe(false)
+  })
+})
+
+describe('Merkle hardening — Team Apex audit (TLOG-001/002)', () => {
+  it('TLOG-001: m=0 consistency requires root1 to be the empty-tree root', () => {
+    const newRoot = merkleRoot(tree(8))
+    // Genesis-from-empty with the REAL empty root verifies...
+    expect(verifyConsistency(0, 8, [], emptyRoot(), newRoot)).toBe(true)
+    // ...but a BOGUS size-0 root is rejected: a signed size-0 STH cannot lie about genesis.
+    expect(verifyConsistency(0, 8, [], leafHash(entry(1)), newRoot)).toBe(false)
+  })
+
+  it('TLOG-002: verification fails closed above the 32-bit-safe size bound', () => {
+    const big = 2 ** 31 // exceeds MAX_TREE_SIZE (2^31 - 1)
+    expect(verifyConsistency(0, big, [], emptyRoot(), merkleRoot(tree(4)))).toBe(false)
+    // verifyInclusion swallows the range error as false (fail-closed).
+    expect(verifyInclusion(0, big, entry(0), [], merkleRoot(tree(4)))).toBe(false)
   })
 })

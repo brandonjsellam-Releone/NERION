@@ -22,15 +22,25 @@ import {
   type Policy,
 } from '../../kernel/src/index.js'
 import type { ActionIntent, Capability } from '../../capabilities/src/index.js'
-import type { Bytes, KeyPair, PermitToken } from '../../crypto/src/index.js'
+import { randomBytes, type Bytes, type KeyPair, type PermitToken } from '../../crypto/src/index.js'
 import { TransparencyLog, type InclusionWitness } from '../../translog/src/index.js'
-import { buildReceipt, receiptLeaf, type Receipt } from '../../receipts/src/index.js'
+import {
+  buildReceipt,
+  receiptLeaf,
+  INTENT_SALT_BYTES,
+  type Receipt,
+} from '../../receipts/src/index.js'
 import type { AttestationClaims } from '../../attest/src/index.js'
 import { actionHash, issueBoundPermit, type PermitClaims } from './permit.js'
 
 export interface Session {
   readonly sessionId: string
-  /** Hot-path PermitToken MAC key, minted on successful attestation. */
+  /**
+   * Per-session secret, minted on successful attestation. The issuer derives a
+   * per-audience PermitToken MAC key from this (`deriveAudiencePermitKey`); the
+   * raw secret is held only by the issuer and never handed to a resource
+   * (PERMIT-001 / ADR-0015).
+   */
   readonly sessionKey: Bytes
   readonly claims: AttestationClaims
 }
@@ -99,6 +109,10 @@ export class PolarSeekNode {
     let logRoot: Bytes | null = null
     if (decision.obligations.includes('nearline-receipt')) {
       const r = replay(buildReplayBundle(input))
+      // Mint a fresh per‑receipt salt so the logged intent commitment is hiding
+      // (RCPT‑001 / ADR‑0014). It rides out on receipt.intentSalt for the holder to
+      // present to authorized verifiers; it is never written to the log leaf.
+      const intentSalt = randomBytes(INTENT_SALT_BYTES)
       receipt = buildReceipt({
         suite: this.cfg.suite,
         evaluatorVersion: decision.evaluatorVersion,
@@ -113,6 +127,7 @@ export class PolarSeekNode {
         decisionHash: r.receiptHash,
         issuerSecretKey: this.cfg.issuer.secretKey,
         issuerPublicKey: this.cfg.issuer.publicKey,
+        intentSalt,
       })
       const { index } = this.cfg.log.append(receiptLeaf(receipt))
       inclusion = this.cfg.log.proveInclusion(index)

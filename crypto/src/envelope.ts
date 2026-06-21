@@ -21,10 +21,14 @@
 import type { Bytes } from './types.js'
 import { encodeCanonical, decodeCbor } from './cbor.js'
 import { signerFor } from './suites.js'
-import { HMAC_SHA384 } from './symmetric.js'
+import { HMAC_SHA384, HKDF_SHA384 } from './symmetric.js'
 
 const SIGNED_CONTEXT = 'PolarSeek-Signed-v1'
 const PERMIT_CONTEXT = 'PolarSeek-Permit-v1'
+const AUDIENCE_KDF_CONTEXT = 'PolarSeek-Permit-AudienceKDF-v1'
+
+/** HMAC-SHA-384 key width (matches the PermitToken MAC tag width). */
+const PERMIT_MAC_KEY_BYTES = 48
 
 export interface SignedEnvelope {
   /** SuiteID that produced `sig`. */
@@ -107,7 +111,26 @@ export function openEnvelope(env: SignedEnvelope): unknown {
   return decodeCbor(env.payload)
 }
 
-/** Issue a hot-path PermitToken MAC'd with a session key. */
+/**
+ * Derive the audience-scoped PermitToken MAC key from a session secret.
+ *
+ * HKDF-SHA-384 binds the `audience` into `info` under a fixed domain separator;
+ * `info` is canonical CBOR (length-prefixed, key-order-independent), so distinct
+ * audiences never collide and the derivation cannot be confused across contexts.
+ *
+ * The derivation is one-way and per-audience independent: the issuer holds the
+ * session secret and derives a key per audience, while each resource is
+ * provisioned with ONLY `deriveAudiencePermitKey(sessionKey, itsAudience)`. A
+ * resource cannot recover the session secret nor any sibling audience's key, so
+ * it cannot re-MAC (forge) a permit for a different audience — closing the
+ * cross-audience forgery PERMIT-001 (ADR-0015).
+ */
+export function deriveAudiencePermitKey(sessionKey: Bytes, audience: string): Bytes {
+  const info = encodeCanonical([AUDIENCE_KDF_CONTEXT, audience])
+  return HKDF_SHA384.derive(sessionKey, new Uint8Array(0), info, PERMIT_MAC_KEY_BYTES)
+}
+
+/** Issue a hot-path PermitToken MAC'd with a (per-audience) session key. */
 export function issuePermit(claims: unknown, suite: string, sessionKey: Bytes): PermitToken {
   const body = encodeCanonical(claims)
   const mac = HMAC_SHA384.compute(sessionKey, toBeMaced(suite, body))

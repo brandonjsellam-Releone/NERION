@@ -17,7 +17,7 @@
 
 ```bash
 npm ci                 # install (from the committed lockfile)
-npm run gate           # clean-room lint + prettier + tsc + 291 tests
+npm run gate           # clean-room lint + prettier + tsc + 313 tests
 npm run demo           # end-to-end T2 governed-payment trace (in-process)
 ```
 
@@ -40,7 +40,11 @@ exit non-zero with a reason.
 ## Embedding (library) — admit an agent action
 
 ```ts
-import { PolarSeekNode, verifyPermitForAction } from './planes/src/index.js'
+import {
+  PolarSeekNode,
+  verifyPermitForAction,
+  deriveAudiencePermitKey,
+} from './planes/src/index.js'
 import { TransparencyLog } from './translog/src/index.js'
 import { DEFAULT_POLICY } from './kernel/src/index.js'
 
@@ -49,11 +53,19 @@ const node = new PolarSeekNode({
   jurisdiction: 'US', permitTtlSeconds: 30,
 })
 const out = node.admit({ intent, capabilities, session, audience, now, observedAggregate })
-// Plane 1: out.permit is bound to {action, audience, session, exp}.
-// The resource re-checks before executing:
-const ok = verifyPermitForAction(out.permit!, session.sessionKey, { audience, intent, now }).ok
+// Plane 1: out.permit is bound to {action, audience, session, exp, effect}.
+// The resource re-checks before executing, under ITS audience-scoped key — each
+// resource is provisioned with only this derived key, NEVER the raw sessionKey,
+// so a key-holding resource cannot forge a permit for another audience
+// (PERMIT-001 / ADR-0015). The issuer (this node) holds the session secret.
+const audienceKey = deriveAudiencePermitKey(session.sessionKey, audience)
+const ok = verifyPermitForAction(out.permit!, audienceKey, { audience, intent, now }).ok
 // Plane 2: out.receipt is anchored at out.inclusion / out.logRoot for audit.
 ```
+
+> **Distribution obligation.** In a multi-resource deployment, provision each resource out-of-band with
+> `deriveAudiencePermitKey(sessionKey, itsAudience)` and keep the raw `sessionKey` issuer-only. Handing a
+> resource the session secret re-opens PERMIT-001.
 
 ## What you can show a reviewer today
 
