@@ -349,6 +349,52 @@ describe('PolarSeekNode admission', () => {
     expect(out.permit).toBeNull()
   })
 
+  it('binds the session to a verified attestation when required (ATTEST-BIND-001)', () => {
+    const rootSecret = randomBytes(32)
+    const attPolicy = {
+      expectedNonce: NONCE,
+      now: NOW,
+      trustedAttesters: [attesterKey.publicKey],
+      acceptedFormats: ['software-dev'],
+    }
+    const attNode = new PolarSeekNode({
+      suite,
+      policy: DEFAULT_POLICY,
+      trustedRoots: [authority.publicKey],
+      issuer,
+      log: new TransparencyLog(),
+      jurisdiction: 'US',
+      permitTtlSeconds: 30,
+      sessionRootSecret: rootSecret,
+      requireAttestedSession: true,
+    })
+    const reqFor = (s: Session) => ({
+      intent: pay(500),
+      capabilities: [cap],
+      session: s,
+      audience: 'acct://treasury',
+      now: NOW,
+      observedAggregate: 0,
+    })
+
+    // A fabricated session (self-chosen key, no node derivation) is DENIED.
+    const fabricated: Session = {
+      sessionId: 'sess-9',
+      sessionKey: randomBytes(48),
+      claims: evidence.claims,
+    }
+    expect(attNode.admit(reqFor(fabricated)).decision.effect).toBe('deny')
+
+    // A node-established session (derived from VALID evidence) is admitted.
+    const established = attNode.establishSession(evidence, attPolicy)
+    expect(attNode.admit(reqFor(established)).decision.effect).toBe('allow')
+
+    // INVALID evidence cannot establish a session at all (fail closed).
+    const badSig = Uint8Array.from(evidence.sig)
+    badSig[0] = (badSig[0] as number) ^ 0xff
+    expect(() => attNode.establishSession({ ...evidence, sig: badSig }, attPolicy)).toThrow()
+  })
+
   it('admits a T0 read with a permit but no nearline receipt', () => {
     const node = makeNode()
     const out = node.admit({

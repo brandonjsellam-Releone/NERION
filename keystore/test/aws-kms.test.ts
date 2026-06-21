@@ -139,11 +139,14 @@ describe('SigV4 full-request regression KAT', () => {
     await sealer.wrap(new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7]))
 
     // Frozen full Authorization for this EXACT request — pins the whole canonical
-    // request + StringToSign path. Regenerate ONLY on a deliberate SigV4 change.
+    // request + StringToSign path. Because the signature covers the request body's
+    // payload hash, it also pins that the body carries the EncryptionContext AAD
+    // (CUSTODY-AWS-AAD-001): dropping it would change the body and break this KAT.
+    // Regenerate ONLY on a deliberate SigV4/request-body change.
     expect(auths[0]).toBe(
       'AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20200102/us-east-2/kms/aws4_request, ' +
         'SignedHeaders=content-type;host;x-amz-date;x-amz-target, ' +
-        'Signature=9a381a33cd96558d9b6b9ec6aef974b73e1c34c9005919a6e132728858039390',
+        'Signature=4e3c95b5031c20b7fb4a419c82639d11bc6a6bb6ab77197563befaa3209203ac',
     )
   })
 })

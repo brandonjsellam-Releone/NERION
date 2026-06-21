@@ -17,12 +17,21 @@ import {
   decide,
   buildReplayBundle,
   replay,
+  evaluatorVersion,
   type Decision,
   type KernelInput,
   type Policy,
 } from '../../kernel/src/index.js'
 import type { ActionIntent, Capability } from '../../capabilities/src/index.js'
-import { randomBytes, type Bytes, type KeyPair, type PermitToken } from '../../crypto/src/index.js'
+import {
+  randomBytes,
+  HKDF_SHA384,
+  encodeCanonical,
+  constantTimeEqual,
+  type Bytes,
+  type KeyPair,
+  type PermitToken,
+} from '../../crypto/src/index.js'
 import { TransparencyLog, type InclusionWitness } from '../../translog/src/index.js'
 import {
   buildReceipt,
@@ -30,8 +39,27 @@ import {
   INTENT_SALT_BYTES,
   type Receipt,
 } from '../../receipts/src/index.js'
-import type { AttestationClaims } from '../../attest/src/index.js'
+import {
+  appraise,
+  type AttestationClaims,
+  type Evidence,
+  type AppraisalPolicy,
+} from '../../attest/src/index.js'
 import { actionHash, issueBoundPermit, type PermitClaims } from './permit.js'
+
+const SESSION_KDF_CONTEXT = 'polarseek/session-key/v1'
+
+/**
+ * Derive a session secret from the node's root secret + the VERIFIED attestation
+ * claims. Possessing a session key that admission accepts then PROVES a successful,
+ * fresh appraisal happened (THREAT_MODEL M-P1-4) — the root secret never leaves the
+ * node, so a caller cannot fabricate an accepted session (ATTEST-BIND-001, Team Apex
+ * 2026-06-21). HKDF-SHA-384 over the canonical claims; output is the 48-byte MAC key.
+ */
+function deriveSessionKey(rootSecret: Bytes, claims: AttestationClaims): Bytes {
+  const info = encodeCanonical([SESSION_KDF_CONTEXT, claims])
+  return HKDF_SHA384.derive(rootSecret, new Uint8Array(0), info, 48)
+}
 
 export interface Session {
   readonly sessionId: string
@@ -53,6 +81,21 @@ export interface NodeConfig {
   readonly log: TransparencyLog
   readonly jurisdiction: string
   readonly permitTtlSeconds: number
+  /**
+   * Optional node root secret for deriving attestation-bound session keys
+   * (`establishSession` / `requireAttestedSession`, ATTEST-BIND-001). Held only by
+   * the node; never handed to a resource.
+   */
+  readonly sessionRootSecret?: Bytes
+  /**
+   * When true, `admit()` DENIES any session whose `sessionKey` was not derived by
+   * THIS node from a verified attestation (i.e. not produced by `establishSession`),
+   * closing the gap where a fabricated session with a self-chosen key mints a valid
+   * permit (ATTEST-BIND-001). Default false preserves the in-process / out-of-band-
+   * provisioned model. Production deployments in the dynamic attestation model SHOULD
+   * set this and mint sessions via `establishSession`.
+   */
+  readonly requireAttestedSession?: boolean
 }
 
 export interface AdmissionRequest {
@@ -83,6 +126,14 @@ export class PolarSeekNode {
   constructor(private readonly cfg: NodeConfig) {}
 
   admit(req: AdmissionRequest): AdmissionOutcome {
+    // ATTEST-BIND-001: when required, the session secret must be one THIS node derived
+    // from a verified attestation (via establishSession). Otherwise a caller could
+    // fabricate a Session with a self-chosen key + claims and mint a valid permit.
+    if (this.cfg.requireAttestedSession) {
+      const denied = this.checkAttestedSession(req.session)
+      if (denied) return denied
+    }
+
     const input: KernelInput = {
       intent: req.intent,
       capabilities: req.capabilities,
@@ -145,5 +196,59 @@ export class PolarSeekNode {
     }
 
     return { decision, permit, receipt, inclusion, logRoot }
+  }
+
+  /**
+   * Establish a session from VERIFIED attestation evidence: appraise it (fail closed
+   * on an invalid / forged / stale attestation) and derive the session secret from the
+   * verified claims, so a fabricated session cannot mint a usable permit
+   * (ATTEST-BIND-001). The resource still only ever receives
+   * `deriveAudiencePermitKey(sessionKey, audience)`, never the root secret.
+   */
+  establishSession(
+    evidence: Evidence,
+    appraisalPolicy: AppraisalPolicy,
+    sessionId?: string,
+  ): Session {
+    if (this.cfg.sessionRootSecret === undefined) {
+      throw new Error('establishSession requires NodeConfig.sessionRootSecret')
+    }
+    const appraised = appraise(evidence, appraisalPolicy)
+    if (!appraised.valid || appraised.claims === null) {
+      throw new Error(`attestation appraisal failed: ${appraised.reasons.join('; ')}`)
+    }
+    const claims = appraised.claims
+    return {
+      sessionId: sessionId ?? claims.sessionId,
+      sessionKey: deriveSessionKey(this.cfg.sessionRootSecret, claims),
+      claims,
+    }
+  }
+
+  /** Deny (return an outcome) if `session` is not bound to a verified attestation. */
+  private checkAttestedSession(session: Session): AdmissionOutcome | null {
+    let reason: string | null = null
+    if (this.cfg.sessionRootSecret === undefined) {
+      reason = 'requireAttestedSession is set but the node has no sessionRootSecret'
+    } else {
+      const expected = deriveSessionKey(this.cfg.sessionRootSecret, session.claims)
+      if (!constantTimeEqual(session.sessionKey, expected)) {
+        reason = 'session is not bound to a verified attestation (ATTEST-BIND-001)'
+      }
+    }
+    if (reason === null) return null
+    return {
+      decision: {
+        effect: 'deny',
+        tier: 3,
+        reasons: [reason],
+        obligations: [],
+        evaluatorVersion: evaluatorVersion(this.cfg.policy),
+      },
+      permit: null,
+      receipt: null,
+      inclusion: null,
+      logRoot: null,
+    }
   }
 }

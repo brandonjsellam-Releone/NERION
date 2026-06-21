@@ -169,10 +169,22 @@ export class AwsKmsSealer implements SeedSealer {
     this.clock = config.clock ?? (() => new Date())
   }
 
+  /**
+   * AAD binding the wrapped seed to THIS KEK + a fixed purpose. KMS requires the
+   * Decrypt EncryptionContext to match the Encrypt one byte-for-byte, so a valid
+   * ciphertext cannot be swapped across keys / tenants / purposes — an online
+   * cross-id swap the symmetric path was otherwise open to (CUSTODY-AWS-AAD-001,
+   * Team Apex 2026-06-21; complements the offline-forgery defense in sealing-provider).
+   */
+  private encryptionContext(): Record<string, string> {
+    return { purpose: 'polarseek-seed-seal-v1', keyId: this.keyId }
+  }
+
   async wrap(seed: Bytes): Promise<Bytes> {
     const json = await this.call('TrentService.Encrypt', {
       KeyId: this.keyId,
       Plaintext: b64Encode(seed),
+      EncryptionContext: this.encryptionContext(),
     })
     const ct = json['CiphertextBlob']
     if (typeof ct !== 'string') throw new Error('AWS KMS Encrypt: no CiphertextBlob in response')
@@ -183,6 +195,7 @@ export class AwsKmsSealer implements SeedSealer {
     const json = await this.call('TrentService.Decrypt', {
       KeyId: this.keyId,
       CiphertextBlob: b64Encode(blob),
+      EncryptionContext: this.encryptionContext(),
     })
     const pt = json['Plaintext']
     if (typeof pt !== 'string') throw new Error('AWS KMS Decrypt: no Plaintext in response')

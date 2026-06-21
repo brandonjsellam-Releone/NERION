@@ -77,6 +77,20 @@ one-page map.
   canonical decode already rejects non-canonical/torsion points. **Still classical-ROM + UNAUDITED —
   this internal pass informs, not replaces, the external ZK audit.**
 
+- **`ledger/` consensus — SOUND (3-lens pass, 2026-06-21).** `chain.ts` verifyFinalized + `leader.ts`
+  + `equivocation.ts`, lenses: DeepSeek (accountable safety), Grok (VRF eligibility + mode-downgrade),
+  Hermes (view-change cert + round grinding). **(1) Accountable safety sound** — two conflicting
+  same-height blocks each ≥2/3 ⟹ ≥1/3 overlap double-signed ⟹ equivocation-provable; `round` is
+  *deliberately* omitted from `attestMessage` so all same-height attestations stay equivocation-comparable
+  (a suggestion to bind `round` was adjudicated **against** — it would weaken that property, not help).
+  **(2) VRF eligibility sound** — β bound to `header.vrfOutput` before the interval check; tie-break
+  un-grindable; the residuals (authentic finalized set, key uniqueness) are the documented trust/
+  registration model, and sybil-resistance is STAKE-based (multiple keys don't inflate eligibility).
+  **(3) View-change cert sound** — sub-⅓ cannot forge; bound to `(height,prevHash,round)` (no cross-fork
+  replay); BigInt quorum (LEDGER-PRECISION-002). The ≥⅔ round-skip leader re-draw is the **documented
+  LEDGER-007** — *fairness-only*, exploitable only by a coalition that already controls liveness; chain
+  safety is unaffected. Rigorous fix (a round-0 cert chain) roadmapped. Classical/UNAUDITED.
+
 ## Known residuals (honest, not yet fixed)
 
 - **Stake/credit arithmetic > 2⁵³** — `totalStake()` and credit balances sum in JS `Number`; the
