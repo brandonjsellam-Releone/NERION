@@ -14,7 +14,7 @@
  */
 
 import {
-  decide,
+  decideWithAuthorizer,
   buildReplayBundle,
   replay,
   evaluatorVersion,
@@ -147,7 +147,7 @@ export class PolarSeekNode {
       ...(req.revoked && req.revoked.length > 0 ? { revoked: req.revoked } : {}),
     }
 
-    const decision = decide(input)
+    const { decision, authorizingCapability } = decideWithAuthorizer(input)
     if (decision.effect === 'deny') {
       return { decision, permit: null, receipt: null, inclusion: null, logRoot: null }
     }
@@ -182,7 +182,10 @@ export class PolarSeekNode {
         jurisdiction: this.cfg.jurisdiction,
         timestamp: req.now,
         intent: req.intent,
-        capability: req.capabilities[0] ?? null,
+        // RECEIPT-CAP-001: commit the capability the resolver ACTUALLY used, not caller-array[0]
+        // (which the resolver may skip), so the receipt's authorizing-capability commitment is
+        // truthful. Identical to capabilities[0] in the common single-capability case.
+        capability: authorizingCapability,
         policy: this.cfg.policy,
         inputHash: r.inputHash,
         decisionHash: r.receiptHash,

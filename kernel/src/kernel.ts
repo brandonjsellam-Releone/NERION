@@ -16,7 +16,12 @@
  *  - Holds no state across decisions; reads no clock; performs no I/O.
  */
 
-import { resolve, type EvalContext, type RiskTier } from '../../capabilities/src/index.js'
+import {
+  resolve,
+  type Capability,
+  type EvalContext,
+  type RiskTier,
+} from '../../capabilities/src/index.js'
 import { tierOf, evaluatorVersion, KERNEL_VERSION } from './policy.js'
 import type { Decision, KernelInput } from './types.js'
 
@@ -33,7 +38,21 @@ function obligationsForTier(tier: RiskTier): string[] {
   }
 }
 
-export function decide(input: KernelInput): Decision {
+/** A decision plus the capability the resolver actually used to authorize it (null on deny). */
+export interface DecisionWithAuthorizer {
+  readonly decision: Decision
+  readonly authorizingCapability: Capability | null
+}
+
+/**
+ * Like {@link decide}, but ALSO returns the capability the resolver selected to authorize the
+ * intent — the first candidate that verified and authorized, at ANY index. A receipt must commit
+ * THIS capability, not the caller-supplied `capabilities[0]`, which the resolver is free to skip
+ * (RECEIPT-CAP-001, Team Apex round-2 sweep — capability-order mis-attribution in the evidence
+ * trail). One resolve; the returned `Decision` is byte-identical to `decide()`'s, so the authorizer
+ * rides OUTSIDE the committed decision and changes no replay/receipt hash.
+ */
+export function decideWithAuthorizer(input: KernelInput): DecisionWithAuthorizer {
   // Computed inside the try so a policy that cannot be canonicalized fails
   // closed (deny) rather than throwing (PS-KERNEL-02).
   let ev = `${KERNEL_VERSION}+uncomputed`
@@ -43,11 +62,14 @@ export function decide(input: KernelInput): Decision {
 
     if (input.policy.denyActions.includes(input.intent.type)) {
       return {
-        effect: 'deny',
-        tier,
-        reasons: ['action is on the policy denylist'],
-        obligations: [],
-        evaluatorVersion: ev,
+        decision: {
+          effect: 'deny',
+          tier,
+          reasons: ['action is on the policy denylist'],
+          obligations: [],
+          evaluatorVersion: ev,
+        },
+        authorizingCapability: null,
       }
     }
 
@@ -66,25 +88,45 @@ export function decide(input: KernelInput): Decision {
       new Set(input.revoked ?? []),
     )
     if (!res.authorized) {
-      return { effect: 'deny', tier, reasons: [res.reason], obligations: [], evaluatorVersion: ev }
+      return {
+        decision: {
+          effect: 'deny',
+          tier,
+          reasons: [res.reason],
+          obligations: [],
+          evaluatorVersion: ev,
+        },
+        authorizingCapability: null,
+      }
     }
 
     const effect = input.policy.transformActions.includes(input.intent.type) ? 'transform' : 'allow'
     return {
-      effect,
-      tier,
-      reasons: ['authorized by capability', `risk tier ${tier}`],
-      obligations: obligationsForTier(tier),
-      evaluatorVersion: ev,
+      decision: {
+        effect,
+        tier,
+        reasons: ['authorized by capability', `risk tier ${tier}`],
+        obligations: obligationsForTier(tier),
+        evaluatorVersion: ev,
+      },
+      authorizingCapability: res.capability,
     }
   } catch (e) {
     // Safe fallback: any unexpected condition denies at the highest tier.
     return {
-      effect: 'deny',
-      tier: 3,
-      reasons: [`safe-fallback deny: ${(e as Error).message}`],
-      obligations: [],
-      evaluatorVersion: ev,
+      decision: {
+        effect: 'deny',
+        tier: 3,
+        reasons: [`safe-fallback deny: ${(e as Error).message}`],
+        obligations: [],
+        evaluatorVersion: ev,
+      },
+      authorizingCapability: null,
     }
   }
+}
+
+/** The decision alone — a pure function of the explicit input (see {@link decideWithAuthorizer}). */
+export function decide(input: KernelInput): Decision {
+  return decideWithAuthorizer(input).decision
 }

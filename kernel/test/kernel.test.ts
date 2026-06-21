@@ -7,7 +7,7 @@ import { bytesToHex } from '@noble/hashes/utils.js'
 import { signerFor, SUITE_IDS } from '../../crypto/src/index.js'
 import { issueRoot } from '../../capabilities/src/index.js'
 import type { ActionIntent } from '../../capabilities/src/index.js'
-import { decide, tierOf, DEFAULT_POLICY } from '../src/index.js'
+import { decide, decideWithAuthorizer, tierOf, DEFAULT_POLICY } from '../src/index.js'
 import type { KernelInput, Policy } from '../src/index.js'
 
 const suite = SUITE_IDS.PS_5
@@ -60,6 +60,40 @@ describe('deterministic risk tiering', () => {
     // PS-KERNEL-03: a crafted near-prefix must NOT inherit the low tier.
     expect(tierOf({ type: 'data.readX', resource: 'r' }, DEFAULT_POLICY)).toBe(3)
     expect(tierOf({ type: 'data.read', resource: 'r' }, DEFAULT_POLICY)).toBe(0)
+  })
+})
+
+describe('decideWithAuthorizer — the real authorizer for the receipt (RECEIPT-CAP-001)', () => {
+  const decoy = issueRoot(
+    {
+      subject: holderHex,
+      actions: ['infra.deploy'],
+      perActionCeiling: null,
+      aggregateCap: null,
+      counterparties: null,
+      maxTier: 3,
+      notBefore: 0,
+      notAfter: 10_000_000_000,
+      delegable: false,
+    },
+    suite,
+    authority,
+  )
+
+  it('returns the capability that actually authorized, not capabilities[0]', () => {
+    // decoy (index 0) does NOT authorize a data.read; root (index 1) does.
+    const out = decideWithAuthorizer(input(READ, { capabilities: [decoy, root] }))
+    expect(out.decision.effect).toBe('allow')
+    expect(out.authorizingCapability).toBe(root)
+    expect(out.authorizingCapability).not.toBe(decoy)
+    // decide() returns the byte-identical decision — the authorizer rides OUTSIDE it.
+    expect(decide(input(READ, { capabilities: [decoy, root] }))).toEqual(out.decision)
+  })
+
+  it('returns a null authorizer on deny', () => {
+    const out = decideWithAuthorizer(input(READ, { capabilities: [] }))
+    expect(out.decision.effect).toBe('deny')
+    expect(out.authorizingCapability).toBe(null)
   })
 })
 
