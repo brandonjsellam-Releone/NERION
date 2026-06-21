@@ -49,11 +49,9 @@ highest‑risk‑first.
 **Named accountable lead:** Brandon Sellam (brandon.sellam@gmail.com) — maintainer; **French (EU) citizen**
 (Paris residence; currently also working from New York); owns audit‑remediation and post‑grant maintenance.
 
-> **[Brandon — expand in your own words (NLnet Stage‑2 weighs "can you execute"). Confirmed credentials to
-> cite:** **OWASP member** (security community); Nerion implements the **OWASP CycloneDX** CBOM standard and
-> targets agentic‑AI risks tracked by OWASP's **GenAI Security Project**. Add your prior cryptography / security /
-> protocol / open‑source work + roles. Honesty note: OWASP individual membership is community standing, **not** a
-> certification — cite it as mission alignment, not as expertise that vets the crypto.**]**
+> **[DRAFT -- Brandon: rewrite in your own words before submitting. NLnet bans verbatim AI text; this proposal already discloses AI assistance, so paraphrasing is fine. Drawn ONLY from your real resume + confirmed standing -- nothing invented.]**
+>
+> Brandon Sellam -- founder of **TRELYAN** (the Swiss foundation behind Nerion) and the project's accountable maintainer -- is **Paris-born and French** (B.A., International Business & Marketing, ESLSCA Business School, Paris). His background is in **finance and risk**: cross-border commodities trading; portfolio-risk analysis and stress-testing for energy / oil-and-gas investment mandates (Risk Analyst, Messodie International AG, Zug); and capital structuring and valuation -- directly relevant to a protocol whose purpose is **governing high-value, least-privilege agent transactions**. He is a full-stack developer (Full-Stack Web Development, Columbia Engineering) and an **OWASP member** -- mission-aligned with the application-security community (Nerion implements the OWASP **CycloneDX** CBOM standard and targets the agentic-AI risks tracked by OWASP's **GenAI Security Project**); cited as alignment, **not** as a credential that vets the cryptography. The novel cryptographic compositions are deliberately scoped for **independent external audit -- the central deliverable this grant funds -- rather than asserted**; Brandon owns the audit interface, remediation, and post-grant maintenance, and intends to add an **EU-based technical co-maintainer** with cryptography / security depth to strengthen execution and reduce single-maintainer risk.
 
 **AI‑assisted authorship, disclosed up front:** Nerion is built with heavy AI assistance under direct
 human review. Our "council" is an explicit multi‑agent, multi‑model **adversarial review** process —
