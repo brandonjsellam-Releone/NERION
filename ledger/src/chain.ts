@@ -19,7 +19,7 @@ import {
   type KeyPair,
 } from '../../crypto/src/index.js'
 import { bytesToHex } from '@noble/hashes/utils.js'
-import { selectLeader, stakeOf, totalStake, canonicalRound } from './sortition.js'
+import { selectLeader, stakeOf, totalStake, totalStakeBig, canonicalRound } from './sortition.js'
 import { prove as vrfProve, verify as vrfVerify } from './vrf.js'
 import { vrfAlpha, vrfLeaderEligible, verifyViewChangeCert } from './leader.js'
 import type {
@@ -373,7 +373,7 @@ export function verifyFinalized(
   }
 
   const counted = new Set<string>()
-  let attestingStake = 0
+  let attestingStake = 0n
   for (const a of attestations) {
     if (a.blockHash !== h) continue
     // The attestation must be for THIS block's height (it is bound into the signed
@@ -398,19 +398,27 @@ export function verifyFinalized(
       continue
     }
     counted.add(a.validator)
-    attestingStake += stake
+    attestingStake += BigInt(Number.isInteger(stake) ? stake : 0)
   }
 
-  // BigInt comparison (LEDGER-PRECISION-001, Team Apex 2026-06-21): `attestingStake * finalityDen`
-  // can exceed 2^53 even when total <= 2^53, silently corrupting the finality threshold under
-  // IEEE-754. Cross-multiply in bigint so the >=2/3-stake check is exact.
+  // Exact BigInt finality (LEDGER-PRECISION-001 + -004, Team Apex): the -001 fix made the >=2/3
+  // cross-multiply exact, but BOTH operands were still summed in IEEE-754 — attestingStake via
+  // `+=` and total via totalStake() — so past 2^53 the threshold could be corrupted. Sum both as
+  // BigInt; fail closed on a zero / malformed total.
+  const totalBig = totalStakeBig(set)
   const finalized =
-    total > 0 && BigInt(attestingStake) * BigInt(finalityDen) >= BigInt(finalityNum) * BigInt(total)
+    totalBig > 0n && attestingStake * BigInt(finalityDen) >= BigInt(finalityNum) * totalBig
   if (!finalized)
     reasons.push(
       `attesting stake ${attestingStake}/${total} below finality ${finalityNum}/${finalityDen}`,
     )
-  return { ok: reasons.length === 0, finalized, attestingStake, totalStake: total, reasons }
+  return {
+    ok: reasons.length === 0,
+    finalized,
+    attestingStake: Number(attestingStake),
+    totalStake: total,
+    reasons,
+  }
 }
 
 function hexToBytesLocal(hex: string): Bytes {
