@@ -23,6 +23,11 @@ export function authorizesIntent(
   // gate so an expired or not-yet-valid grant would authorize. Guard it like
   // tier/amount/aggregate already are (KERNEL-TIME-001, Team Apex 2026-06-21).
   if (!Number.isSafeInteger(ctx.now)) return false
+  // The signed GRANT's own window must be finite too: a non-finite notBefore/notAfter (NaN/
+  // Infinity) makes BOTH comparisons below false, silently skipping expiry so the grant would
+  // authorize FOREVER (CAP-WINDOW-001 — the KERNEL-TIME-001 / GOV-WINDOW-001 class; flagged as the
+  // grant.ts follow-up in the GOV-WINDOW-001 fix). Guard the bounds like the clock.
+  if (!Number.isSafeInteger(grant.notBefore) || !Number.isSafeInteger(grant.notAfter)) return false
   if (ctx.now < grant.notBefore || ctx.now > grant.notAfter) return false
   // Defense in depth at the trust boundary: an undefined/negative/non-integer tier
   // would make `ctx.tier > maxTier` false and skip the cap (CAP-001, Team Apex).
