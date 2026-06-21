@@ -1,0 +1,51 @@
+# SPDX-FileCopyrightText: 2026 TRELYAN
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Dependabot configuration (schema v2 — https://docs.github.com/code-security/dependabot).
+# Keeps the npm root manifest and the GitHub Actions workflows current with weekly,
+# grouped, low-noise update PRs. Security updates from Dependabot are unaffected by
+# these schedules and are raised as soon as advisories are published.
+
+version: 2
+updates:
+  # --- npm (root package.json / package-lock.json) ---
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+    groups:
+      # Batch all non-major (minor + patch) bumps into a single PR to cut review noise.
+      npm-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+
+  # --- GitHub Actions (workflows under .github/workflows) ---
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    groups:
+      # Batch all non-major (minor + patch) action bumps into a single PR.
+      github-actions-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
