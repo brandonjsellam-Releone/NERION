@@ -1,0 +1,1814 @@
+SPDXVersion: SPDX-2.1
+DataLicense: CC0-1.0
+SPDXID: SPDXRef-DOCUMENT
+DocumentName: nerion-wt-a7
+DocumentNamespace: http://spdx.org/spdxdocs/spdx-v2.1-fb81b83a-b24c-4a87-bc37-7f3b0610a686
+Creator: Person: Anonymous ()
+Creator: Organization: Anonymous ()
+Creator: Tool: reuse-6.2.0
+Created: 2026-06-21T15:58:31Z
+CreatorComment: <text>This document was created automatically using available reuse information consistent with REUSE.</text>
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-e67c6a035348a37084ddb6aaca2c6e67
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-1263a6a7e73e2faa803add5ad5349af2
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-0fc0e8b452311046489fbe7305318fc8
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-e250baf3df9c3fb48aca0202a6126b4f
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-939bee263c7db5723f32a83a62913501
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-33a2bd34467e589fa5db93fbb7a06ea3
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-d30660da15959e0e037a4512df9a558a
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-09af5278f6ccc602883cf23e074574ef
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-6a2cab90f2c666bccc4ab493a18ec197
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-20f6825790d55522607336bb25bcfde1
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-1db7f841096d24c1a1eea64c0ab9ff34
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-5df16deaee75632efae427b2d8d8425b
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-a2238e1b7597c5abfe8a762531b38cf3
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-1b4d16f6712e08422a7acff1d762a4ca
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-6ded24aa5371ee01d1e5e8ee1235b08a
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-4dec10884323c9fdaaed717e12b7fdcf
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-918f97eea53feb855226cdbf59e36a06
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-43796afec993a2da0bfc049ac93c9421
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-f9255c1e11574873553823a5462f30d9
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-9b8245822ae6ab4be65a0c531ecd8c0b
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-dd0676f234f550af2027fe77d2b11739
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-59668796fe534cd6496eaadf6746e42b
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-383255ab10a51049b8818266785a9df8
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-abe103baff0f87555e4d63c9550ecc4e
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-7bcbde83ea9184dc4ae8b9cefb81687c
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-93072fbce667f4101af583faafbbae76
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-6643740ef379217b8c0bb57e19434cf7
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-9ce0893abe94f84eec894a0f24a39b69
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-110fc41730eca5b1d96a238e86402e4e
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-802496c3d0e857cf961d2021d078d2c9
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-654d6247461e639b784ea5be515de6fb
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-3627abdeb871f6c9419c96c64b5a9d84
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-23a9ba79f2b094d4fdb1517e90de3181
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-7ca5fe7c3823c7d8018a9936c5779411
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-4cc510bcf2be05054dc86aa74c326c5a
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-819a60cb54b958a692efa772b0281b3e
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-9905244e43ca7c25b800e2329084bd71
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-1de3d7913829da859e4db9e62ef2bf9d
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-66584c80fa5698085506f2e638c73a21
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-f3348fffda3ca446b43ac1f81b4fa43a
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-5952a1fb2183cf36ee65397c0c6d2c4b
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-53188e021b0b9dbc72221af37343c00f
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-6e21aa98c298b260734a38d7681bb76d
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-84fd7420121859ac0dd328f61986bcaa
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-381ee2d36973148ea352ea929341896c
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-0d2e5273403f01db3d734024774f02f9
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-73a43d1e9bff67a9bcbc2216589c5c4a
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-beb2a98929e59821fe2f230d37579255
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-0be49ab47c05677a620c90c96f36fa9b
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-a4cef37482eedc419b5b3e05db857824
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-ec3296c57cf805795dd64b2148f78d3b
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-9499763db0bcf486b9b02aa0763cd0d6
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-301468cb3cd2531c41f9066d7ca8cbe3
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-e906d2fd9f8fc8b1a9891942d6ebeca3
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-378c3549c769dac38e480160597c0344
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-27627ac6563304d98eb0d02a8f3d24fc
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-0b8c50871bf62bf09e8dc1630b1c2c98
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-736da657536bc09ef5df351137f10a79
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-bcb95f5e2b8a57a3ae21596c8b6b82b5
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-4602cab5a61a1adb4edbbc007de912a3
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-d0fac944c0c76f35d4e2a461fc51d710
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-63eccbe65ce9e8130a179e4d3d49913f
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-cfd1710e7612a0e4065bcb4463d64447
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-69cb2f3ab66509007ed0df18220c7bec
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-09d3d1754044fd689405074867697424
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-b870800ada44bdfe79266b44bbf03e15
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-3eb4a1a2d58c8aec6414c2de98aaf3a6
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-d8c1daa5eeda1bea041e6c5a69669213
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-1407c2df92702340636ecd46ef4d636f
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-28826eccdadde05ff6773c242e8fa852
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-113fd79a7352c01c0a1f8a4e92ce374c
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-036e70a072a8589be45b51daf0f256f4
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-df67f7549cfbb8b05729ddae5e8501bf
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-dee2eeed03c5e6225d32ad7fa4d50794
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-b46aa594a4cb1266e69d5dfb067ab547
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-d76e521af7c306723c4464dc7d89ab5c
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-922ad3cebde81653ed5e5d902e48e625
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-76c47fb19889321f93aa7fb29496a59b
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-6850cbf802c73b50bf856db9d4ccc6a4
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-0aadf9749bae68e596a681429d14eef5
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-78697eea7b253425ab415d729dae6d68
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-41bd0ed283615697da590052a8c82cde
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-603bbd843f766c90cbf228f4fffe8457
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-0bfc7672029bf6680c8e535bf2d93c08
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-5337d753ffebc16ae42ae4dd65f60b91
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-0aef96763d6e8899e62c2d1874111487
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-e07d2aeeea3889378a6de8d70ab1c43d
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-18f0d2bb8a3ae0d5fa876b7bb219be32
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-3c7ae0bded40cfb5df4fbbd9f3095723
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-6f9705b7ab1d9a97ae6f2313764277b9
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-a9955d3ca936931b18f5887713c086ad
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-77f1b8f5bff2122421bf751d80b823c7
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-25bcc0e9d4e0f834dcf25d8e2e712b27
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-0be559eec868185b498a14c93af1553b
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-673a3485900ff81bcb68dd1b1d4587e2
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-f70ed11148b6b078e1b23b42bcd6c621
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-549a2f347a5936bb23cf89a3c0e03754
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-2c9216e19e055532e33f3142db64b4f8
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-f9d30d2e9271f8c9dab528c6e702a316
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-4f7bbeade1f3470b8357086bc759152e
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-d6fa1414ba4b97874fa4cc59e7cd083c
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-27a7585c9550886e6d6d4c2fdfec0596
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-39367a0fe76175733ac4d7fc91f06f8b
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-60d255197f4a8da635a80469892d63af
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-2c07fa4e5555967f736f73653f5174f3
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-b4fa1a100147e5bcdc1cacb435c30650
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-f175cf7704e78030421df6f7bca62db3
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-7ca6ed3073f53d682a4a809956a9d946
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-feb8b92ffd3e106f8b2851ca0e1b42d0
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-0758d3dad914b5f7ed46d7e48ce2ae6a
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-8b920bb07eb1e7703311defa1edebda4
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-8f7add426f4c6b1a59b5d2ca4a48e259
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-b7f17c4a73fe0b7e8ac67088f07156c2
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-7cf105361fc396df0f99e8d24a62b1d6
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-44cf9be0fa743470ea409b81457c2b3d
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-be7f560f3b31abdcffc27f770691e6f2
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-bb9a5112677b900461be2b2ea3ab7f93
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-049853bbcc63e9cdabe7525e6bd6c46a
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-18113a4b285395662384a9556a4abca9
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-950fb2d7de6642d6cf689544543b6e37
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-d1a49f20b4ac9051a4b4da40ad29aca2
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-f253f1a988ff1129ece7c27a7633af4f
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-2f9b346324a297a181f7498a5fbf3aeb
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-f01e78b4c42e316db58b7bc0dbecbf0a
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-dbda90fa6751503d3f8f2460c16bfec5
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-d9ff6df745fa3a900257fe67f1be30b6
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-92730cfd9e8666e22acfd7e005e863a9
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-619a7a4213d979d590da84bd5877e532
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-52db561420dc88ddec6bb3af389766a7
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-a3e5d292a7db008bfb8f6cc672dcb7c7
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-71fa841511b402cf38f2bcb95dd7d6c2
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-9f3cf5b09ca922b6c726e98444cc970a
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-89343495855669b2b1ba15e5c6e7280c
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-c6dbda659eb9e3ef1c39418de6a6e31e
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-6e9b6d86902846fc4aa11cb39fc19b17
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-dbc15c67b3464241ed429f944980d26b
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-e36159fc4dcba2fba37dbf2406489422
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-a2be913a0534c4feebad83b301fe531b
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-5d7d1763466666fb4dbbd79af379db12
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-acbf41362596a44c1ca7bff439b0dd1d
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-a3ef66155f1d24ac94372a7eacd17f93
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-b69cef886d8fdf2c6aa8bbd8d9582691
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-bd3fd233f7eabc3c906782fb5b092dfb
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-36fee013f8dd4fe7dc879ba051f71a32
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-9e6c9ff1dd0b0114a6073b02a02e283b
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-d494a66fab47025bf12d3db12b848d3b
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-e12fa40d349de8e962f01b46b78501b6
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-def41f964d5aa0efd39d06e21b20ab45
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-0cd043b75d7c1b86bd8bc0bfd8f0c691
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-35142ae730c135611a88aba0b0aba0be
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-793ad9cdfc62a474b75dd15717c25647
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-c9a6347037f618edb6e07c3616c12ac9
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-a91312a1ff93bb182695b24f87783b80
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-dbda0ad8be3edf016a544558dcaf483a
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-f9aedb8fe3ba6e34182e82593479c660
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-c84fa33e06f1cffa1ec68a0cc7dae60e
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-1a19c6273b4d7cdc2f87b820d6ff3737
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-294e925bc57430de64505eb32054345a
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-0f370de0194c87619c0ec43e0b24d396
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-9120ae869c0b239be836513a3babae3f
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-3ad29f25eab2f05a35a28124fbb6c3d7
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-b71c207c9556dde801a477650c822bec
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-835c7a7a73cb178c2d0253b0985600d3
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-947d242e2a286ee57bb575b62d0c4483
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-2f7a61776db740566c7012eb369436c5
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-0ea8f1de6e9a30fe8b94447f38f5d0ed
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-57e3d94f710c1f0f9a4a15a1a1f4b988
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-57a7195b040e6810b182570184fd2f3c
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-419f7245a328b547a98c679c6c12326f
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-4a5f45f0db5c173df8f05693729a22a3
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-d6f95cc617531a09cee1d1f03ece1e18
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-61eedc26269afe5ab0b6708872d732ec
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-162d84c6f0a7c171b662f8957cd3da3d
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-bcafb17593c941646f10e71dbf3c51ce
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-b16dfba7ee915f03b25f21c63d4e5b07
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-54d073a798eb31bb3dc30bfc17c6ec10
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-6bf1dce638a330532f66553e4cc4f2c7
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-6b2a61336c1765e2d49642d981560393
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-5917ac45f7e6c1fc1dc060625bd1decc
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-042c858922e42c8bb807e6e5e0c432f4
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-fcc5c819a5cb6742056b4c54f37d2591
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-c2ad481c96d6fd7e5a966f756ece3f79
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-cc71af2c3c322ca5baf2da2199d3bdf5
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-fe41b560c9eb56d54f4f9290d61109b0
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-c96ad76458fac1f0c38f892d14ceb48c
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-f5fdbfe663b570503bab775215134d74
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-ac764ac891f16e9b4a2b1ee8936ee32b
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-4b8b60c663b1ba88df7985e7665be080
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-8b97bfdcc487163ac83077197c4d5156
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-6ab22952cf9cd92cef7ac83721894533
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-d0cb50e95d5b7000f2cff7bfca5bb73e
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-66c6f17ff15a53ce04ad0ec36ef96279
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-d5f8c7bcd397fba67d22ec47370f6ea8
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-98c4e60a097b333468261a132e3cf8bc
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-d17bdda8d73cda692373c1d77e77b29a
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-820e203032475e7aaaf248194cf2f9ad
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-3af4a90dd74a5c160a273a5f924ea4d3
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-fa397410e4cfd4028a05fd785eb2c4a0
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-1e05188ad02a772a203e0dcb87e8b1b9
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-f7e253556f7f6b347b3204a9b82afbd4
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-72710a93b74d7f33f7a93361bb91e3ae
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-d31ec8ee19ac44a6da57aa9f3d1c4280
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-5a19ebe83ed23cefc7138e221440a981
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-16f1c68f815b3ceea210fb25617423f6
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-775047b23d625c04ae2828c4d8b224c4
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-deb41958f5444e7d9d4141908e93f7af
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-7aee195d6e83f728ef2cbe93ece0ca9f
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-b46f025a91d89f74090c59abc9142ff5
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-a862e2341404f1a02105f95b6f1ebff6
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-b5907f400e621529967c334981ec505a
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-9d2fbdcd8870ca2795fca60967cc6ac6
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-7e2332f3fa6cdeae854bdda74adfdad6
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-816a0df0287cb76e44da916536a4f067
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-39515aa39eb30fbcca4468b9cf66007c
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-ce814d8502e1c7c09d266308688eefb3
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-a1451ed15005f954dbc867325fed1075
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-d930d0f373f445b6a6b0dd0def0bb597
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-ae60b48f3494a649328025742b7e2ba1
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-76c28916ccd681936bd6e3d54b0cbf14
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-8ea3a1524a6859c3b7e46e98fc4ab430
+
+FileName: ./.env.example
+SPDXID: SPDXRef-e67c6a035348a37084ddb6aaca2c6e67
+FileChecksum: SHA1: 901968410fc043d694e41923c9dd906f3b3f6a95
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./.gitattributes
+SPDXID: SPDXRef-1263a6a7e73e2faa803add5ad5349af2
+FileChecksum: SHA1: d931ca6c9b553e63198221aa0b93ae8c068d923b
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./.github\workflows\ci.yml
+SPDXID: SPDXRef-0fc0e8b452311046489fbe7305318fc8
+FileChecksum: SHA1: 7bf081aeb26533d694ec66e92b3eeb840606ef0c
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./.gitignore
+SPDXID: SPDXRef-e250baf3df9c3fb48aca0202a6126b4f
+FileChecksum: SHA1: 5b05cce6e286f3da33583efc95eeacb2185bfb56
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./.prettierrc.json
+SPDXID: SPDXRef-939bee263c7db5723f32a83a62913501
+FileChecksum: SHA1: 9bb6b17184b45675557e46d3210d1b0fddae1fd6
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./CONTRIBUTING.md
+SPDXID: SPDXRef-33a2bd34467e589fa5db93fbb7a06ea3
+FileChecksum: SHA1: eb2f9ac39c6f3020bcf1bd9649ceab497e06ac92
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN
+SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./NOTICE
+SPDXID: SPDXRef-d30660da15959e0e037a4512df9a558a
+FileChecksum: SHA1: 235fd3e622900bbfca1ec31a62744b6699c6f913
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>Copyright (C) 2022 Paul Miller (https://paulmillr.com)
+Copyright (C) 2023 Joe Hildebrand
+Copyright (C) 2024 Paul Miller (https://paulmillr.com)
+Copyright 2026 TRELYAN
+SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./README.md
+SPDXID: SPDXRef-09af5278f6ccc602883cf23e074574ef
+FileChecksum: SHA1: 08f070a051319028e46855b2b8aabad8b6033b98
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN
+Copyright 2026 TRELYAN.</text>
+
+FileName: ./SECURITY.md
+SPDXID: SPDXRef-6a2cab90f2c666bccc4ab493a18ec197
+FileChecksum: SHA1: 3b53879ebd97cee5dc2275b57b6ff92e14968cb3
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN
+Copyright 2026 TRELYAN — Apache‑2.0.</text>
+
+FileName: ./attest\src\index.ts
+SPDXID: SPDXRef-20f6825790d55522607336bb25bcfde1
+FileChecksum: SHA1: db3c3c5c6b5aa07cf6df786401901755e5ec7a98
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./attest\src\software.ts
+SPDXID: SPDXRef-1db7f841096d24c1a1eea64c0ab9ff34
+FileChecksum: SHA1: 8eb78d9579a0bd2e42f99b9643c4f81369513b90
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./attest\src\types.ts
+SPDXID: SPDXRef-5df16deaee75632efae427b2d8d8425b
+FileChecksum: SHA1: 91b1fb79118347a5c5993cca7d6c7f89440dbee7
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./attest\src\verifiers.ts
+SPDXID: SPDXRef-a2238e1b7597c5abfe8a762531b38cf3
+FileChecksum: SHA1: 531367c9586548d21378a186a71b61f1e7c8a6bf
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./attest\test\attest-hardening.test.ts
+SPDXID: SPDXRef-1b4d16f6712e08422a7acff1d762a4ca
+FileChecksum: SHA1: f61e11f336664ebe208022b35a361878898d4c74
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./attest\test\attest.test.ts
+SPDXID: SPDXRef-6ded24aa5371ee01d1e5e8ee1235b08a
+FileChecksum: SHA1: aea6f70db82e57139c4e189b43a6567b1351d44d
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./attest\test\verifiers.test.ts
+SPDXID: SPDXRef-4dec10884323c9fdaaed717e12b7fdcf
+FileChecksum: SHA1: 2bface9c4309bcb27237d8ab0f643f97ff74900f
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./capabilities\src\capability.ts
+SPDXID: SPDXRef-918f97eea53feb855226cdbf59e36a06
+FileChecksum: SHA1: d61f81fcf0695b4a22493ee68dbf2a14f79caeb0
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./capabilities\src\grant.ts
+SPDXID: SPDXRef-43796afec993a2da0bfc049ac93c9421
+FileChecksum: SHA1: c07e0ebace8b3d2d220676c1d6f8d4c4cc0bbc7b
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./capabilities\src\index.ts
+SPDXID: SPDXRef-f9255c1e11574873553823a5462f30d9
+FileChecksum: SHA1: b9048d1ee8a92a4e28a0d5207bbf624e6f56056d
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./capabilities\src\resolver.ts
+SPDXID: SPDXRef-9b8245822ae6ab4be65a0c531ecd8c0b
+FileChecksum: SHA1: e597de0bcc4085dd93055163c77c11f93deac4bf
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./capabilities\src\types.ts
+SPDXID: SPDXRef-dd0676f234f550af2027fe77d2b11739
+FileChecksum: SHA1: 52c6f1397b4f25940f9834524c409a6dfcd3dcaf
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./capabilities\test\attenuation.property.test.ts
+SPDXID: SPDXRef-59668796fe534cd6496eaadf6746e42b
+FileChecksum: SHA1: f23e8bc4f8e32dcca99507a695e46b7f1004ebed
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./capabilities\test\capability.test.ts
+SPDXID: SPDXRef-383255ab10a51049b8818266785a9df8
+FileChecksum: SHA1: f85b04f804c1ff4a38c643780d2cf22e027219d2
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./conformance\src\cbom.ts
+SPDXID: SPDXRef-abe103baff0f87555e4d63c9550ecc4e
+FileChecksum: SHA1: c12fe809f74b1fb6b9887318fb38dcd5cd21f763
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./conformance\src\cnsa-oracle.ts
+SPDXID: SPDXRef-7bcbde83ea9184dc4ae8b9cefb81687c
+FileChecksum: SHA1: e4c6b38ffa1d650581183cb315c59380c2cdd5d4
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./conformance\src\index.ts
+SPDXID: SPDXRef-93072fbce667f4101af583faafbbae76
+FileChecksum: SHA1: 89ecd1e4ae99ceb57a95aa08e4791d1caa962590
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./conformance\src\negative.ts
+SPDXID: SPDXRef-6643740ef379217b8c0bb57e19434cf7
+FileChecksum: SHA1: 3705f9373a303c275d0d8afae71e0795f3bf7569
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./conformance\src\suite.ts
+SPDXID: SPDXRef-9ce0893abe94f84eec894a0f24a39b69
+FileChecksum: SHA1: e3cdcdb0eacba65379e88443c8db5fac20134f4e
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./conformance\src\supplychain.ts
+SPDXID: SPDXRef-110fc41730eca5b1d96a238e86402e4e
+FileChecksum: SHA1: a9b5616edf07f21bfa3d8c3c9a0b0a7596b8e853
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./conformance\test\cbom.test.ts
+SPDXID: SPDXRef-802496c3d0e857cf961d2021d078d2c9
+FileChecksum: SHA1: b6b10d754c584b7bf7b14f80ae02a23a8a6174c2
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./conformance\test\cnsa-oracle.test.ts
+SPDXID: SPDXRef-654d6247461e639b784ea5be515de6fb
+FileChecksum: SHA1: 031593f3f17b10a0b2336a33a0f2e51ea1bb1ee3
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./conformance\test\conformance.test.ts
+SPDXID: SPDXRef-3627abdeb871f6c9419c96c64b5a9d84
+FileChecksum: SHA1: a343f898b52c4d84f03d378614b761330e7ff3cb
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./conformance\test\kat.test.ts
+SPDXID: SPDXRef-23a9ba79f2b094d4fdb1517e90de3181
+FileChecksum: SHA1: 2b18e25cb23bbc5d0e999659d164bc3d8ac05023
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./conformance\test\negative.test.ts
+SPDXID: SPDXRef-7ca5fe7c3823c7d8018a9936c5779411
+FileChecksum: SHA1: 22eb7b7c988f520dc55314760990eb74b1fea14a
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./conformance\test\supplychain.test.ts
+SPDXID: SPDXRef-4cc510bcf2be05054dc86aa74c326c5a
+FileChecksum: SHA1: ce12b4c293e6fcfd3148f86a4215a2bfebd8b9a1
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./conformance\vectors\ps-kat.json
+SPDXID: SPDXRef-819a60cb54b958a692efa772b0281b3e
+FileChecksum: SHA1: e70d21ed52fecbd68109d10506a3d82896f27c52
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./conformance\vectors\ps-negative.json
+SPDXID: SPDXRef-9905244e43ca7c25b800e2329084bd71
+FileChecksum: SHA1: 9e0ae2870cd42b2ee41f4d700d5508f1aa889119
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./crypto\README.md
+SPDXID: SPDXRef-1de3d7913829da859e4db9e62ef2bf9d
+FileChecksum: SHA1: 01a6c5bff9260c4d1d8043e69754eaf1509aee5a
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./crypto\src\cbor.ts
+SPDXID: SPDXRef-66584c80fa5698085506f2e638c73a21
+FileChecksum: SHA1: 1604271e425f6533f1236aecd0b1a1b9dbf9117f
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./crypto\src\cnsa.ts
+SPDXID: SPDXRef-f3348fffda3ca446b43ac1f81b4fa43a
+FileChecksum: SHA1: badfd9952f563ee2bafa2fcc8c4f280556fa8b45
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./crypto\src\code-sign.ts
+SPDXID: SPDXRef-5952a1fb2183cf36ee65397c0c6d2c4b
+FileChecksum: SHA1: d472633ff1aa9e436054d035bddba3ba748dda94
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./crypto\src\cose.ts
+SPDXID: SPDXRef-53188e021b0b9dbc72221af37343c00f
+FileChecksum: SHA1: dde3fabacd4ae2fd5e95d167c51e248fdd3f0694
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./crypto\src\envelope.ts
+SPDXID: SPDXRef-6e21aa98c298b260734a38d7681bb76d
+FileChecksum: SHA1: 6c1c8f0572e386b401993e0d4931f6920f0cb4c5
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./crypto\src\errors.ts
+SPDXID: SPDXRef-84fd7420121859ac0dd328f61986bcaa
+FileChecksum: SHA1: 894c6da36b1d6c840028421ed2e9bb0d4d5173b8
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./crypto\src\index.ts
+SPDXID: SPDXRef-381ee2d36973148ea352ea929341896c
+FileChecksum: SHA1: bf91a26d25a39885c438796acfdf564ba5675cb4
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./crypto\src\kem.ts
+SPDXID: SPDXRef-0d2e5273403f01db3d734024774f02f9
+FileChecksum: SHA1: 0e82cd8298eb68e4adcb0a6f54cb989d684d1fc2
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./crypto\src\sign.ts
+SPDXID: SPDXRef-73a43d1e9bff67a9bcbc2216589c5c4a
+FileChecksum: SHA1: 696fc0e470d4f439472c7ec8a44d174c050ef8eb
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./crypto\src\suites.ts
+SPDXID: SPDXRef-beb2a98929e59821fe2f230d37579255
+FileChecksum: SHA1: 080b59d4c601aa6303d6dcf6f2224077f2d7c197
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./crypto\src\symmetric.ts
+SPDXID: SPDXRef-0be49ab47c05677a620c90c96f36fa9b
+FileChecksum: SHA1: fce8c84ccaefc0ede5fd2aecb8f0c7fd7aad77f6
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./crypto\src\types.ts
+SPDXID: SPDXRef-a4cef37482eedc419b5b3e05db857824
+FileChecksum: SHA1: 3a529f2eb6938d5fb62ebff9d254cb2632e39e31
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./crypto\test\cbor-determinism.test.ts
+SPDXID: SPDXRef-ec3296c57cf805795dd64b2148f78d3b
+FileChecksum: SHA1: 88fc5b4d570c888d1713b621a453ba97893b7e8c
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./crypto\test\cbor.test.ts
+SPDXID: SPDXRef-9499763db0bcf486b9b02aa0763cd0d6
+FileChecksum: SHA1: 50f4dd61d738a07572f8094a666b76b3ed1b2b8e
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./crypto\test\cnsa.test.ts
+SPDXID: SPDXRef-301468cb3cd2531c41f9066d7ca8cbe3
+FileChecksum: SHA1: de66ca167aa81ddee4be8ae7a2df482fe89b08f0
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./crypto\test\code-sign.test.ts
+SPDXID: SPDXRef-e906d2fd9f8fc8b1a9891942d6ebeca3
+FileChecksum: SHA1: b9f21cfb9e7bc16f106ccd5ed80bc2dbe5641470
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./crypto\test\cose.test.ts
+SPDXID: SPDXRef-378c3549c769dac38e480160597c0344
+FileChecksum: SHA1: a291abb6480002725b1c885ef6a208811c24c7bf
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./crypto\test\envelope.test.ts
+SPDXID: SPDXRef-27627ac6563304d98eb0d02a8f3d24fc
+FileChecksum: SHA1: 8bea598a626b1a86082f7b960a25ef3c9231c2df
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./crypto\test\kat.test.ts
+SPDXID: SPDXRef-0b8c50871bf62bf09e8dc1630b1c2c98
+FileChecksum: SHA1: 2635da4f0f97cee8286e115b03479336acacf5d9
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./crypto\test\kem.test.ts
+SPDXID: SPDXRef-736da657536bc09ef5df351137f10a79
+FileChecksum: SHA1: 3dc42ebb9b5aff077b0cd5df34580eb7e776b2ed
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./crypto\test\sign.test.ts
+SPDXID: SPDXRef-bcb95f5e2b8a57a3ae21596c8b6b82b5
+FileChecksum: SHA1: 4f92ab505326b70f69d079227938258c0dff99cd
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./crypto\test\suites.test.ts
+SPDXID: SPDXRef-4602cab5a61a1adb4edbbc007de912a3
+FileChecksum: SHA1: ab2691fb4c5425f57af75837dcdabc7091201e55
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./crypto\test\symmetric.test.ts
+SPDXID: SPDXRef-d0fac944c0c76f35d4e2a461fc51d710
+FileChecksum: SHA1: 7367fffb0f75fb95f92b134dca0f77af4fc4a85d
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./crypto\vectors\_gen.mjs
+SPDXID: SPDXRef-63eccbe65ce9e8130a179e4d3d49913f
+FileChecksum: SHA1: 01c0240799a33b1f725b5580658fd23254889fdb
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./crypto\vectors\deterministic-kat.json
+SPDXID: SPDXRef-cfd1710e7612a0e4065bcb4463d64447
+FileChecksum: SHA1: 4579736d4753e18f9d6bc331f1470555076d3e03
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./disclosure\src\commitbind.ts
+SPDXID: SPDXRef-69cb2f3ab66509007ed0df18220c7bec
+FileChecksum: SHA1: 185b0efa3bf3f6da7fa401c98fe05d08f036b18f
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./disclosure\src\index.ts
+SPDXID: SPDXRef-09d3d1754044fd689405074867697424
+FileChecksum: SHA1: 76aeae022f5a840f620e7b109c88891977d808e3
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./disclosure\src\policyproof.ts
+SPDXID: SPDXRef-b870800ada44bdfe79266b44bbf03e15
+FileChecksum: SHA1: 450e76a817a92cc67de2d177b7b2c1d6153fe4ac
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./disclosure\src\selective.ts
+SPDXID: SPDXRef-3eb4a1a2d58c8aec6414c2de98aaf3a6
+FileChecksum: SHA1: 43e76f905aa6045a8c9fb4afb260d9abcaecdae1
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./disclosure\src\zkrange.ts
+SPDXID: SPDXRef-d8c1daa5eeda1bea041e6c5a69669213
+FileChecksum: SHA1: 0ccb19aca98ae92d600125b0fcfa3b546bf277ca
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./disclosure\test\commitbind.test.ts
+SPDXID: SPDXRef-1407c2df92702340636ecd46ef4d636f
+FileChecksum: SHA1: a24cbf3d6b27f65caedf38b265167294e6450c1e
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./disclosure\test\policyproof.test.ts
+SPDXID: SPDXRef-28826eccdadde05ff6773c242e8fa852
+FileChecksum: SHA1: 5a837c4f08f8df4a333d2312fc767d229fcc3451
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./disclosure\test\selective.test.ts
+SPDXID: SPDXRef-113fd79a7352c01c0a1f8a4e92ce374c
+FileChecksum: SHA1: f9c79200699c941bcf403bac420027b30f0f7242
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./disclosure\test\zkrange.property.test.ts
+SPDXID: SPDXRef-036e70a072a8589be45b51daf0f256f4
+FileChecksum: SHA1: aeb0a39f8af283db6052b07253b50a982d25a66a
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./disclosure\test\zkrange.test.ts
+SPDXID: SPDXRef-df67f7549cfbb8b05729ddae5e8501bf
+FileChecksum: SHA1: 0ef56473668e158b6ffc60df1e6355389d12f60f
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\APEX_COUNCIL.md
+SPDXID: SPDXRef-dee2eeed03c5e6225d32ad7fa4d50794
+FileChecksum: SHA1: 0a7392f72e5b92da016afc8dc25fdc4d47b43c4b
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN
+Copyright stays **TRELYAN**; new files carry REUSE/SPDX headers.</text>
+
+FileName: ./docs\APEX_SPRINT_BACKLOG.md
+SPDXID: SPDXRef-b46aa594a4cb1266e69d5dfb067ab547
+FileChecksum: SHA1: 3bee93c5241479a87003ed116e149be0399dc84f
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\APEX_UPGRADE_PROGRAM.md
+SPDXID: SPDXRef-d76e521af7c306723c4464dc7d89ab5c
+FileChecksum: SHA1: a8c9820b616f6fd2d5f7de4b740a6e64209f664c
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN
+SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\ASSURANCE.md
+SPDXID: SPDXRef-922ad3cebde81653ed5e5d902e48e625
+FileChecksum: SHA1: 06ac3ea5d278c46eed9a03f527c4ad53d2ef2778
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN
+SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\AUDIT_PACKAGE.md
+SPDXID: SPDXRef-76c47fb19889321f93aa7fb29496a59b
+FileChecksum: SHA1: 2014b717221b12e61ddbe48e599524095befdac8
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\CLEANROOM.md
+SPDXID: SPDXRef-6850cbf802c73b50bf856db9d4ccc6a4
+FileChecksum: SHA1: 6e43166b0ae0bf770fa8626a7c173f43d67a7a78
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\DEPLOY.md
+SPDXID: SPDXRef-0aadf9749bae68e596a681429d14eef5
+FileChecksum: SHA1: e2ac95248d117f02f3f1291ea3d1ed76409d37b4
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\DEPLOY_HARDWARE.md
+SPDXID: SPDXRef-78697eea7b253425ab415d729dae6d68
+FileChecksum: SHA1: acdc841c76f40be3c2d585d639f0aa154b5ed97f
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\DESIGN_AROUND.md
+SPDXID: SPDXRef-41bd0ed283615697da590052a8c82cde
+FileChecksum: SHA1: 3f1d792e4a6a079b1163e3ac9b3c8fe312ac7a8d
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\EXECUTIVE_SUMMARY.md
+SPDXID: SPDXRef-603bbd843f766c90cbf228f4fffe8457
+FileChecksum: SHA1: 59b6a70381c903e2cf89a697466716b022a6f025
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN
+SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\FTO_CLAIM_CHART.md
+SPDXID: SPDXRef-0bfc7672029bf6680c8e535bf2d93c08
+FileChecksum: SHA1: 1e166e78d25631b40df3a16aed35d67791de2a82
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\FTO_PACKAGE.md
+SPDXID: SPDXRef-5337d753ffebc16ae42ae4dd65f60b91
+FileChecksum: SHA1: 5bc06ea063eabc624c152d9f546e2826834f9a60
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\FTO_TODO.md
+SPDXID: SPDXRef-0aef96763d6e8899e62c2d1874111487
+FileChecksum: SHA1: d28439062adc9d366df8b320009fd3436e49cc2d
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\LAUNCH_READINESS.md
+SPDXID: SPDXRef-e07d2aeeea3889378a6de8d70ab1c43d
+FileChecksum: SHA1: 939df49c85b0b583859a6fc0c8fc47f56e15c698
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\PRIOR_ART_NOTES.md
+SPDXID: SPDXRef-18f0d2bb8a3ae0d5fa876b7bb219be32
+FileChecksum: SHA1: 8cb13acfcb5cc0ae457acd8b6a5d8a9b6fdb4860
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\REVIEW-apex.md
+SPDXID: SPDXRef-3c7ae0bded40cfb5df4fbbd9f3095723
+FileChecksum: SHA1: a54932bed72cf99db945a97f79fa1927c94b09e8
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\SECURITY_FINDINGS.md
+SPDXID: SPDXRef-6f9705b7ab1d9a97ae6f2313764277b9
+FileChecksum: SHA1: 1386fdae3dbff433f127232c2064803ce64051c0
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN
+SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\STATUS.md
+SPDXID: SPDXRef-a9955d3ca936931b18f5887713c086ad
+FileChecksum: SHA1: 7411726c7d445472f9db1d808b2d55e067857be0
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\STRENGTHEN.md
+SPDXID: SPDXRef-77f1b8f5bff2122421bf751d80b823c7
+FileChecksum: SHA1: f42c0bf53e4845103ca504fb29d605c5f6045ff3
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\THREAT_MODEL.md
+SPDXID: SPDXRef-25bcc0e9d4e0f834dcf25d8e2e712b27
+FileChecksum: SHA1: ba2cd3bcd4eb6ca73bc89fcd6fd3bff05ee4339a
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\adr\ADR-0001-crypto-suite.md
+SPDXID: SPDXRef-0be559eec868185b498a14c93af1553b
+FileChecksum: SHA1: 59435350c28c93020a7b38fa452cd170efeae4ce
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\adr\ADR-0002-ts-reference-and-kem-pairing.md
+SPDXID: SPDXRef-673a3485900ff81bcb68dd1b1d4587e2
+FileChecksum: SHA1: db7d2e6687a19f9d17b8b747ee7b7a62cb32cf5a
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\adr\ADR-0003-repo-location.md
+SPDXID: SPDXRef-f70ed11148b6b078e1b23b42bcd6c621
+FileChecksum: SHA1: 87a0cbb1353b654c9ce17d7169493232db581f07
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\adr\ADR-0004-vrf-sortition.md
+SPDXID: SPDXRef-549a2f347a5936bb23cf89a3c0e03754
+FileChecksum: SHA1: 25506bca777a16adc9a0ff85322669f1c70c9d3f
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\adr\ADR-0005-quorum-receipts.md
+SPDXID: SPDXRef-2c9216e19e055532e33f3142db64b4f8
+FileChecksum: SHA1: 1dfa5c6e5c76c630734237c6cab49c6780929220
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\adr\ADR-0006-zk-policy-satisfaction.md
+SPDXID: SPDXRef-f9d30d2e9271f8c9dab528c6e702a316
+FileChecksum: SHA1: c9121ba9e37320ce0c24bdd56c916ae53c0fedc2
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\adr\ADR-0007-govern-the-verb-oracle.md
+SPDXID: SPDXRef-4f7bbeade1f3470b8357086bc759152e
+FileChecksum: SHA1: e9aa5e07be5957997e86d94fe0cc83de89c83d94
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\adr\ADR-0008-cnsa2-oracle.md
+SPDXID: SPDXRef-d6fa1414ba4b97874fa4cc59e7cd083c
+FileChecksum: SHA1: f4ec5a40202adab72a8961fe72bbce9fab7d7eea
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\adr\ADR-0009-cbom.md
+SPDXID: SPDXRef-27a7585c9550886e6d6d4c2fdfec0596
+FileChecksum: SHA1: a78727773a6e79a9a9ccf9519fe618ebce85617c
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\adr\ADR-0010-cnsa-code-signing.md
+SPDXID: SPDXRef-39367a0fe76175733ac4d7fc91f06f8b
+FileChecksum: SHA1: 8a85070e2903c62fa47884db9a619a11977a47fa
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\adr\ADR-0011-cose-rats.md
+SPDXID: SPDXRef-60d255197f4a8da635a80469892d63af
+FileChecksum: SHA1: ac06627f79b9da5f357c2f7aa505be5deeedc728
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\adr\ADR-0012-supply-chain-provenance.md
+SPDXID: SPDXRef-2c07fa4e5555967f736f73653f5174f3
+FileChecksum: SHA1: 2e03ba9da85207f43d605eee6ef756a68559d502
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\adr\ADR-0013-v2-commitment-equality.md
+SPDXID: SPDXRef-b4fa1a100147e5bcdc1cacb435c30650
+FileChecksum: SHA1: 7c51cc5af88326b7349325ac5cb6bd69712a0096
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN
+SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\adr\ADR-0014-salted-intent-commitment.md
+SPDXID: SPDXRef-f175cf7704e78030421df6f7bca62db3
+FileChecksum: SHA1: 206aa31b8a00063c575082b13c1cf74c25c72415
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN
+SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\adr\ADR-0015-per-audience-permit-keys.md
+SPDXID: SPDXRef-7ca6ed3073f53d682a4a809956a9d946
+FileChecksum: SHA1: 28d2611bb5eacd840f010ddccd4a3afb86cc8a03
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN
+SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\council\P0-verdicts.md
+SPDXID: SPDXRef-feb8b92ffd3e106f8b2851ca0e1b42d0
+FileChecksum: SHA1: 7fd8c966fa0183da6d4e33270ba91a7f68cec16b
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\council\team-apex-campaign-summary-2026-06-21.md
+SPDXID: SPDXRef-0758d3dad914b5f7ed46d7e48ce2ae6a
+FileChecksum: SHA1: ade37e1a5329e114bb2c90c3103f87064882cfd9
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN
+SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\council\team-apex-postfix-verification-2026-06-21.md
+SPDXID: SPDXRef-8b920bb07eb1e7703311defa1edebda4
+FileChecksum: SHA1: 40cb1e12c175689a5a9301071be31bcb9c923d25
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN
+SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\council\team-apex-round1-audit-2026-06-21.md
+SPDXID: SPDXRef-8f7add426f4c6b1a59b5d2ca4a48e259
+FileChecksum: SHA1: eede86729347c8e49a0b68f053b35a054ed4ac8f
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN
+SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\council\team-apex-round2-audit-2026-06-21.md
+SPDXID: SPDXRef-b7f17c4a73fe0b7e8ac67088f07156c2
+FileChecksum: SHA1: 28a8f08e6072ece5512d95d3faad44328c31a5c0
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN
+SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\council\team-apex-round3-audit-2026-06-21.md
+SPDXID: SPDXRef-7cf105361fc396df0f99e8d24a62b1d6
+FileChecksum: SHA1: ef32d0a0be8903281032c4b8912c0c119458fc55
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN
+SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\council\team-apex-round4-audit-2026-06-21.md
+SPDXID: SPDXRef-44cf9be0fa743470ea409b81457c2b3d
+FileChecksum: SHA1: b9f1eb4c3991c065824f805e81eabeaee282bf1b
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN
+SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\council\team-apex-round5-audit-2026-06-21.md
+SPDXID: SPDXRef-be7f560f3b31abdcffc27f770691e6f2
+FileChecksum: SHA1: 7e52349d78f6af92dc9c2d1d1d282e750d26158e
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN
+SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\council\team-apex-sweep-2026-06-21.md
+SPDXID: SPDXRef-bb9a5112677b900461be2b2ea3ab7f93
+FileChecksum: SHA1: 435afae6779392a58fe4f612df4d064d2745aaec
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN
+SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\council\team-apex-zkrange-2026-06-21.md
+SPDXID: SPDXRef-049853bbcc63e9cdabe7525e6bd6c46a
+FileChecksum: SHA1: 6cea8a6dfdc817abbed7799735b144c09705f836
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN
+SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\grants\AUDIT_FUNDING_OUTREACH.md
+SPDXID: SPDXRef-18113a4b285395662384a9556a4abca9
+FileChecksum: SHA1: c3303fdc6553eff3f2a9f7ef18ae35ae0f300978
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\grants\GRANT_TARGETS.md
+SPDXID: SPDXRef-950fb2d7de6642d6cf689544543b6e37
+FileChecksum: SHA1: 715d58860c55d9a10ca961c37fce007163e13b40
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\grants\NLnet-NGI-Application.md
+SPDXID: SPDXRef-d1a49f20b4ac9051a4b4da40ad29aca2
+FileChecksum: SHA1: 7d27a08f1b094068e028bc508fd5b93199d5f777
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./docs\grants\ZK_AUDITOR_SHORTLIST.md
+SPDXID: SPDXRef-f253f1a988ff1129ece7c27a7633af4f
+FileChecksum: SHA1: ddc5f5648c54b8d241983c1b4f05e2628a94f014
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./governance\src\index.ts
+SPDXID: SPDXRef-2f9b346324a297a181f7498a5fbf3aeb
+FileChecksum: SHA1: bf194e62f3e05f983a1ab09f687df39142f8a7e9
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./governance\src\quorum.ts
+SPDXID: SPDXRef-f01e78b4c42e316db58b7bc0dbecbf0a
+FileChecksum: SHA1: 288555ce2954aa310d6d1cdef43efb05b6e41322
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./governance\src\types.ts
+SPDXID: SPDXRef-dbda90fa6751503d3f8f2460c16bfec5
+FileChecksum: SHA1: 04e1fd60573b343cb9b12d8db887cfdbc17ed182
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./governance\test\quorum.test.ts
+SPDXID: SPDXRef-d9ff6df745fa3a900257fe67f1be30b6
+FileChecksum: SHA1: 4f6f56bd535949cd440025d67e8f85b9dcf34fce
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./kernel\spec\PolarSeekKernel.tla
+SPDXID: SPDXRef-92730cfd9e8666e22acfd7e005e863a9
+FileChecksum: SHA1: 5462f0c3b65666bbe1bba9162da257e3b9c9304b
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./kernel\spec\README.md
+SPDXID: SPDXRef-619a7a4213d979d590da84bd5877e532
+FileChecksum: SHA1: bbe4d8ef26855247df8e1592d02753ec69d93da1
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./kernel\src\index.ts
+SPDXID: SPDXRef-52db561420dc88ddec6bb3af389766a7
+FileChecksum: SHA1: 41c1ef1606365fee0806b70235eef59b186c4f2d
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./kernel\src\kernel.ts
+SPDXID: SPDXRef-a3e5d292a7db008bfb8f6cc672dcb7c7
+FileChecksum: SHA1: 262e2de300ec1f3767314745f65f7e756a9f492d
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./kernel\src\policy.ts
+SPDXID: SPDXRef-71fa841511b402cf38f2bcb95dd7d6c2
+FileChecksum: SHA1: b40c20cfb08855d1f15bce12ef82c32721470813
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./kernel\src\replay.ts
+SPDXID: SPDXRef-9f3cf5b09ca922b6c726e98444cc970a
+FileChecksum: SHA1: ede14423bb2db5fde36cdc12470b6808b35d1ad4
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./kernel\src\types.ts
+SPDXID: SPDXRef-89343495855669b2b1ba15e5c6e7280c
+FileChecksum: SHA1: bfff31c4f17b430f887cfa1a8e8295f94fef68e8
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./kernel\test\kernel.test.ts
+SPDXID: SPDXRef-c6dbda659eb9e3ef1c39418de6a6e31e
+FileChecksum: SHA1: 95a09d955e65893e087cfd4a6c4d06e2863fcbdc
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./kernel\test\replay.test.ts
+SPDXID: SPDXRef-6e9b6d86902846fc4aa11cb39fc19b17
+FileChecksum: SHA1: 57f212c2f65eeb358346b6c14347810732e4d6e0
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./keystore\src\aws-kms.ts
+SPDXID: SPDXRef-dbc15c67b3464241ed429f944980d26b
+FileChecksum: SHA1: ab685f11b0ca00f8f1f2885cad90bca65c279016
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./keystore\src\azure-kv.ts
+SPDXID: SPDXRef-e36159fc4dcba2fba37dbf2406489422
+FileChecksum: SHA1: 9f28b40eaedbd9ce74da65407975bb96bb886aae
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./keystore\src\azure-provider.ts
+SPDXID: SPDXRef-a2be913a0534c4feebad83b301fe531b
+FileChecksum: SHA1: 08572b7e64d02d9a7790c268da98fecb6c4f65a4
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./keystore\src\hbs-state.ts
+SPDXID: SPDXRef-5d7d1763466666fb4dbbd79af379db12
+FileChecksum: SHA1: f7e0768391082f19006e1261ba0edbec9a13a75c
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./keystore\src\index.ts
+SPDXID: SPDXRef-acbf41362596a44c1ca7bff439b0dd1d
+FileChecksum: SHA1: ada30e54b3bf85b17f6151d8e8e2a732e6df7ab8
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./keystore\src\pkcs11.ts
+SPDXID: SPDXRef-a3ef66155f1d24ac94372a7eacd17f93
+FileChecksum: SHA1: 8fb87ca98780926c86536956ef6051ecf42e63de
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./keystore\src\providers.ts
+SPDXID: SPDXRef-b69cef886d8fdf2c6aa8bbd8d9582691
+FileChecksum: SHA1: 5139a06b9d000d19df998f3260bb8873886aae4b
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./keystore\src\sealing-provider.ts
+SPDXID: SPDXRef-bd3fd233f7eabc3c906782fb5b092dfb
+FileChecksum: SHA1: 27e85f733affa892f46c12d0359c6bec40a954b3
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./keystore\src\types.ts
+SPDXID: SPDXRef-36fee013f8dd4fe7dc879ba051f71a32
+FileChecksum: SHA1: e7184edf62b88e6717628eea920a2d134816d972
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./keystore\test\aws-kms.test.ts
+SPDXID: SPDXRef-9e6c9ff1dd0b0114a6073b02a02e283b
+FileChecksum: SHA1: e02a4771f4292098275e53817b7c3a7dab6b59d2
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./keystore\test\azure-kv.test.ts
+SPDXID: SPDXRef-d494a66fab47025bf12d3db12b848d3b
+FileChecksum: SHA1: 10f385817c92b1a6f4a1d8587bea8344d71e27cc
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./keystore\test\azure-provider.test.ts
+SPDXID: SPDXRef-e12fa40d349de8e962f01b46b78501b6
+FileChecksum: SHA1: eda72ab76840fbfc331a75e8c8ea97504c40074c
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./keystore\test\custody-seal.test.ts
+SPDXID: SPDXRef-def41f964d5aa0efd39d06e21b20ab45
+FileChecksum: SHA1: f659f7e3c87961169d36c55b525640d24bb308a5
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./keystore\test\hbs-state.test.ts
+SPDXID: SPDXRef-0cd043b75d7c1b86bd8bc0bfd8f0c691
+FileChecksum: SHA1: 0acbb2d367e626184c726695fabb896e0aa99706
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./keystore\test\pkcs11.test.ts
+SPDXID: SPDXRef-35142ae730c135611a88aba0b0aba0be
+FileChecksum: SHA1: 89c67b9c83cc06337509376f769be7060d949c0e
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./keystore\test\providers.test.ts
+SPDXID: SPDXRef-793ad9cdfc62a474b75dd15717c25647
+FileChecksum: SHA1: 0e9f3879c4e676b11f48082737d4a6ff99f89bf5
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./ledger\src\chain.ts
+SPDXID: SPDXRef-c9a6347037f618edb6e07c3616c12ac9
+FileChecksum: SHA1: 6df8e3565e5dd439474d29242db7a736921d60be
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./ledger\src\equivocation.ts
+SPDXID: SPDXRef-a91312a1ff93bb182695b24f87783b80
+FileChecksum: SHA1: 6040f5c4aefa6d933bdd4e7517641725debdbff4
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./ledger\src\gossip.ts
+SPDXID: SPDXRef-dbda0ad8be3edf016a544558dcaf483a
+FileChecksum: SHA1: 219ce62b274de17fdd896f62b190d321f143b5c2
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./ledger\src\index.ts
+SPDXID: SPDXRef-f9aedb8fe3ba6e34182e82593479c660
+FileChecksum: SHA1: f501d24ea41b72d712e37c57b67f05e0fd5c73ac
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./ledger\src\leader.ts
+SPDXID: SPDXRef-c84fa33e06f1cffa1ec68a0cc7dae60e
+FileChecksum: SHA1: 6f2721a845b53677d35c74973b09c2d451845514
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./ledger\src\sortition.ts
+SPDXID: SPDXRef-1a19c6273b4d7cdc2f87b820d6ff3737
+FileChecksum: SHA1: eeebd455f9245108091fab97701ba2f56e1f3ed4
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./ledger\src\types.ts
+SPDXID: SPDXRef-294e925bc57430de64505eb32054345a
+FileChecksum: SHA1: ac95d334c94e24540f77f583c55409d22be5b385
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./ledger\src\vrf.ts
+SPDXID: SPDXRef-0f370de0194c87619c0ec43e0b24d396
+FileChecksum: SHA1: ce8089380b635ab43a4b909ab377d0973eff8e12
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./ledger\test\chain.test.ts
+SPDXID: SPDXRef-9120ae869c0b239be836513a3babae3f
+FileChecksum: SHA1: c2beb60404836858e3e8aea7c4d511666133b0b3
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./ledger\test\equivocation.test.ts
+SPDXID: SPDXRef-3ad29f25eab2f05a35a28124fbb6c3d7
+FileChecksum: SHA1: 74a3dd2591393db9622211f50bd30ddfaa9f34f6
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./ledger\test\gossip-buffer.test.ts
+SPDXID: SPDXRef-b71c207c9556dde801a477650c822bec
+FileChecksum: SHA1: 4f450e5700678578abc28e22a284212ee7273032
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./ledger\test\gossip.test.ts
+SPDXID: SPDXRef-835c7a7a73cb178c2d0253b0985600d3
+FileChecksum: SHA1: a516d8b30d15baad1eac360928074a02ef9604b0
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./ledger\test\leader.test.ts
+SPDXID: SPDXRef-947d242e2a286ee57bb575b62d0c4483
+FileChecksum: SHA1: b823d98f07286b7f4482f978f5128048f95024a8
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./ledger\test\vrf-chain.test.ts
+SPDXID: SPDXRef-2f7a61776db740566c7012eb369436c5
+FileChecksum: SHA1: 73580b880cba0eff0b4d8e347fa1a56af238d6a5
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./ledger\test\vrf-rfc9381.test.ts
+SPDXID: SPDXRef-0ea8f1de6e9a30fe8b94447f38f5d0ed
+FileChecksum: SHA1: 82fbd60f145da7898ecdfb94e4ec2e9b5146a829
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./ledger\test\vrf-validate-key.test.ts
+SPDXID: SPDXRef-57e3d94f710c1f0f9a4a15a1a1f4b988
+FileChecksum: SHA1: 1cc5277a4d2300c0411bc2e23d7ae406baf14813
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./ledger\test\vrf.test.ts
+SPDXID: SPDXRef-57a7195b040e6810b182570184fd2f3c
+FileChecksum: SHA1: d1c616c2b62a4d67928f9dba4123966a7f4201aa
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./ops\src\env.ts
+SPDXID: SPDXRef-419f7245a328b547a98c679c6c12326f
+FileChecksum: SHA1: 4fc4f729b2bfb7d93e4fcb1d8f493a4784901983
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./ops\src\index.ts
+SPDXID: SPDXRef-4a5f45f0db5c173df8f05693729a22a3
+FileChecksum: SHA1: 7261930211a76cf868795fee33dd59e3f77564fb
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./ops\test\env.test.ts
+SPDXID: SPDXRef-d6f95cc617531a09cee1d1f03ece1e18
+FileChecksum: SHA1: daaeb9c36d1035356e38d49b7d2d3b8e0b43ec86
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./package-lock.json
+SPDXID: SPDXRef-61eedc26269afe5ab0b6708872d732ec
+FileChecksum: SHA1: ea806e1fb3ef4e81a7ad0f04141da83e6e9178b1
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: NONE</text>
+
+FileName: ./package.json
+SPDXID: SPDXRef-162d84c6f0a7c171b662f8957cd3da3d
+FileChecksum: SHA1: e0376d8bbb090e6d2fb135f24c9dfc65941be720
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./planes\src\index.ts
+SPDXID: SPDXRef-bcafb17593c941646f10e71dbf3c51ce
+FileChecksum: SHA1: a6fdad2c03ceec8463e16ccde57e12ccced15606
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./planes\src\node.ts
+SPDXID: SPDXRef-b16dfba7ee915f03b25f21c63d4e5b07
+FileChecksum: SHA1: a654205fade6de58aecb8a90dd2fb9dbf9876374
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./planes\src\permit.ts
+SPDXID: SPDXRef-54d073a798eb31bb3dc30bfc17c6ec10
+FileChecksum: SHA1: 6552b162216d678d5633d2440396c2a9b98b0d93
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./planes\test\node.test.ts
+SPDXID: SPDXRef-6bf1dce638a330532f66553e4cc4f2c7
+FileChecksum: SHA1: cd4320e9d254b7064e7aef83658186a82f8b7914
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./receipts\src\index.ts
+SPDXID: SPDXRef-6b2a61336c1765e2d49642d981560393
+FileChecksum: SHA1: 10c3a0ceb60a70acf0a479d6d08fe6e3a63a8cfe
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./receipts\src\quorum.ts
+SPDXID: SPDXRef-5917ac45f7e6c1fc1dc060625bd1decc
+FileChecksum: SHA1: a3ff4385934bb6870a4e9640e7195e802806c570
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./receipts\src\receipt.ts
+SPDXID: SPDXRef-042c858922e42c8bb807e6e5e0c432f4
+FileChecksum: SHA1: 6143b9699572389b0c1c3bebc31e76e3bf46e38e
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./receipts\test\e2e.test.ts
+SPDXID: SPDXRef-fcc5c819a5cb6742056b4c54f37d2591
+FileChecksum: SHA1: 2f93141fd0a0b4aaa4c070e900bcd746637357e3
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./receipts\test\quorum.property.test.ts
+SPDXID: SPDXRef-c2ad481c96d6fd7e5a966f756ece3f79
+FileChecksum: SHA1: c95e67ff582485efd5b1ac88c8af29c7c9f594dd
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./receipts\test\quorum.test.ts
+SPDXID: SPDXRef-cc71af2c3c322ca5baf2da2199d3bdf5
+FileChecksum: SHA1: d6e0c6aaa577fc225a62477e455699823b102c23
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./receipts\test\receipt.test.ts
+SPDXID: SPDXRef-fe41b560c9eb56d54f4f9290d61109b0
+FileChecksum: SHA1: e945e19b7357b35d177222c958879b82a04c6ee3
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./rust\.cargo\config.toml
+SPDXID: SPDXRef-c96ad76458fac1f0c38f892d14ceb48c
+FileChecksum: SHA1: b8767ad1ef10d661e9fb35ae86dfcc6d385bccc8
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./rust\.gitignore
+SPDXID: SPDXRef-f5fdbfe663b570503bab775215134d74
+FileChecksum: SHA1: 4bcdd0ef500e36de0e5037ff7d3d7413a58c111e
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./rust\Cargo.lock
+SPDXID: SPDXRef-ac764ac891f16e9b4a2b1ee8936ee32b
+FileChecksum: SHA1: 36b1431eb42aa50a0a860674fc8b019f4d31b8d9
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: NONE</text>
+
+FileName: ./rust\Cargo.toml
+SPDXID: SPDXRef-4b8b60c663b1ba88df7985e7665be080
+FileChecksum: SHA1: f5d2d7ea8587e5c0bdbac02e703768534f335c0d
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./rust\README.md
+SPDXID: SPDXRef-8b97bfdcc487163ac83077197c4d5156
+FileChecksum: SHA1: c9a8a5c01ba27bfc46dd214d2f47fd3361b68a06
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./rust\src\lib.rs
+SPDXID: SPDXRef-6ab22952cf9cd92cef7ac83721894533
+FileChecksum: SHA1: c79fc4fa4d679ab2094c5ad8152246680a8260c7
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./sdks\python\polarseek_conformance.py
+SPDXID: SPDXRef-d0cb50e95d5b7000f2cff7bfca5bb73e
+FileChecksum: SHA1: b670398ac435ebc54fec13082b6b4e907d0a23d7
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./sdks\ts\src\client.ts
+SPDXID: SPDXRef-66c6f17ff15a53ce04ad0ec36ef96279
+FileChecksum: SHA1: 376300b3b59a0edeb39257c560552b46397a6f46
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./sdks\ts\src\index.ts
+SPDXID: SPDXRef-d5f8c7bcd397fba67d22ec47370f6ea8
+FileChecksum: SHA1: 8f12d5de9a6d71088fad557a901d7e8a8719b90a
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./sdks\ts\src\mcp.ts
+SPDXID: SPDXRef-98c4e60a097b333468261a132e3cf8bc
+FileChecksum: SHA1: cc89496a44f642a7238e4155111c636638e9bc73
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./sdks\ts\test\mcp.test.ts
+SPDXID: SPDXRef-d17bdda8d73cda692373c1d77e77b29a
+FileChecksum: SHA1: 36b76b291d0872c95761bb2f42b756a019080b0e
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./settlement\src\credits.ts
+SPDXID: SPDXRef-820e203032475e7aaaf248194cf2f9ad
+FileChecksum: SHA1: d9803f4c7277091778e5f996aa083ad7579ab5a1
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./settlement\src\index.ts
+SPDXID: SPDXRef-3af4a90dd74a5c160a273a5f924ea4d3
+FileChecksum: SHA1: 06b708c2ceaf3cdc59ac149ab2dab3d519f7e805
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./settlement\test\credits-hardening.test.ts
+SPDXID: SPDXRef-fa397410e4cfd4028a05fd785eb2c4a0
+FileChecksum: SHA1: 84b7dbcaa201d1fa6902e33c5f97284af89cbb56
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./settlement\test\credits.test.ts
+SPDXID: SPDXRef-1e05188ad02a772a203e0dcb87e8b1b9
+FileChecksum: SHA1: 0fd98f2a67ea1be9a276d1504038ab5c077d38cf
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./third_party\README.md
+SPDXID: SPDXRef-f7e253556f7f6b347b3204a9b82afbd4
+FileChecksum: SHA1: e295c3beb3ed84a726a7ddf9d344cb68b7f20f53
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN
+© |</text>
+
+FileName: ./third_party\cbor2.LICENSE.txt
+SPDXID: SPDXRef-72710a93b74d7f33f7a93361bb91e3ae
+FileChecksum: SHA1: d0d90ccfe15af0b7e70f4736c7c8e7ec74c8423b
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2023 Joe Hildebrand</text>
+
+FileName: ./third_party\noble.LICENSE.txt
+SPDXID: SPDXRef-d31ec8ee19ac44a6da57aa9f3d1c4280
+FileChecksum: SHA1: 3f63833b64f12958b6db591bc932a2ea2f079cdd
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2022 Paul Miller (https://paulmillr.com)
+SPDX-FileCopyrightText: 2024 Paul Miller (https://paulmillr.com)</text>
+
+FileName: ./tools\azure-custody-check.mjs
+SPDXID: SPDXRef-5a19ebe83ed23cefc7138e221440a981
+FileChecksum: SHA1: 5145be3852708e9155505be9133488c01808d8cd
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./tools\cleanroom-lint.mjs
+SPDXID: SPDXRef-16f1c68f815b3ceea210fb25617423f6
+FileChecksum: SHA1: df33393fc705329802afd03ceaae6a821fa2057d
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./tools\conformance.mjs
+SPDXID: SPDXRef-775047b23d625c04ae2828c4d8b224c4
+FileChecksum: SHA1: 468f6adc0bea0e109e63c8e3a3c51a310d9764df
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./tools\demo-bundle.mjs
+SPDXID: SPDXRef-deb41958f5444e7d9d4141908e93f7af
+FileChecksum: SHA1: 8d7a2759613d71833031f524fb2f1c1ebef0160c
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./tools\gen-kat.mjs
+SPDXID: SPDXRef-7aee195d6e83f728ef2cbe93ece0ca9f
+FileChecksum: SHA1: 4b917d5603e093e4e401ea8475dafd4f281aa4ae
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./tools\verify-receipt.mjs
+SPDXID: SPDXRef-b46f025a91d89f74090c59abc9142ff5
+FileChecksum: SHA1: c6039dd8c043247393a522221f8dc1795eeb9ab7
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./translog\src\index.ts
+SPDXID: SPDXRef-a862e2341404f1a02105f95b6f1ebff6
+FileChecksum: SHA1: a0fd071362b4d2e62470617e4b86d4871d2bd541
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./translog\src\log.ts
+SPDXID: SPDXRef-b5907f400e621529967c334981ec505a
+FileChecksum: SHA1: 4dc145e22711eb79a70a97bd75025433c7ff2c4e
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./translog\src\merkle.ts
+SPDXID: SPDXRef-9d2fbdcd8870ca2795fca60967cc6ac6
+FileChecksum: SHA1: b91c75b42b0de4abb75ad44ce9dabd1655bc8273
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./translog\src\persistent.ts
+SPDXID: SPDXRef-7e2332f3fa6cdeae854bdda74adfdad6
+FileChecksum: SHA1: 3fb4f2c0d716f1e38a1b77ff53c1a5cb8a0043c2
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./translog\src\sth.ts
+SPDXID: SPDXRef-816a0df0287cb76e44da916536a4f067
+FileChecksum: SHA1: 9a748058e768d3aef083df3741788ef628359447
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./translog\test\log.test.ts
+SPDXID: SPDXRef-39515aa39eb30fbcca4468b9cf66007c
+FileChecksum: SHA1: a685e434d41c660fbd9be3c444d60cc5da3cc58f
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./translog\test\merkle-soundness.test.ts
+SPDXID: SPDXRef-ce814d8502e1c7c09d266308688eefb3
+FileChecksum: SHA1: b7df83ad854665cd430f705e355c57998644d01c
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./translog\test\merkle.test.ts
+SPDXID: SPDXRef-a1451ed15005f954dbc867325fed1075
+FileChecksum: SHA1: 837890d904acfcf13d3408a5941d996e24202373
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./translog\test\persistent.test.ts
+SPDXID: SPDXRef-d930d0f373f445b6a6b0dd0def0bb597
+FileChecksum: SHA1: b1fa4d501dbd9a6443b12907a88a92d494b5f2b4
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./translog\test\sth.test.ts
+SPDXID: SPDXRef-ae60b48f3494a649328025742b7e2ba1
+FileChecksum: SHA1: 9a5ffdedfcef778a9a82d62d787e6a8316ccc7a0
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./tsconfig.json
+SPDXID: SPDXRef-76c28916ccd681936bd6e3d54b0cbf14
+FileChecksum: SHA1: 585bf1df010023e61ad1e23f5426071687806d97
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
+FileName: ./vitest.config.ts
+SPDXID: SPDXRef-8ea3a1524a6859c3b7e46e98fc4ab430
+FileChecksum: SHA1: 6f204487b7e89934df42c94603b42ea304eb1904
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: Apache-2.0
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2026 TRELYAN</text>
+
