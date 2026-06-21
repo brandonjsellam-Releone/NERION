@@ -26,3 +26,21 @@ export {
 export type { RootGrantSpec } from './capability.js'
 export { resolve } from './resolver.js'
 export type { ResolveResult } from './resolver.js'
+
+// Standards-binding profile (ADR-0025, Phase A) — additive projection onto
+// agent-identity standards (Action Manifest, did:key, W3C VC 2.0).
+export {
+  manifestDigest,
+  isNamespacedVerb,
+  ActionManifestError,
+  base58btcEncode,
+  base58btcDecode,
+  didKeyFromPublicKey,
+  toVerifiableCredential,
+} from './profile.js'
+export type {
+  ActionManifest,
+  ActionProvenance,
+  RiskClass,
+  PermitCredentialInput,
+} from './profile.js'
