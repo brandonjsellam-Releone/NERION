@@ -59,4 +59,27 @@ describe('LEDGER-PRECISION-004 — exact bigint stake at the finality decision p
     const oneThird: ViewChangeCert = { round: 0, votes: [voteOf(v[0]!)] }
     expect(verifyViewChangeCert(set, suite, 0, GENESIS_PREV, 0, oneThird)).toBe(false)
   })
+
+  it('fails CLOSED on a malformed set (negative stake cannot lower the threshold) — council review', () => {
+    const k = [0, 1].map((i) => signer.keygen(new Uint8Array(32).fill(30 + i)))
+    // A negative stake would shrink a Number total; silently zeroing it would lower the 2/3 bar.
+    const malformed: ValidatorSet = {
+      validators: [
+        { pubkey: bytesToHex(k[0]!.publicKey), stake: 10 },
+        { pubkey: bytesToHex(k[1]!.publicKey), stake: -5 },
+      ],
+    }
+    const votes = k.map((kp) => ({
+      height: 0,
+      prevHash: GENESIS_PREV,
+      round: 0,
+      validator: bytesToHex(kp.publicKey),
+      suite,
+      sig: signer.sign(viewChangeMessage(suite, 0, GENESIS_PREV, 0), kp.secretKey),
+    }))
+    // Even a unanimous cert must NOT finalize against a malformed set.
+    expect(verifyViewChangeCert(malformed, suite, 0, GENESIS_PREV, 0, { round: 0, votes })).toBe(
+      false,
+    )
+  })
 })

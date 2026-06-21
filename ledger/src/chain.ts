@@ -404,14 +404,21 @@ export function verifyFinalized(
   // Exact BigInt finality (LEDGER-PRECISION-001 + -004, Team Apex): the -001 fix made the >=2/3
   // cross-multiply exact, but BOTH operands were still summed in IEEE-754 — attestingStake via
   // `+=` and total via totalStake() — so past 2^53 the threshold could be corrupted. Sum both as
-  // BigInt; fail closed on a zero / malformed total.
+  // BigInt. Fail CLOSED if the trusted set carries a non-integer / negative stake: silently
+  // coercing it to 0 would shrink the denominator and LOWER the 2/3 threshold (council review).
+  const wellFormedSet = set.validators.every((v) => Number.isInteger(v.stake) && v.stake >= 0)
   const totalBig = totalStakeBig(set)
   const finalized =
-    totalBig > 0n && attestingStake * BigInt(finalityDen) >= BigInt(finalityNum) * totalBig
-  if (!finalized)
+    wellFormedSet &&
+    totalBig > 0n &&
+    attestingStake * BigInt(finalityDen) >= BigInt(finalityNum) * totalBig
+  if (!wellFormedSet) {
+    reasons.push('validator set has a non-integer or negative stake (malformed)')
+  } else if (!finalized) {
     reasons.push(
       `attesting stake ${attestingStake}/${total} below finality ${finalityNum}/${finalityDen}`,
     )
+  }
   return {
     ok: reasons.length === 0,
     finalized,

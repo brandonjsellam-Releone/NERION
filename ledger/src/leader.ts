@@ -106,7 +106,11 @@ export function verifyViewChangeCert(
   // Exact BigInt finality (LEDGER-PRECISION-001/-002/-004, Team Apex): both the counted cert
   // stake (via `+=`) and the total were previously summed in IEEE-754 before the cross-multiply,
   // so past 2^53 the inequality could flip (a sub-2/3 view-change cert accepted). Sum BOTH as
-  // BigInt; fail closed on a zero / malformed total.
+  // BigInt. Fail closed on a malformed set (non-integer / negative stake) so silent zeroing cannot
+  // shrink the denominator and lower the 2/3 threshold (council review).
+  const wellFormedSet = set.validators.every((v) => Number.isInteger(v.stake) && v.stake >= 0)
   const totalBig = totalStakeBig(set)
-  return totalBig > 0n && stake * BigInt(finalityDen) >= BigInt(finalityNum) * totalBig
+  return (
+    wellFormedSet && totalBig > 0n && stake * BigInt(finalityDen) >= BigInt(finalityNum) * totalBig
+  )
 }
