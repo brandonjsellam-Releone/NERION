@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: 2026 TRELYAN
+# SPDX-License-Identifier: Apache-2.0
+#
+# Review routing for Nerion. The maintainer owns everything by default; the
+# high-sensitivity cryptography / governance / frozen-tag paths are called out
+# explicitly so a change there always requires maintainer review.
+# See docs/APEX_COUNCIL.md for the Team Apex review process.
+
+*                               @brandonjsellam-Releone
+
+# Cryptography & zero-knowledge (highest sensitivity)
+/crypto/                        @brandonjsellam-Releone
+/disclosure/                    @brandonjsellam-Releone
+/conformance/                   @brandonjsellam-Releone
+
+# Governance, ledger, settlement, keystore
+/governance/                    @brandonjsellam-Releone
+/ledger/                        @brandonjsellam-Releone
+/settlement/                    @brandonjsellam-Releone
+/keystore/                      @brandonjsellam-Releone
+
+# Frozen wire-tags / KAT vectors — never change without a Track-B ADR + conformance regen
+/crypto/src/suites.ts           @brandonjsellam-Releone
+/conformance/vectors/           @brandonjsellam-Releone
+
+# Licensing, security, grant materials
+/LICENSE                        @brandonjsellam-Releone
+/NOTICE                         @brandonjsellam-Releone
+/REUSE.toml                     @brandonjsellam-Releone
+/docs/grants/                   @brandonjsellam-Releone
