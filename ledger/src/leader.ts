@@ -19,7 +19,7 @@
 import { encodeCanonical, signerFor } from '../../crypto/src/index.js'
 import type { Bytes } from '../../crypto/src/index.js'
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils.js'
-import { totalStake, stakeOf } from './sortition.js'
+import { totalStake, totalStakeBig, stakeOf } from './sortition.js'
 import type { ValidatorSet, ViewChangeCert } from './types.js'
 
 /** The VRF input α for a draw. Mirrors the old sortition seed preimage. */
@@ -91,23 +91,31 @@ export function verifyViewChangeCert(
   const total = totalStake(set)
   if (total <= 0) return false
   const counted = new Set<string>()
-  let stake = 0
+  const attempted = new Set<string>()
+  let stake = 0n
   for (const v of cert.votes) {
     if (v.suite !== suite) continue // bind to the block's suite (cross-suite hardening)
     if (v.height !== height || v.prevHash !== prevHash || v.round !== certRound) continue
     if (counted.has(v.validator)) continue
     const s = stakeOf(set, v.validator)
     if (s <= 0) continue
+    // DOS-VERIFY-001 (round-2 sweep): one PQ verify per distinct validator — duplicate garbage-sig
+    // votes for a staked validator otherwise each ran a fresh ML-DSA-87 verify (O(N) attacker CPU).
+    if (attempted.has(v.validator)) continue
+    attempted.add(v.validator)
     const msg = viewChangeMessage(v.suite, height, prevHash, certRound)
     if (!safeVerifyTimeout(v.suite, v.sig, msg, hexToBytes(v.validator))) continue
     counted.add(v.validator)
-    stake += s
+    stake += BigInt(Number.isInteger(s) ? s : 0)
   }
-  // BigInt cross-multiply — stake/total are unbounded PoS weights; in IEEE-754
-  // `number`, `stake * finalityDen` or `finalityNum * total` past 2^53 lose
-  // precision and the inequality can flip (a sub-2/3 view-change cert accepted, or
-  // a legit >=2/3 cert rejected). Parity with the finality check in chain.ts
-  // (LEDGER-PRECISION-001) — this quorum site was missed by that sweep
-  // (LEDGER-PRECISION-002, Team Apex 2026-06-21).
-  return BigInt(stake) * BigInt(finalityDen) >= BigInt(finalityNum) * BigInt(total)
+  // Exact BigInt finality (LEDGER-PRECISION-001/-002/-004, Team Apex): both the counted cert
+  // stake (via `+=`) and the total were previously summed in IEEE-754 before the cross-multiply,
+  // so past 2^53 the inequality could flip (a sub-2/3 view-change cert accepted). Sum BOTH as
+  // BigInt. Fail closed on a malformed set (non-integer / negative stake) so silent zeroing cannot
+  // shrink the denominator and lower the 2/3 threshold (council review).
+  const wellFormedSet = set.validators.every((v) => Number.isInteger(v.stake) && v.stake >= 0)
+  const totalBig = totalStakeBig(set)
+  return (
+    wellFormedSet && totalBig > 0n && stake * BigInt(finalityDen) >= BigInt(finalityNum) * totalBig
+  )
 }

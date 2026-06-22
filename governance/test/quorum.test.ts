@@ -139,6 +139,32 @@ describe('M-of-N quorum', () => {
     expect(r.validApprovals).toBe(1) // the relabeled m1 approval no longer counts
     expect(r.enacted).toBe(false)
   })
+
+  it('GOV-WINDOW-001: a non-finite / inverted proposal window fails closed (expiry undisableable)', () => {
+    const mk = (notBefore: number, notAfter: number): Proposal => {
+      const base = {
+        kind: 'revoke' as const,
+        target: 'cap-w',
+        payload: '',
+        notBefore,
+        notAfter,
+        nonce: 'nw',
+      }
+      return { id: proposalId(base), ...base }
+    }
+    const both = (pp: Proposal) => [approve(pp, suite, m1, quorum), approve(pp, suite, m2, quorum)]
+    // A NaN/Infinity notAfter would make `now > notAfter` false, silently never expiring.
+    const nan = mk(0, Number.NaN)
+    expect(enact(nan, both(nan), quorum, NOW).enacted).toBe(false)
+    const inf = mk(0, Number.POSITIVE_INFINITY)
+    expect(enact(inf, both(inf), quorum, Number.MAX_SAFE_INTEGER).enacted).toBe(false)
+    // An inverted window (notAfter < notBefore) is malformed -> deny.
+    const inverted = mk(NOW + 100, NOW + 10)
+    expect(enact(inverted, both(inverted), quorum, NOW + 50).enacted).toBe(false)
+    // Sanity: a well-formed in-window proposal still enacts (the new gate is not over-broad).
+    const ok = mk(0, NOW + 1000)
+    expect(enact(ok, both(ok), quorum, NOW).enacted).toBe(true)
+  })
 })
 
 describe('revocation registry & kill switch', () => {

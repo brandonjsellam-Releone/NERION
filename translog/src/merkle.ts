@@ -191,6 +191,14 @@ export function verifyConsistency(
     }
     const p = proof.slice(start)
     const mask = (m - 1) >> shift
+    // TLOG-DOS-001 (round-2 sweep): bound the proof length BEFORE the border-hash chain. A genuine
+    // RFC 6962 consistency proof for size n has at most 2·bitLength(n)+1 elements (inner and border
+    // are each ≤ bitLength(n), plus the optional seed); surplus elements otherwise flow into
+    // borderProof and are each SHA3-hashed (chainBorderRight), making verification O(proof.length)
+    // — a measured ~minute on a crafted multi-million-element proof from untrusted gossip. The
+    // inclusion verifier already guards this; this brings consistency to parity (wrong-length but
+    // in-bound proofs are still rejected by the root comparison below, so soundness is unchanged).
+    if (proof.length > 2 * bitLength(n) + 1) return false
     const innerProof = p.slice(0, inner)
     const borderProof = p.slice(inner)
 

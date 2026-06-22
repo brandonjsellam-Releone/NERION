@@ -125,9 +125,15 @@ function countDistinctValid(
   // Must match buildQuorumReceipt's domain-separated message exactly.
   const msg = encodeCanonical([QUORUM_CONTEXT, receipt.body])
   const seen = new Set<string>()
+  const attempted = new Set<string>()
   for (const a of receipt.attestations) {
     if (a.suite !== q.suite) continue // bind to the quorum's committed suite
     if (!isMember(a.validator) || seen.has(a.validator)) continue
+    // DOS-VERIFY-001 (round-2 sweep): cap PQ verification to ONE per distinct member. `seen` is
+    // populated only on a VALID sig, so duplicate garbage-sig attestations for a known member each
+    // ran a fresh ML-DSA-87 verify — O(N) attacker-controlled CPU. Skip a member already attempted.
+    if (attempted.has(a.validator)) continue
+    attempted.add(a.validator)
     let valid = false
     try {
       valid = signerFor(a.suite).verify(a.sig, msg, hexToBytes(a.validator))
@@ -197,8 +203,9 @@ export function verifyQuorumReceiptByStake(
   // Fail-closed on a non-positive stake threshold (the k=0 analogue) and on a
   // malformed set carrying negative stake (defensive — the set is verifier-supplied).
   if (!(stakeThreshold > 0)) reasons.push('stake threshold must be positive')
-  if (set.validators.some((v) => v.stake < 0)) {
-    reasons.push('validator set has negative stake (malformed)')
+  if (!Number.isInteger(stakeThreshold)) reasons.push('stake threshold must be an integer')
+  if (set.validators.some((v) => !Number.isInteger(v.stake) || v.stake < 0)) {
+    reasons.push('validator set has negative or non-integer stake (malformed)')
   }
   const q = receipt.body.quorum
   if (q.epoch !== epoch) reasons.push(`committed epoch ${q.epoch} != expected ${epoch}`)
@@ -208,17 +215,21 @@ export function verifyQuorumReceiptByStake(
     )
   }
   const stakeOf = new Map(set.validators.map((v) => [v.pubkey, v.stake]))
-  let stake = 0
+  // LEDGER-PRECISION-003 (Team Apex sweep): accumulate + compare stake as BigInt. Validator
+  // stakes are unbounded PoS weights; a float `stake += ...` past 2^53 can round a sub-threshold
+  // subset UP across the threshold and accept it (parity with chain.ts/leader.ts BigInt finality).
+  let stake = 0n
   let counted = 0
   countDistinctValid(
     receipt,
     (v) => stakeOf.has(v),
     (v) => {
-      stake += stakeOf.get(v) ?? 0
+      const s = stakeOf.get(v) ?? 0
+      stake += Number.isInteger(s) ? BigInt(s) : 0n
       counted += 1
     },
   )
-  if (stake < stakeThreshold)
+  if (Number.isInteger(stakeThreshold) && stake < BigInt(stakeThreshold))
     reasons.push(`distinct valid stake ${stake} < required ${stakeThreshold}`)
   return { ok: reasons.length === 0, distinctValid: counted, threshold: stakeThreshold, reasons }
 }

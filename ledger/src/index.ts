@@ -17,7 +17,7 @@ export type {
   FinalizedBlock,
   LightClientVerdict,
 } from './types.js'
-export { totalStake, stakeOf, selectLeader, canonicalRound } from './sortition.js'
+export { totalStake, totalStakeBig, stakeOf, selectLeader, canonicalRound } from './sortition.js'
 export { Ledger, LedgerError, blockHash, verifyFinalized, GENESIS_PREV } from './chain.js'
 export type { VerifyOpts } from './chain.js'
 export { detectEquivocations, verifyEquivocationProof, slash } from './equivocation.js'

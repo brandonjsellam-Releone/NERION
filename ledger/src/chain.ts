@@ -19,7 +19,7 @@ import {
   type KeyPair,
 } from '../../crypto/src/index.js'
 import { bytesToHex } from '@noble/hashes/utils.js'
-import { selectLeader, stakeOf, totalStake, canonicalRound } from './sortition.js'
+import { selectLeader, stakeOf, totalStake, totalStakeBig, canonicalRound } from './sortition.js'
 import { prove as vrfProve, verify as vrfVerify } from './vrf.js'
 import { vrfAlpha, vrfLeaderEligible, verifyViewChangeCert } from './leader.js'
 import type {
@@ -373,7 +373,8 @@ export function verifyFinalized(
   }
 
   const counted = new Set<string>()
-  let attestingStake = 0
+  const attempted = new Set<string>()
+  let attestingStake = 0n
   for (const a of attestations) {
     if (a.blockHash !== h) continue
     // The attestation must be for THIS block's height (it is bound into the signed
@@ -387,6 +388,11 @@ export function verifyFinalized(
     if (opts.expectedSuite !== undefined && a.suite !== opts.expectedSuite) continue
     const stake = stakeOf(set, a.validator)
     if (stake <= 0) continue
+    // DOS-VERIFY-001 (round-2 sweep): one PQ verify per distinct validator — duplicate garbage-sig
+    // attestations for a staked validator otherwise each ran a fresh ML-DSA-87 verify (O(N) CPU on
+    // attacker-controlled, uncapped peer input to this light-client export).
+    if (attempted.has(a.validator)) continue
+    attempted.add(a.validator)
     if (
       !safeVerify(
         a.suite,
@@ -398,19 +404,34 @@ export function verifyFinalized(
       continue
     }
     counted.add(a.validator)
-    attestingStake += stake
+    attestingStake += BigInt(Number.isInteger(stake) ? stake : 0)
   }
 
-  // BigInt comparison (LEDGER-PRECISION-001, Team Apex 2026-06-21): `attestingStake * finalityDen`
-  // can exceed 2^53 even when total <= 2^53, silently corrupting the finality threshold under
-  // IEEE-754. Cross-multiply in bigint so the >=2/3-stake check is exact.
+  // Exact BigInt finality (LEDGER-PRECISION-001 + -004, Team Apex): the -001 fix made the >=2/3
+  // cross-multiply exact, but BOTH operands were still summed in IEEE-754 — attestingStake via
+  // `+=` and total via totalStake() — so past 2^53 the threshold could be corrupted. Sum both as
+  // BigInt. Fail CLOSED if the trusted set carries a non-integer / negative stake: silently
+  // coercing it to 0 would shrink the denominator and LOWER the 2/3 threshold (council review).
+  const wellFormedSet = set.validators.every((v) => Number.isInteger(v.stake) && v.stake >= 0)
+  const totalBig = totalStakeBig(set)
   const finalized =
-    total > 0 && BigInt(attestingStake) * BigInt(finalityDen) >= BigInt(finalityNum) * BigInt(total)
-  if (!finalized)
+    wellFormedSet &&
+    totalBig > 0n &&
+    attestingStake * BigInt(finalityDen) >= BigInt(finalityNum) * totalBig
+  if (!wellFormedSet) {
+    reasons.push('validator set has a non-integer or negative stake (malformed)')
+  } else if (!finalized) {
     reasons.push(
       `attesting stake ${attestingStake}/${total} below finality ${finalityNum}/${finalityDen}`,
     )
-  return { ok: reasons.length === 0, finalized, attestingStake, totalStake: total, reasons }
+  }
+  return {
+    ok: reasons.length === 0,
+    finalized,
+    attestingStake: Number(attestingStake),
+    totalStake: total,
+    reasons,
+  }
 }
 
 function hexToBytesLocal(hex: string): Bytes {

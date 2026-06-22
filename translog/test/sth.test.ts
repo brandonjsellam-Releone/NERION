@@ -31,6 +31,17 @@ describe('signed tree heads', () => {
     const other = signerFor(suite).keygen()
     expect(verifyTreeHead(sth, other.publicKey)).toBe(false)
   })
+
+  it('STH-SUITE-001: a relabeled suite fails verification (suite is bound into the signed head)', () => {
+    const log = new TransparencyLog()
+    log.append(data('a'))
+    const sth = signTreeHead(log.size(), log.root(), SUITE_IDS.PS_5, op)
+    expect(verifyTreeHead(sth, op.publicKey)).toBe(true)
+    // PS-1 / PS-5 / PS-5-HQC all share the ML-DSA-87 signer, so before the fix a PS-5 STH
+    // relabeled to either still verified. With the suite folded into the signed bytes, it fails.
+    expect(verifyTreeHead({ ...sth, suite: SUITE_IDS.PS_1 }, op.publicKey)).toBe(false)
+    expect(verifyTreeHead({ ...sth, suite: SUITE_IDS.PS_5_HQC }, op.publicKey)).toBe(false)
+  })
 })
 
 describe('split-view / equivocation detection', () => {
