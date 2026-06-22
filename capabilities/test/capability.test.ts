@@ -156,6 +156,14 @@ describe('attenuating delegation', () => {
     expect(verifyChain(child, trustedRoots)).toBe(true)
     expect(child.chain.length).toBe(2)
   })
+  it('DOS-VERIFY-002: rejects a chain longer than the bound, before the per-link verify loop', () => {
+    // verifyChain does one PQ verify per link; an over-long (attacker-extended) chain is rejected on
+    // length BEFORE verifying, bounding hot-path work. A legit chain is a root + a few delegations.
+    const link = root.chain[0]!
+    const overLong: Capability = { chain: Array.from({ length: 40 }, () => link) }
+    expect(verifyChain(overLong, trustedRoots)).toBe(false)
+    expect(verifyChain(root, trustedRoots)).toBe(true) // genuine short chain still verifies
+  })
   it('the delegated ceiling binds even though the root allowed more', () => {
     const ctx = baseCtx({ holder: delegateeHex })
     expect(resolve(pay(100), [child], trustedRoots, ctx).authorized).toBe(true)

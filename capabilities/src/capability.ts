@@ -119,9 +119,17 @@ export function attenuate(
   return { chain: [...parent.chain, { grant, suite, signerPublicKey: delegator.publicKey, sig }] }
 }
 
+/**
+ * Max delegation-chain length verifyChain will process. A legitimate chain is a root plus a few
+ * attenuating delegations; this bounds the per-link PQ verification so an over-long (attacker-
+ * extended, trusted-root-anchored) chain cannot force unbounded ML-DSA-87 verifies per admission —
+ * hot-path CPU exhaustion (DOS-VERIFY-002, Team Apex round-4). Fail-closed beyond it.
+ */
+const MAX_CHAIN_LINKS = 32
+
 /** Verify the full chain against an explicit set of trusted root public keys. */
 export function verifyChain(cap: Capability, trustedRoots: readonly Bytes[]): boolean {
-  if (cap.chain.length === 0) return false
+  if (cap.chain.length === 0 || cap.chain.length > MAX_CHAIN_LINKS) return false
   const trusted = new Set(trustedRoots.map((k) => bytesToHex(k)))
 
   for (let i = 0; i < cap.chain.length; i++) {
