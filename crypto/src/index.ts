@@ -40,6 +40,8 @@ export {
   decodeCoseSign1,
   signEatResult,
   COSE_ALG,
+  COSE_PROFILE,
+  coseProfileAad,
   EAT_CLAIM,
 } from './cose.js'
 export type { CoseSign1 } from './cose.js'

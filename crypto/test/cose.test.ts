@@ -13,6 +13,8 @@ import {
   decodeCoseSign1,
   signEatResult,
   COSE_ALG,
+  COSE_PROFILE,
+  coseProfileAad,
 } from '../src/index.js'
 
 const SUITE = SUITE_IDS.PS_5
@@ -54,7 +56,7 @@ describe('COSE_Sign1 (RFC 9052) over ML-DSA-87 (COSE alg -50, provisional)', () 
     expect(coseSign1Verify(back, SUITE, kp.publicKey, COSE_ALG.ML_DSA_87)).toBe(true)
   })
 
-  it('signs a RATS/EAT attestation-result (nonce-bound) as COSE_Sign1', () => {
+  it('signs a RATS/EAT attestation-result (nonce-bound), profile-bound (ADR-0026)', () => {
     const kp = s.keygen()
     const msg = signEatResult(
       enc.encode('nonce-123'),
@@ -62,7 +64,27 @@ describe('COSE_Sign1 (RFC 9052) over ML-DSA-87 (COSE alg -50, provisional)', () 
       SUITE,
       kp.secretKey,
     )
-    expect(coseSign1Verify(msg, SUITE, kp.publicKey, COSE_ALG.ML_DSA_87)).toBe(true)
+    // verifies ONLY under the EAT-result profile aad
+    expect(
+      coseSign1Verify(
+        msg,
+        SUITE,
+        kp.publicKey,
+        COSE_ALG.ML_DSA_87,
+        coseProfileAad(COSE_PROFILE.EAT_RESULT),
+      ),
+    ).toBe(true)
+    // RECEIPT/COSE-PROFILE-001: must NOT verify with the empty/legacy aad, nor as another profile
+    expect(coseSign1Verify(msg, SUITE, kp.publicKey, COSE_ALG.ML_DSA_87)).toBe(false)
+    expect(
+      coseSign1Verify(
+        msg,
+        SUITE,
+        kp.publicKey,
+        COSE_ALG.ML_DSA_87,
+        coseProfileAad(COSE_PROFILE.SLSA_PROVENANCE),
+      ),
+    ).toBe(false)
   })
 
   it('DECODE-TYPE-001: rejects a 4-element COSE whose fields are not byte strings (decode type-confusion)', () => {

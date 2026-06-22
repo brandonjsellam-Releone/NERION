@@ -32,6 +32,23 @@ export const COSE_ALG = {
   ML_DSA_87: -50,
 } as const
 
+/**
+ * Per-application COSE profile domain separators (RECEIPT/COSE-PROFILE-001, ADR-0026). Bound as the
+ * COSE `external_aad`, they ensure a signature minted for one application (EAT attestation result /
+ * CycloneDX SBOM / SLSA provenance) cannot verify as ANOTHER under a shared key. Interop note: an
+ * external COSE/SCITT/RATS verifier must supply the matching external_aad to verify.
+ */
+export const COSE_PROFILE = {
+  EAT_RESULT: 'polarseek/cose/eat-result/v1',
+  CYCLONEDX_SBOM: 'polarseek/cose/cyclonedx-sbom/v1',
+  SLSA_PROVENANCE: 'polarseek/cose/slsa-provenance/v1',
+} as const
+
+/** external_aad bytes for a COSE profile domain separator. */
+export function coseProfileAad(profile: string): Bytes {
+  return new TextEncoder().encode(profile)
+}
+
 /** EAT (RFC 9711) claim keys used here. */
 export const EAT_CLAIM = {
   /** eat_nonce */
@@ -133,5 +150,13 @@ export function signEatResult(
 ): CoseSign1 {
   const eat = new Map<number | string, unknown>([[EAT_CLAIM.nonce, nonce]])
   for (const [k, val] of Object.entries(claims)) eat.set(k, val)
-  return coseSign1(encodeCanonical(eat), suite, secretKey, alg)
+  // Bind the EAT-result profile (ADR-0026) so this signature cannot verify as a supply-chain
+  // statement (or any other COSE application) under a shared key.
+  return coseSign1(
+    encodeCanonical(eat),
+    suite,
+    secretKey,
+    alg,
+    coseProfileAad(COSE_PROFILE.EAT_RESULT),
+  )
 }

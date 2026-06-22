@@ -26,6 +26,8 @@ import {
   decodeCoseSign1,
   signEatResult,
   COSE_ALG,
+  COSE_PROFILE,
+  coseProfileAad,
   issuePermit,
 } from '../../crypto/src/index.js'
 import {
@@ -572,8 +574,17 @@ const CHECKS: Array<() => ConformanceResult> = [
           SUITE,
           kp.publicKey,
           COSE_ALG.ML_DSA_87,
+          coseProfileAad(COSE_PROFILE.EAT_RESULT),
         )
-        return ok && badKey && badAlg && eatOk
+        // ADR-0026: the EAT result must NOT verify as a supply-chain statement (profile separation).
+        const noCross = !coseSign1Verify(
+          eat,
+          SUITE,
+          kp.publicKey,
+          COSE_ALG.ML_DSA_87,
+          coseProfileAad(COSE_PROFILE.SLSA_PROVENANCE),
+        )
+        return ok && badKey && badAlg && eatOk && noCross
       },
     ),
 
@@ -594,12 +605,21 @@ const CHECKS: Array<() => ConformanceResult> = [
         })
         const provSig = signSupplyChainStatement(prov, SUITE, kp.secretKey)
         const ok =
-          verifySupplyChainStatement(sbomSig, SUITE, kp.publicKey) &&
-          verifySupplyChainStatement(provSig, SUITE, kp.publicKey)
-        const badKey = !verifySupplyChainStatement(sbomSig, SUITE, s.keygen().publicKey)
+          verifySupplyChainStatement(sbomSig, SUITE, kp.publicKey, COSE_PROFILE.CYCLONEDX_SBOM) &&
+          verifySupplyChainStatement(provSig, SUITE, kp.publicKey, COSE_PROFILE.SLSA_PROVENANCE)
+        // ADR-0026: an SBOM must NOT verify as a provenance, and neither as an EAT result.
+        const noCross =
+          !verifySupplyChainStatement(sbomSig, SUITE, kp.publicKey, COSE_PROFILE.SLSA_PROVENANCE) &&
+          !verifySupplyChainStatement(provSig, SUITE, kp.publicKey, COSE_PROFILE.CYCLONEDX_SBOM)
+        const badKey = !verifySupplyChainStatement(
+          sbomSig,
+          SUITE,
+          s.keygen().publicKey,
+          COSE_PROFILE.CYCLONEDX_SBOM,
+        )
         const log = new TransparencyLog()
         const { index } = log.append(supplyChainLeaf(provSig))
-        return ok && badKey && checkInclusion(log.proveInclusion(index), log.root())
+        return ok && noCross && badKey && checkInclusion(log.proveInclusion(index), log.root())
       },
     ),
 
