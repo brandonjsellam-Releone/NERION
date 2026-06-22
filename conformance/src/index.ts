@@ -14,6 +14,13 @@ export { assertCnsa, signCnsaVerdict, verifyCnsaVerdict, cnsaVerdictLeaf } from 
 export type { CnsaVerdict, CnsaLevel, CnsaVerdictFinding } from './cnsa-oracle.js'
 export { buildCbom, signCbom, verifyCbom, cbomLeaf } from './cbom.js'
 export type { Cbom, CryptoAsset, CbomSuiteEntry, QuantumClass } from './cbom.js'
+export { toCycloneDx } from './cbom-cyclonedx.js'
+export type {
+  CycloneDxBom,
+  CycloneDxComponent,
+  CycloneDxAlgorithmProperties,
+  CycloneDxProperty,
+} from './cbom-cyclonedx.js'
 export {
   buildSbom,
   buildSlsaProvenance,
