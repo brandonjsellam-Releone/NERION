@@ -18,6 +18,8 @@ export { toCycloneDx } from './cbom-cyclonedx.js'
 export type {
   CycloneDxBom,
   CycloneDxComponent,
+  CycloneDxLibraryComponent,
+  CycloneDxDependency,
   CycloneDxAlgorithmProperties,
   CycloneDxProperty,
 } from './cbom-cyclonedx.js'

@@ -14,6 +14,7 @@
  */
 
 import type { Cbom, CryptoAsset } from './cbom.js'
+import { POLARSEEK_DEPENDENCIES } from './supplychain.js'
 
 /** Nerion primitive -> CycloneDX 1.6 `algorithmProperties.primitive` enum. */
 const PRIMITIVE_MAP: Record<CryptoAsset['primitive'], string> = {
@@ -60,15 +61,33 @@ export interface CycloneDxComponent {
   readonly properties: readonly CycloneDxProperty[]
 }
 
+export interface CycloneDxLibraryComponent {
+  readonly type: 'library'
+  readonly name: string
+  readonly version: string
+  readonly 'bom-ref': string
+  readonly purl: string
+}
+
+export interface CycloneDxDependency {
+  readonly ref: string
+  readonly dependsOn: readonly string[]
+}
+
 export interface CycloneDxBom {
   readonly bomFormat: 'CycloneDX'
   readonly specVersion: '1.6'
   readonly metadata: {
     readonly timestamp: number
-    readonly component: { readonly type: 'application'; readonly name: string }
+    readonly component: {
+      readonly type: 'application'
+      readonly name: string
+      readonly 'bom-ref': string
+    }
     readonly properties: readonly CycloneDxProperty[]
   }
-  readonly components: readonly CycloneDxComponent[]
+  readonly components: readonly (CycloneDxComponent | CycloneDxLibraryComponent)[]
+  readonly dependencies: readonly CycloneDxDependency[]
 }
 
 function toComponent(asset: CryptoAsset): CycloneDxComponent {
@@ -99,23 +118,71 @@ function toComponent(asset: CryptoAsset): CycloneDxComponent {
   }
 }
 
+const APP_REF = 'nerion'
+
+/** Map a crypto asset to the @noble library that implements it (TNO Handbook p.35 graph). */
+function assetLibrary(asset: CryptoAsset): string | undefined {
+  const n = asset.name.toUpperCase()
+  if (/ML-KEM|ML-DSA|SLH-DSA|HQC|FN-DSA|FALCON/.test(n)) return '@noble/post-quantum'
+  if (n.includes('P-384') || n.includes('X25519')) return '@noble/curves'
+  if (n.includes('AES')) return '@noble/ciphers'
+  if (n.includes('SHA')) return '@noble/hashes'
+  return undefined
+}
+
 /**
- * Project a native Nerion CBOM onto CycloneDX 1.6. Deterministic: the input CBOM's
- * asset order (sorted) is preserved, so two projections of the same CBOM are
- * byte-identical.
+ * Project a native Nerion CBOM onto CycloneDX 1.6, including the
+ * application -> algorithm -> @noble-library DEPENDENCY GRAPH with pinned library
+ * versions (TNO PQC Migration Handbook p.35). The native signed CBOM stays the
+ * source of truth; this is an additive interop rendering. Deterministic: the input
+ * CBOM's sorted asset order is preserved and libraries are emitted sorted.
  */
 export function toCycloneDx(cbom: Cbom): CycloneDxBom {
+  const cryptoComponents = cbom.assets.map(toComponent)
+  const versionOf = new Map(
+    POLARSEEK_DEPENDENCIES.map((d) => [d.name, d.version] as [string, string]),
+  )
+
+  const assetToLib = new Map<string, string>()
+  const usedLibs = new Set<string>()
+  for (const asset of cbom.assets) {
+    const lib = assetLibrary(asset)
+    if (lib !== undefined) {
+      assetToLib.set(asset.name, lib)
+      usedLibs.add(lib)
+    }
+  }
+  const libComponents: CycloneDxLibraryComponent[] = [...usedLibs].sort().map((name) => {
+    const version = versionOf.get(name) ?? 'unknown'
+    return {
+      type: 'library' as const,
+      name,
+      version,
+      'bom-ref': `lib/${name}`,
+      purl: `pkg:npm/${name}@${version}`,
+    }
+  })
+
+  const dependencies: CycloneDxDependency[] = [
+    { ref: APP_REF, dependsOn: cryptoComponents.map((c) => c['bom-ref']) },
+    ...cbom.assets.map((a) => {
+      const lib = assetToLib.get(a.name)
+      return { ref: `crypto/${a.name}`, dependsOn: lib !== undefined ? [`lib/${lib}`] : [] }
+    }),
+  ]
+
   return {
     bomFormat: 'CycloneDX',
     specVersion: '1.6',
     metadata: {
       timestamp: cbom.generatedAt,
-      component: { type: 'application', name: 'Nerion' },
+      component: { type: 'application', name: 'Nerion', 'bom-ref': APP_REF },
       properties: [
         { name: 'nerion:source', value: cbom.bomFormat },
         { name: 'nerion:quantumVulnerable', value: cbom.quantumVulnerable.join(',') },
       ],
     },
-    components: cbom.assets.map(toComponent),
+    components: [...cryptoComponents, ...libComponents],
+    dependencies,
   }
 }
