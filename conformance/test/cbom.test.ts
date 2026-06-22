@@ -55,4 +55,19 @@ describe('Cryptographic Bill of Materials (CBOM)', () => {
     expect(vuln.length).toBeGreaterThan(0)
     expect(vuln.every((a) => a.deprecation.includes('Shor-broken'))).toBe(true)
   })
+
+  it('enriches each asset with NIST level, spec sizes, and lifecycle status (TNO p.34-35)', () => {
+    const assets = buildCbom().assets
+    const mlkem = assets.find((a) => a.name === 'ML-KEM-1024')!
+    expect(mlkem.nistLevel).toBe(5)
+    expect(mlkem.sizesBytes['publicKey']).toBe(1568)
+    expect(mlkem.sizesBytes['sharedSecret']).toBe(32)
+    expect(mlkem.status).toBe('active')
+    const mldsa = assets.find((a) => a.name === 'ML-DSA-87')!
+    expect(mldsa.sizesBytes['signature']).toBe(4627)
+    // classical legs carry no PQC category (0); PQ/symmetric assets do
+    expect(assets.find((a) => a.name === 'P-384')!.nistLevel).toBe(0)
+    expect(assets.every((a) => [0, 1, 3, 5].includes(a.nistLevel))).toBe(true)
+    expect(assets.every((a) => Object.values(a.sizesBytes).every((n) => n > 0))).toBe(true)
+  })
 })

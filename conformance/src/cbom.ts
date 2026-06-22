@@ -47,7 +47,17 @@ export interface CryptoAsset {
   readonly primitive: 'kem' | 'kex' | 'signature' | 'ae' | 'mac' | 'hash'
   readonly parameterSet: string
   readonly nistStandard: string
+  /** NIST PQC security category (1/3/5); 0 = symmetric/hash or classical (no PQC category). */
+  readonly nistLevel: 0 | 1 | 3 | 5
   readonly quantum: QuantumClass
+  /**
+   * Spec-standard sizes in bytes (publicKey/secretKey/ciphertext/sharedSecret/
+   * signature/key/nonce/tag/output, as applicable). Per the TNO PQC Migration
+   * Handbook (2nd ed., p.34-35), an inventory asset records its key/parameter sizes.
+   */
+  readonly sizesBytes: Readonly<Record<string, number>>
+  /** Lifecycle status of this algorithm within Nerion's registry. */
+  readonly status: 'active' | 'pending-standardization' | 'deprecated'
   readonly deprecation: string
 }
 
@@ -81,75 +91,148 @@ function kemLegs(kemId: string): string[] {
   return [kemId]
 }
 
-/** Classify a single algorithm leg into a CBOM asset. */
+/**
+ * Classify a single algorithm leg into a CBOM asset, enriched per the TNO PQC
+ * Migration Handbook (2nd ed., p.34-35): NIST security level, spec-standard
+ * sizes, and lifecycle status alongside the quantum-resistance class. Sizes are
+ * the FIPS-standard byte counts (FIPS 203/204/205, SP 800-186, etc.).
+ */
 function classify(id: string): CryptoAsset {
-  const a = (
-    primitive: CryptoAsset['primitive'],
-    parameterSet: string,
-    nistStandard: string,
-    quantum: QuantumClass,
-    deprecation: string,
-  ): CryptoAsset => ({ name: id, primitive, parameterSet, nistStandard, quantum, deprecation })
+  const a = (props: Omit<CryptoAsset, 'name'>): CryptoAsset => ({ name: id, ...props })
 
   if (has(id, 'ML-DSA-87'))
-    return a('signature', 'ML-DSA-87', 'FIPS 204', 'pq-cat5', 'current (CNSA 2.0).')
+    return a({
+      primitive: 'signature',
+      parameterSet: 'ML-DSA-87',
+      nistStandard: 'FIPS 204',
+      nistLevel: 5,
+      quantum: 'pq-cat5',
+      sizesBytes: { publicKey: 2592, secretKey: 4896, signature: 4627 },
+      status: 'active',
+      deprecation: 'current (CNSA 2.0).',
+    })
   if (has(id, 'SLH-DSA') || has(id, 'SPHINCS'))
-    return a(
-      'signature',
-      'SLH-DSA-SHAKE-256f',
-      'FIPS 205',
-      'pq-cat5',
-      'current (FIPS 205; EXCLUDED from CNSA 2.0).',
-    )
+    return a({
+      primitive: 'signature',
+      parameterSet: 'SLH-DSA-SHAKE-256f',
+      nistStandard: 'FIPS 205',
+      nistLevel: 5,
+      quantum: 'pq-cat5',
+      sizesBytes: { publicKey: 64, secretKey: 128, signature: 49856 },
+      status: 'active',
+      deprecation: 'current (FIPS 205; EXCLUDED from CNSA 2.0).',
+    })
   if (has(id, 'FN-DSA') || has(id, 'FALCON'))
-    return a('signature', 'FN-DSA-1024', 'FIPS 206 (draft)', 'pq-cat5', 'pending standardization.')
+    return a({
+      primitive: 'signature',
+      parameterSet: 'FN-DSA-1024',
+      nistStandard: 'FIPS 206 (draft)',
+      nistLevel: 5,
+      quantum: 'pq-cat5',
+      sizesBytes: { publicKey: 1793, signature: 1280 },
+      status: 'pending-standardization',
+      deprecation: 'pending standardization.',
+    })
   if (has(id, 'ML-KEM-1024') || has(id, 'MLKEM1024'))
-    return a('kem', 'ML-KEM-1024', 'FIPS 203', 'pq-cat5', 'current (CNSA 2.0).')
+    return a({
+      primitive: 'kem',
+      parameterSet: 'ML-KEM-1024',
+      nistStandard: 'FIPS 203',
+      nistLevel: 5,
+      quantum: 'pq-cat5',
+      sizesBytes: { publicKey: 1568, secretKey: 3168, ciphertext: 1568, sharedSecret: 32 },
+      status: 'active',
+      deprecation: 'current (CNSA 2.0).',
+    })
   if (has(id, 'ML-KEM-768') || has(id, 'MLKEM768'))
-    return a('kem', 'ML-KEM-768', 'FIPS 203', 'pq-cat3', 'current (Cat-3; below CNSA 2.0 Cat-5).')
+    return a({
+      primitive: 'kem',
+      parameterSet: 'ML-KEM-768',
+      nistStandard: 'FIPS 203',
+      nistLevel: 3,
+      quantum: 'pq-cat3',
+      sizesBytes: { publicKey: 1184, secretKey: 2400, ciphertext: 1088, sharedSecret: 32 },
+      status: 'active',
+      deprecation: 'current (Cat-3; below CNSA 2.0 Cat-5).',
+    })
   if (has(id, 'HQC'))
-    return a('kem', 'HQC-256', 'FIPS 207 (draft)', 'pq-other', 'pending standardization.')
+    return a({
+      primitive: 'kem',
+      parameterSet: 'HQC-256',
+      nistStandard: 'FIPS 207 (draft)',
+      nistLevel: 5,
+      quantum: 'pq-other',
+      sizesBytes: { publicKey: 7245, ciphertext: 14469, sharedSecret: 64 },
+      status: 'pending-standardization',
+      deprecation: 'pending standardization.',
+    })
   if (has(id, 'P-384') || has(id, 'P384'))
-    return a(
-      'kex',
-      'ECDH P-384',
-      'SP 800-186',
-      'quantum-vulnerable',
-      'Shor-broken; deprecate ~2030 / disallow ~2035 (NSA CNSA 2.0 + NIST PQC transition).',
-    )
+    return a({
+      primitive: 'kex',
+      parameterSet: 'ECDH P-384',
+      nistStandard: 'SP 800-186',
+      nistLevel: 0,
+      quantum: 'quantum-vulnerable',
+      sizesBytes: { publicKey: 97, sharedSecret: 48 },
+      status: 'active',
+      deprecation:
+        'Shor-broken; deprecate ~2030 / disallow ~2035 (NSA CNSA 2.0 + NIST PQC transition).',
+    })
   if (has(id, 'X25519'))
-    return a(
-      'kex',
-      'X25519',
-      'SP 800-186 / RFC 7748',
-      'quantum-vulnerable',
-      'Shor-broken; deprecate ~2030 / disallow ~2035 (NSA CNSA 2.0 + NIST PQC transition).',
-    )
+    return a({
+      primitive: 'kex',
+      parameterSet: 'X25519',
+      nistStandard: 'SP 800-186 / RFC 7748',
+      nistLevel: 0,
+      quantum: 'quantum-vulnerable',
+      sizesBytes: { publicKey: 32, sharedSecret: 32 },
+      status: 'active',
+      deprecation:
+        'Shor-broken; deprecate ~2030 / disallow ~2035 (NSA CNSA 2.0 + NIST PQC transition).',
+    })
   if (has(id, 'AES-256') || has(id, 'AES256'))
-    return a(
-      'ae',
-      'AES-256-GCM',
-      'FIPS 197 / SP 800-38D',
-      'quantum-resistant-symmetric',
-      'current (CNSA 2.0; 256-bit is Grover-resistant).',
-    )
+    return a({
+      primitive: 'ae',
+      parameterSet: 'AES-256-GCM',
+      nistStandard: 'FIPS 197 / SP 800-38D',
+      nistLevel: 5,
+      quantum: 'quantum-resistant-symmetric',
+      sizesBytes: { key: 32, nonce: 12, tag: 16 },
+      status: 'active',
+      deprecation: 'current (CNSA 2.0; 256-bit is Grover-resistant).',
+    })
   if (has(id, 'SHA-384') || has(id, 'SHA384'))
-    return a(
-      'mac',
-      'HMAC-SHA-384',
-      'FIPS 198-1 / 180-4',
-      'quantum-resistant-symmetric',
-      'current (CNSA 2.0).',
-    )
+    return a({
+      primitive: 'mac',
+      parameterSet: 'HMAC-SHA-384',
+      nistStandard: 'FIPS 198-1 / 180-4',
+      nistLevel: 5,
+      quantum: 'quantum-resistant-symmetric',
+      sizesBytes: { key: 48, output: 48 },
+      status: 'active',
+      deprecation: 'current (CNSA 2.0).',
+    })
   if (has(id, 'SHA3') || has(id, 'SHAKE'))
-    return a(
-      'hash',
-      'SHA3-256 / SHAKE256',
-      'FIPS 202',
-      'quantum-resistant-symmetric',
-      'current (FIPS 202; CNSA 2.0 prefers SHA-2 for general hashing).',
-    )
-  return a('hash', id, 'unknown', 'quantum-resistant-symmetric', 'unclassified algorithm id.')
+    return a({
+      primitive: 'hash',
+      parameterSet: 'SHA3-256 / SHAKE256',
+      nistStandard: 'FIPS 202',
+      nistLevel: 5,
+      quantum: 'quantum-resistant-symmetric',
+      sizesBytes: { output: 32 },
+      status: 'active',
+      deprecation: 'current (FIPS 202; CNSA 2.0 prefers SHA-2 for general hashing).',
+    })
+  return a({
+    primitive: 'hash',
+    parameterSet: id,
+    nistStandard: 'unknown',
+    nistLevel: 0,
+    quantum: 'quantum-resistant-symmetric',
+    sizesBytes: {},
+    status: 'active',
+    deprecation: 'unclassified algorithm id.',
+  })
 }
 
 /** Build a deterministic CBOM over the active SuiteID registry. */
