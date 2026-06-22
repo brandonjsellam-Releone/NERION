@@ -19,7 +19,7 @@
 import { encodeCanonical, signerFor } from '../../crypto/src/index.js'
 import type { Bytes } from '../../crypto/src/index.js'
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils.js'
-import { totalStake, totalStakeBig, stakeOf } from './sortition.js'
+import { totalStake, totalStakeBig, stakeOf, safeStake, isWellFormedStakeSet } from './sortition.js'
 import type { ValidatorSet, ViewChangeCert } from './types.js'
 
 /** The VRF input α for a draw. Mirrors the old sortition seed preimage. */
@@ -35,14 +35,14 @@ export function vrfAlpha(prevHash: string, round: number): Bytes {
  */
 export function vrfLeaderEligible(set: ValidatorSet, proposer: string, beta: Bytes): boolean {
   const total = totalStake(set)
-  if (total <= 0) return false
-  const x = BigInt('0x' + bytesToHex(beta)) % BigInt(total)
+  if (total <= 0n) return false
+  const x = BigInt('0x' + bytesToHex(beta)) % total
   const sorted = [...set.validators].sort((a, b) =>
     a.pubkey < b.pubkey ? -1 : a.pubkey > b.pubkey ? 1 : 0,
   )
   let acc = 0n
   for (const v of sorted) {
-    acc += BigInt(v.stake)
+    acc += safeStake(v.stake)
     if (x < acc) return v.pubkey === proposer
   }
   return false
@@ -89,7 +89,7 @@ export function verifyViewChangeCert(
 ): boolean {
   if (!cert || cert.round !== certRound) return false
   const total = totalStake(set)
-  if (total <= 0) return false
+  if (total <= 0n) return false
   const counted = new Set<string>()
   const attempted = new Set<string>()
   let stake = 0n
@@ -98,7 +98,7 @@ export function verifyViewChangeCert(
     if (v.height !== height || v.prevHash !== prevHash || v.round !== certRound) continue
     if (counted.has(v.validator)) continue
     const s = stakeOf(set, v.validator)
-    if (s <= 0) continue
+    if (s <= 0n) continue
     // DOS-VERIFY-001 (round-2 sweep): one PQ verify per distinct validator — duplicate garbage-sig
     // votes for a staked validator otherwise each ran a fresh ML-DSA-87 verify (O(N) attacker CPU).
     if (attempted.has(v.validator)) continue
@@ -106,14 +106,14 @@ export function verifyViewChangeCert(
     const msg = viewChangeMessage(v.suite, height, prevHash, certRound)
     if (!safeVerifyTimeout(v.suite, v.sig, msg, hexToBytes(v.validator))) continue
     counted.add(v.validator)
-    stake += BigInt(Number.isInteger(s) ? s : 0)
+    stake += safeStake(s)
   }
   // Exact BigInt finality (LEDGER-PRECISION-001/-002/-004, Team Apex): both the counted cert
   // stake (via `+=`) and the total were previously summed in IEEE-754 before the cross-multiply,
   // so past 2^53 the inequality could flip (a sub-2/3 view-change cert accepted). Sum BOTH as
   // BigInt. Fail closed on a malformed set (non-integer / negative stake) so silent zeroing cannot
   // shrink the denominator and lower the 2/3 threshold (council review).
-  const wellFormedSet = set.validators.every((v) => Number.isInteger(v.stake) && v.stake >= 0)
+  const wellFormedSet = isWellFormedStakeSet(set)
   const totalBig = totalStakeBig(set)
   return (
     wellFormedSet && totalBig > 0n && stake * BigInt(finalityDen) >= BigInt(finalityNum) * totalBig

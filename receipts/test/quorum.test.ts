@@ -35,7 +35,7 @@ const body: ReceiptBody = {
 }
 
 const kp = (n: number): KeyPair => signer.keygen(new Uint8Array(32).fill(n))
-const setOf = (kps: KeyPair[], stake = 1): ValidatorSet => ({
+const setOf = (kps: KeyPair[], stake = 1n): ValidatorSet => ({
   validators: kps.map((k) => ({ pubkey: bytesToHex(k.publicKey), stake })),
 })
 
@@ -84,7 +84,7 @@ describe('quorum receipts (decentralized k-of-n issuance)', () => {
     const zero = buildQuorumReceipt(body, set, 0, epoch, [], suite)
     expect(verifyQuorumReceipt(zero, set, 0, epoch).ok).toBe(false) // not 0 >= 0
     const noSig = buildQuorumReceipt(body, set, 1, epoch, [], suite)
-    expect(verifyQuorumReceiptByStake(noSig, set, 0, epoch).ok).toBe(false) // stake floor must be > 0
+    expect(verifyQuorumReceiptByStake(noSig, set, 0n, epoch).ok).toBe(false) // stake floor must be > 0
   })
 
   it('rejects threshold / epoch mismatch even with enough valid signatures', () => {
@@ -109,14 +109,14 @@ describe('quorum receipts (decentralized k-of-n issuance)', () => {
   it('stake-weighted variant requires >= stake threshold of distinct valid signers', () => {
     const sset: ValidatorSet = {
       validators: [
-        { pubkey: bytesToHex(v[0]!.publicKey), stake: 3 },
-        { pubkey: bytesToHex(v[1]!.publicKey), stake: 1 },
-        { pubkey: bytesToHex(v[2]!.publicKey), stake: 1 },
+        { pubkey: bytesToHex(v[0]!.publicKey), stake: 3n },
+        { pubkey: bytesToHex(v[1]!.publicKey), stake: 1n },
+        { pubkey: bytesToHex(v[2]!.publicKey), stake: 1n },
       ],
     }
     const r = buildQuorumReceipt(body, sset, 1, epoch, [v[0]!], suite) // v0 alone = stake 3
-    expect(verifyQuorumReceiptByStake(r, sset, 3, epoch).ok).toBe(true)
-    expect(verifyQuorumReceiptByStake(r, sset, 4, epoch).ok).toBe(false)
+    expect(verifyQuorumReceiptByStake(r, sset, 3n, epoch).ok).toBe(true)
+    expect(verifyQuorumReceiptByStake(r, sset, 4n, epoch).ok).toBe(false)
   })
 
   it('LEDGER-PRECISION-003: stake summed/compared as BigInt (no float round-up across threshold)', () => {
@@ -125,22 +125,22 @@ describe('quorum receipts (decentralized k-of-n issuance)', () => {
     const big = [kp(11), kp(12)]
     const sset: ValidatorSet = {
       validators: [
-        { pubkey: bytesToHex(big[0]!.publicKey), stake: 9007199254740991 }, // 2^53 - 1
-        { pubkey: bytesToHex(big[1]!.publicKey), stake: 4 },
+        { pubkey: bytesToHex(big[0]!.publicKey), stake: 9007199254740991n }, // 2^53 - 1
+        { pubkey: bytesToHex(big[1]!.publicKey), stake: 4n },
       ],
     }
     const r = buildQuorumReceipt(body, sset, 2, epoch, [big[0]!, big[1]!], suite)
     // Threshold 2^53+4 is ABOVE the exact sum (2^53+3) -> must REJECT. The old float sum rounded
     // to exactly 2^53+4 and wrongly accepted (2^53+4 < 2^53+4 === false).
-    expect(verifyQuorumReceiptByStake(r, sset, 9007199254740996, epoch).ok).toBe(false)
+    expect(verifyQuorumReceiptByStake(r, sset, 9007199254740996n, epoch).ok).toBe(false)
     // Threshold 2^53+2 is below the exact sum -> must ACCEPT (the fix is exact, not over-rejecting).
-    expect(verifyQuorumReceiptByStake(r, sset, 9007199254740994, epoch).ok).toBe(true)
+    expect(verifyQuorumReceiptByStake(r, sset, 9007199254740994n, epoch).ok).toBe(true)
   })
 
   it('quorumSetId is order-independent but stake/k/epoch sensitive', () => {
     const id = quorumSetId(set, k, epoch)
     expect(quorumSetId({ validators: [...set.validators].reverse() }, k, epoch)).toBe(id)
-    expect(quorumSetId(setOf(v, 2), k, epoch)).not.toBe(id) // reweighted stake
+    expect(quorumSetId(setOf(v, 2n), k, epoch)).not.toBe(id) // reweighted stake
     expect(quorumSetId(set, k + 1, epoch)).not.toBe(id)
     expect(quorumSetId(set, k, epoch + 1)).not.toBe(id)
   })

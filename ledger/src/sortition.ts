@@ -28,45 +28,51 @@ export function canonicalRound(_height: number): number {
   return 0
 }
 
-export function totalStake(set: ValidatorSet): number {
-  return set.validators.reduce((a, v) => a + v.stake, 0)
-}
-
 /**
- * Exact total stake as BigInt. `totalStake()` reduces in Number and rounds once the sum exceeds
- * 2^53; finality and sortition decisions must be exact, so they sum non-negative integer stakes
- * as BigInt (LEDGER-PRECISION-004, Team Apex sweep — advancing the documented bigint-stake
- * migration at the decision points). Non-integer / negative stakes contribute 0 (malformed).
+ * A validator's stake as a SAFE non-negative bigint. A non-bigint (e.g. a `number` from an untrusted
+ * decode of a verifier-supplied set) or a negative value yields 0n, so stake arithmetic never throws a
+ * `bigint + number` TypeError (council R5 review, ADR-0027). Malformed sets are still REJECTED —
+ * fail-closed — by `isWellFormedStakeSet`; this helper only keeps the running total safe meanwhile.
  */
-export function totalStakeBig(set: ValidatorSet): bigint {
-  return set.validators.reduce(
-    (a, v) => a + BigInt(Number.isInteger(v.stake) && v.stake >= 0 ? v.stake : 0),
-    0n,
-  )
+export function safeStake(stake: unknown): bigint {
+  return typeof stake === 'bigint' && stake >= 0n ? stake : 0n
 }
 
-export function stakeOf(set: ValidatorSet, pubkey: string): number {
-  return set.validators.find((v) => v.pubkey === pubkey)?.stake ?? 0
+/** Fail-closed malformed-set predicate: every validator's stake must be a NON-NEGATIVE BIGINT. */
+export function isWellFormedStakeSet(set: ValidatorSet): boolean {
+  return set.validators.every((v) => typeof v.stake === 'bigint' && v.stake >= 0n)
+}
+
+export function totalStake(set: ValidatorSet): bigint {
+  // Exact for unbounded PoS weights (ADR-0027): stake is bigint. A non-bigint / negative (malformed)
+  // stake contributes 0; callers that must reject a malformed set call isWellFormedStakeSet.
+  return set.validators.reduce((a, v) => a + safeStake(v.stake), 0n)
+}
+
+/** @deprecated stake is bigint, so `totalStake` is already exact; retained as an alias. */
+export function totalStakeBig(set: ValidatorSet): bigint {
+  return totalStake(set)
+}
+
+export function stakeOf(set: ValidatorSet, pubkey: string): bigint {
+  return safeStake(set.validators.find((v) => v.pubkey === pubkey)?.stake)
 }
 
 /** Deterministic stake-weighted leader for a (prevHash, round). */
 export function selectLeader(set: ValidatorSet, prevHash: string, round: number): string {
   const total = totalStake(set)
-  if (total <= 0) throw new Error('validator set has no stake')
-  const totalBig = totalStakeBig(set)
-  if (totalBig <= 0n) throw new Error('validator set has no integer stake')
+  if (total <= 0n) throw new Error('validator set has no stake')
   const seed = SHA3_SHAKE256.digest(encodeCanonical(['polarseek-sortition-v1', prevHash, round]))
-  // BigInt cumulative walk over an EXACT bigint total (LEDGER-PRECISION-001 + -004, Team Apex):
-  // both the modulo base and the running `acc` are bigint, so leader selection stays exact even
-  // once total stake exceeds 2^53 (the Number `total` above is kept only for the > 0 guard).
-  const x = BigInt('0x' + bytesToHex(seed)) % totalBig
+  // Exact BigInt cumulative walk: both the modulo base (total) and the running `acc` are bigint, so
+  // leader selection stays exact for unbounded PoS stake weights (LEDGER-PRECISION-001/-004/-005).
+  const x = BigInt('0x' + bytesToHex(seed)) % total
   // Sort by pubkey so the cumulative interval is order-independent.
   const sorted = [...set.validators].sort((a, b) =>
     a.pubkey < b.pubkey ? -1 : a.pubkey > b.pubkey ? 1 : 0,
   )
   let acc = 0n
   for (const v of sorted) {
-    acc += BigInt(Number.isInteger(v.stake) && v.stake >= 0 ? v.stake : 0)
+    acc += safeStake(v.stake)
     if (x < acc) return v.pubkey
   }
   return sorted[sorted.length - 1]!.pubkey

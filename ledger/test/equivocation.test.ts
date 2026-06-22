@@ -20,7 +20,7 @@ import {
 const suite = SUITE_IDS.PS_5
 const s = signerFor(suite)
 const keys: KeyPair[] = [s.keygen(), s.keygen(), s.keygen()]
-const stakes = [34, 33, 33]
+const stakes = [34n, 33n, 33n]
 const set: ValidatorSet = {
   validators: keys.map((k, i) => ({ pubkey: bytesToHex(k.publicKey), stake: stakes[i]! })),
 }
@@ -50,7 +50,7 @@ describe('accountable finality safety (LEDGER-001)', () => {
       set,
       proofs.map((p) => p.validator),
     )
-    expect(totalStake(slashed)).toBe(0)
+    expect(totalStake(slashed)).toBe(0n)
     expect(verifyFinalized(blockA, attsA, slashed, GENESIS_PREV).finalized).toBe(false)
     expect(verifyFinalized(blockB, attsB, slashed, GENESIS_PREV).finalized).toBe(false)
   })

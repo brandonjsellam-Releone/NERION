@@ -9,7 +9,7 @@ import { vrfAlpha, vrfLeaderEligible, vrfPriority } from '../src/leader.js'
 import type { ValidatorSet } from '../src/index.js'
 
 // Each validator has an identity pubkey (drives the stake interval) + a VRF seed.
-function validators(n: number, stake: (i: number) => number) {
+function validators(n: number, stake: (i: number) => bigint) {
   return Array.from({ length: n }, (_, i) => ({
     pubkey: bytesToHex(new Uint8Array(32).fill(i + 1)),
     vrfSeed: new Uint8Array(32).fill(100 + i),
@@ -19,7 +19,7 @@ function validators(n: number, stake: (i: number) => number) {
 
 describe('VRF leader eligibility', () => {
   it('a single validator is always eligible (beta mod 1 = 0)', () => {
-    const v = validators(1, () => 5)[0]!
+    const v = validators(1, () => 5n)[0]!
     const set: ValidatorSet = { validators: [{ pubkey: v.pubkey, stake: v.stake }] }
     for (let r = 0; r < 5; r++) {
       const beta = prove(v.vrfSeed, vrfAlpha('00'.repeat(32), r)).beta
@@ -28,7 +28,7 @@ describe('VRF leader eligibility', () => {
   })
 
   it('eligibility frequency tracks stake fraction (stake-weighted self-selection)', () => {
-    const vs = validators(4, (i) => (i === 0 ? 7 : 1)) // total 10; v0 holds 70%
+    const vs = validators(4, (i) => (i === 0 ? 7n : 1n)) // total 10; v0 holds 70%
     const set: ValidatorSet = { validators: vs.map((v) => ({ pubkey: v.pubkey, stake: v.stake })) }
     const eligible = [0, 0, 0, 0]
     const ROUNDS = 150

@@ -22,7 +22,7 @@ import type { ValidatorSet, TimeoutVote, ViewChangeCert } from '../src/index.js'
 const suite = SUITE_IDS.PS_5
 const signer = signerFor(suite)
 
-const validator = (idSeed: number, vrfSeed: number, stake: number) => {
+const validator = (idSeed: number, vrfSeed: number, stake: bigint) => {
   const kp = signer.keygen(new Uint8Array(32).fill(idSeed))
   const seed = new Uint8Array(32).fill(vrfSeed)
   return {
@@ -34,7 +34,7 @@ const validator = (idSeed: number, vrfSeed: number, stake: number) => {
 
 describe('VRF-mode ledger (ADR-0004)', () => {
   it('proposes, attests, and finalizes a VRF block; a light client verifies it', () => {
-    const v = validator(1, 50, 1) // single validator → always eligible (β mod 1 = 0)
+    const v = validator(1, 50, 1n) // single validator → always eligible (β mod 1 = 0)
     const set: ValidatorSet = { validators: [v.record] }
     const ledger = new Ledger(set, suite)
     const block = ledger.proposeVrf('deadbeefroot', 0, 1000, v.kp, v.seed)
@@ -47,7 +47,7 @@ describe('VRF-mode ledger (ADR-0004)', () => {
   })
 
   it('rejects a wrong VRF key and a tampered vrfOutput', () => {
-    const v = validator(2, 60, 1)
+    const v = validator(2, 60, 1n)
     const set: ValidatorSet = { validators: [v.record] }
     const ledger = new Ledger(set, suite)
     const block = ledger.proposeVrf('caferoot', 0, 1, v.kp, v.seed)
@@ -69,7 +69,7 @@ describe('VRF-mode ledger (ADR-0004)', () => {
   })
 
   it('round > 0 needs a 2/3 view-change cert; a valid cert admits the block', () => {
-    const v = validator(3, 70, 1)
+    const v = validator(3, 70, 1n)
     const set: ValidatorSet = { validators: [v.record] }
     const ledger = new Ledger(set, suite)
 
@@ -104,8 +104,8 @@ describe('VRF-mode ledger (ADR-0004)', () => {
   })
 
   it('an ineligible proposer cannot propose', () => {
-    const low = validator(40, 90, 1) // stake 1 of 100 → eligible only ~1% of draws
-    const high = validator(41, 91, 99)
+    const low = validator(40, 90, 1n) // stake 1 of 100 → eligible only ~1% of draws
+    const high = validator(41, 91, 99n)
     // β is deterministic per seed, so find a vrf seed where `low` is NOT eligible.
     let foundIneligible = false
     for (let i = 0; i < 20 && !foundIneligible; i++) {
@@ -124,7 +124,7 @@ describe('VRF-mode ledger (ADR-0004)', () => {
   })
 
   it('rejects a downgrade: a proof-less legacy block in a VRF validator set', () => {
-    const v = validator(5, 55, 1)
+    const v = validator(5, 55, 1n)
     const set: ValidatorSet = { validators: [v.record] } // VRF-mode (has vrfPubkey)
     const ledger = new Ledger(set, suite)
     const legacy = ledger.propose('x', 0, 1, v.kp) // deprecated path → no vrfProof
@@ -135,10 +135,10 @@ describe('VRF-mode ledger (ADR-0004)', () => {
   })
 
   it('rejects a VRF block presented to a legacy (no-VRF-key) validator set', () => {
-    const v = validator(6, 56, 1)
+    const v = validator(6, 56, 1n)
     const vrfSet: ValidatorSet = { validators: [v.record] }
     const block = new Ledger(vrfSet, suite).proposeVrf('y', 0, 1, v.kp, v.seed) // has vrfProof
-    const legacySet: ValidatorSet = { validators: [{ pubkey: v.record.pubkey, stake: 1 }] }
+    const legacySet: ValidatorSet = { validators: [{ pubkey: v.record.pubkey, stake: 1n }] }
     const att = new Ledger(legacySet, suite).attest(block, v.kp)
     const verdict = verifyFinalized(block, [att], legacySet, GENESIS_PREV)
     expect(verdict.ok).toBe(false) // rejected (ok=false); submit() would throw
@@ -146,9 +146,9 @@ describe('VRF-mode ledger (ADR-0004)', () => {
   })
 
   it('a VRF block and a legacy block with identical fields hash differently (β committed)', () => {
-    const v = validator(7, 57, 1)
+    const v = validator(7, 57, 1n)
     const vrfSet: ValidatorSet = { validators: [v.record] }
-    const legacySet: ValidatorSet = { validators: [{ pubkey: v.record.pubkey, stake: 1 }] }
+    const legacySet: ValidatorSet = { validators: [{ pubkey: v.record.pubkey, stake: 1n }] }
     const vrfBlock = new Ledger(vrfSet, suite).proposeVrf('same', 0, 5, v.kp, v.seed)
     const legacyBlock = new Ledger(legacySet, suite).propose('same', 0, 5, v.kp)
     expect(blockHash(vrfBlock.header)).not.toBe(blockHash(legacyBlock.header))
@@ -160,7 +160,7 @@ describe('VRF-mode ledger (ADR-0004)', () => {
   })
 
   it('finalizes a round>0 VRF block at a real (non-genesis) head via Ledger.submit()', () => {
-    const v = validator(8, 58, 1)
+    const v = validator(8, 58, 1n)
     const set: ValidatorSet = { validators: [v.record] }
     const ledger = new Ledger(set, suite)
     const b0 = ledger.proposeVrf('h0', 0, 1, v.kp, v.seed)

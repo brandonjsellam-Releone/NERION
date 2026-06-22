@@ -371,7 +371,7 @@ const CHECKS: Array<() => ConformanceResult> = [
     check('C12', 'Quorum receipt finalizes at k (not below); rejects set substitution', () => {
       const s = signerFor(SUITE)
       const v = [s.keygen(), s.keygen(), s.keygen()]
-      const set = { validators: v.map((kp) => ({ pubkey: bytesToHex(kp.publicKey), stake: 1 })) }
+      const set = { validators: v.map((kp) => ({ pubkey: bytesToHex(kp.publicKey), stake: 1n })) }
       const body = {
         v: 1 as const,
         suite: SUITE,
@@ -407,8 +407,8 @@ const CHECKS: Array<() => ConformanceResult> = [
       const atk = s.keygen()
       const atkSet = {
         validators: [
-          { pubkey: bytesToHex(v[0]!.publicKey), stake: 1 },
-          { pubkey: bytesToHex(atk.publicKey), stake: 1 },
+          { pubkey: bytesToHex(v[0]!.publicKey), stake: 1n },
+          { pubkey: bytesToHex(atk.publicKey), stake: 1n },
         ],
       }
       const substituted = verifyQuorumReceipt(

@@ -42,7 +42,7 @@ const POOL: KeyPair[] = Array.from({ length: 6 }, (_, i) =>
   signer.keygen(new Uint8Array(32).fill(i + 1)),
 )
 const setOf = (kps: KeyPair[]): ValidatorSet => ({
-  validators: kps.map((k) => ({ pubkey: bytesToHex(k.publicKey), stake: 1 })),
+  validators: kps.map((k) => ({ pubkey: bytesToHex(k.publicKey), stake: 1n })),
 })
 
 describe('quorum receipts — properties (randomized)', () => {

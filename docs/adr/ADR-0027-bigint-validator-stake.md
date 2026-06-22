@@ -5,7 +5,25 @@ SPDX-License-Identifier: Apache-2.0
 
 # ADR-0027: bigint validator-stake migration (LEDGER-PRECISION-005)
 
-**Status:** Proposed (design + de-risking complete; implementation deferred to a focused, council-reviewed pass).
+**Status:** Accepted — IMPLEMENTED 2026-06-23 (council-reviewed). `Validator.stake` is now `bigint`
+end-to-end; gate green (423 tests) + conformance 23/23 with no KAT/SuiteID change.
+
+**Implementation note (council R5 hardening).** The DeepSeek/Grok/OpenAI panel flagged that replacing
+the old `Number.isInteger(v.stake) && v.stake >= 0` malformed predicate with a bare `v.stake >= 0n`
+DROPS the runtime type guard: in JS `aNumber >= 0n` is `true` (relational coercion), so a verifier-
+supplied set carrying a runtime `number` stake (e.g. from an untrusted decode) would pass the predicate
+and then THROW `bigint + number` in the accumulation — an uncontrolled crash, not the codebase's
+mandated fail-closed verdict. Fix: a single audited pair of helpers in `ledger/src/sortition.ts` —
+`safeStake(x)` (a non-bigint/negative value clamps to `0n`, so stake arithmetic never throws) and
+`isWellFormedStakeSet(set)` (`every(v => typeof v.stake === 'bigint' && v.stake >= 0n)`, the fail-closed
+predicate) — used across `chain.ts` / `leader.ts` / `sortition.ts`; `receipts/quorum.ts` inlines the
+equivalent guard on its stake threshold + set. A regression test asserts a runtime non-bigint stake is
+rejected (verdict `false`) WITHOUT throwing, plus a shape test covering number/float/NaN/Infinity/
+string/null/undefined/object/negative-bigint. DeepSeek confirmed the fix (SHIP); Grok concurred it is
+non-blocking. **Follow-up (non-blocking, Grok R5):** the guards are call-site-enforced, not
+type-enforced — a branded `StakeSet` constructor that validates once at the trust boundary would make
+the invariant structural rather than reliant on every consumer routing through `safeStake`. Tracked,
+not required (no current consumer bypasses the guards).
 
 ## Context
 

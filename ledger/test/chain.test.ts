@@ -17,7 +17,7 @@ import {
 const suite = SUITE_IDS.PS_5
 const s = signerFor(suite)
 const keys: KeyPair[] = [s.keygen(), s.keygen(), s.keygen()]
-const stakes = [34, 33, 33]
+const stakes = [34n, 33n, 33n]
 const set: ValidatorSet = {
   validators: keys.map((k, i) => ({ pubkey: bytesToHex(k.publicKey), stake: stakes[i]! })),
 }
@@ -71,7 +71,7 @@ describe('pure-PoS ledger', () => {
     const verdict = verifyFinalized(block, atts, set, GENESIS_PREV)
     expect(verdict.ok).toBe(true)
     expect(verdict.finalized).toBe(true)
-    expect(verdict.attestingStake).toBeGreaterThanOrEqual(67)
+    expect(verdict.attestingStake).toBeGreaterThanOrEqual(67n)
   })
 
   it('light client rejects a tampered proposer signature', () => {
@@ -114,8 +114,8 @@ describe('pure-PoS ledger', () => {
     const k2 = [s.keygen(), s.keygen()]
     const bigSet: ValidatorSet = {
       validators: [
-        { pubkey: bytesToHex(k2[0]!.publicKey), stake: A },
-        { pubkey: bytesToHex(k2[1]!.publicKey), stake: B },
+        { pubkey: bytesToHex(k2[0]!.publicKey), stake: BigInt(A) },
+        { pubkey: bytesToHex(k2[1]!.publicKey), stake: BigInt(B) },
       ],
     }
     const ledger = new Ledger(bigSet, suite)

@@ -8,6 +8,8 @@ import { signerFor, SUITE_IDS } from '../../crypto/src/index.js'
 import {
   totalStake,
   totalStakeBig,
+  safeStake,
+  isWellFormedStakeSet,
   viewChangeMessage,
   verifyViewChangeCert,
   GENESIS_PREV,
@@ -22,7 +24,7 @@ import type { ValidatorSet, TimeoutVote, ViewChangeCert } from '../src/index.js'
  */
 const suite = SUITE_IDS.PS_5
 const signer = signerFor(suite)
-const MAX = 9007199254740991 // 2^53 - 1, the largest exactly-representable Number integer
+const MAX = 9007199254740991n // 2^53 - 1, the largest exactly-representable Number integer
 
 describe('LEDGER-PRECISION-004 — exact bigint stake at the finality decision points', () => {
   it('totalStakeBig is exact where the Number sum rounds past 2^53', () => {
@@ -30,13 +32,13 @@ describe('LEDGER-PRECISION-004 — exact bigint stake at the finality decision p
       validators: [
         { pubkey: 'a', stake: MAX },
         { pubkey: 'b', stake: MAX },
-        { pubkey: 'c', stake: 5 },
+        { pubkey: 'c', stake: 5n },
       ],
     }
     expect(totalStakeBig(set)).toBe(18014398509481987n) // MAX + MAX + 5, exact
-    // The Number reduce cannot represent that odd value past 2^53 — it is rounded, so the
-    // bigint-of-the-float disagrees with the exact bigint sum (this is the gap being closed).
-    expect(BigInt(totalStake(set))).not.toBe(totalStakeBig(set))
+    // R5 (ADR-0027): stake is bigint, so totalStake itself is now exact past 2^53 — it AGREES with
+    // totalStakeBig (the float-rounding gap this test once guarded against is structurally closed).
+    expect(totalStake(set)).toBe(totalStakeBig(set))
   })
 
   it('verifyViewChangeCert is exact at stakes whose total exceeds 2^53', () => {
@@ -65,8 +67,8 @@ describe('LEDGER-PRECISION-004 — exact bigint stake at the finality decision p
     // A negative stake would shrink a Number total; silently zeroing it would lower the 2/3 bar.
     const malformed: ValidatorSet = {
       validators: [
-        { pubkey: bytesToHex(k[0]!.publicKey), stake: 10 },
-        { pubkey: bytesToHex(k[1]!.publicKey), stake: -5 },
+        { pubkey: bytesToHex(k[0]!.publicKey), stake: 10n },
+        { pubkey: bytesToHex(k[1]!.publicKey), stake: -5n },
       ],
     }
     const votes = k.map((kp) => ({
@@ -80,6 +82,51 @@ describe('LEDGER-PRECISION-004 — exact bigint stake at the finality decision p
     // Even a unanimous cert must NOT finalize against a malformed set.
     expect(verifyViewChangeCert(malformed, suite, 0, GENESIS_PREV, 0, { round: 0, votes })).toBe(
       false,
+    )
+  })
+
+  it('fails CLOSED (no throw) on a RUNTIME non-bigint stake — council R5 review', () => {
+    // The TS type says bigint, but a verifier-supplied set decoded from untrusted bytes could carry a
+    // `number`. `number >= 0n` is TRUE (relational coercion), so a `>= 0n`-only predicate would pass
+    // it and then THROW `bigint + number` in the accumulation — an uncontrolled crash, NOT a
+    // fail-closed verdict. isWellFormedStakeSet + safeStake must reject it cleanly without throwing.
+    const k = [0, 1].map((i) => signer.keygen(new Uint8Array(32).fill(50 + i)))
+    const malformed = {
+      validators: [
+        { pubkey: bytesToHex(k[0]!.publicKey), stake: 10 as unknown as bigint }, // runtime number!
+        { pubkey: bytesToHex(k[1]!.publicKey), stake: 10n },
+      ],
+    } as ValidatorSet
+    const votes = k.map((kp) => ({
+      height: 0,
+      prevHash: GENESIS_PREV,
+      round: 0,
+      validator: bytesToHex(kp.publicKey),
+      suite,
+      sig: signer.sign(viewChangeMessage(suite, 0, GENESIS_PREV, 0), kp.secretKey),
+    }))
+    const cert = { round: 0, votes }
+    expect(() => verifyViewChangeCert(malformed, suite, 0, GENESIS_PREV, 0, cert)).not.toThrow()
+    expect(verifyViewChangeCert(malformed, suite, 0, GENESIS_PREV, 0, cert)).toBe(false)
+    // The stake-reading helpers stay total-safe (no bigint+number throw); the number clamps to 0n.
+    expect(() => totalStake(malformed)).not.toThrow()
+    expect(totalStake(malformed)).toBe(10n)
+  })
+
+  it('safeStake + isWellFormedStakeSet reject EVERY non-bigint stake shape (council R5)', () => {
+    // safeStake clamps anything that is not a NON-NEGATIVE BIGINT to 0n, without throwing.
+    for (const bad of [10, 1.5, NaN, Infinity, '5', null, undefined, {}, [], true, -1n, -7n]) {
+      expect(safeStake(bad as unknown)).toBe(0n)
+    }
+    expect(safeStake(0n)).toBe(0n)
+    expect(safeStake(7n)).toBe(7n)
+    // isWellFormedStakeSet fails CLOSED on any non-bigint / negative shape.
+    for (const bad of [10, 1.5, '5', null, undefined, -1n]) {
+      const set = { validators: [{ pubkey: 'a', stake: bad as unknown as bigint }] } as ValidatorSet
+      expect(isWellFormedStakeSet(set)).toBe(false)
+    }
+    expect(isWellFormedStakeSet({ validators: [{ pubkey: 'a', stake: 0n }] } as ValidatorSet)).toBe(
+      true,
     )
   })
 })

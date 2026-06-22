@@ -29,7 +29,7 @@ function fixture() {
     signer.keygen(new Uint8Array(32).fill(i + 1)),
   )
   const set: ValidatorSet = {
-    validators: keys.map((k) => ({ pubkey: bytesToHex(k.publicKey), stake: 1 })),
+    validators: keys.map((k) => ({ pubkey: bytesToHex(k.publicKey), stake: 1n })),
   }
   const leaderId = selectLeader(set, GENESIS_PREV, 0)
   const leaderIdx = keys.findIndex((k) => bytesToHex(k.publicKey) === leaderId)
@@ -214,7 +214,7 @@ describe('networked ledger — suite binding (anti cross-suite confusion)', () =
     const mixedAtts = atts.map((a) => ({ ...a, suite: SUITE_IDS.PS_1 }))
     const mixed = verifyFinalized(block, mixedAtts, set, GENESIS_PREV)
     expect(mixed.finalized).toBe(false)
-    expect(mixed.attestingStake).toBe(0)
+    expect(mixed.attestingStake).toBe(0n)
   })
 })
 

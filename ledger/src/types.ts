@@ -20,8 +20,8 @@ import type { Bytes } from '../../crypto/src/index.js'
 export interface Validator {
   /** hex validator public key (ML-DSA-87 consensus identity). */
   readonly pubkey: string
-  /** Non-negative integer stake weight. */
-  readonly stake: number
+  /** Non-negative stake weight. bigint — exact for unbounded PoS weights beyond 2^53 (ADR-0027). */
+  readonly stake: bigint
   /**
    * hex ed25519 VRF public key (ADR-0004) — classical, SEPARATE from the ML-DSA
    * identity. Required for VRF-mode sortition; absent under legacy mode.
@@ -90,14 +90,14 @@ export interface FinalizedBlock {
   readonly block: Block
   readonly hash: string
   readonly attestations: readonly Attestation[]
-  readonly attestingStake: number
+  readonly attestingStake: bigint
   readonly finalized: boolean
 }
 
 export interface LightClientVerdict {
   readonly ok: boolean
   readonly finalized: boolean
-  readonly attestingStake: number
-  readonly totalStake: number
+  readonly attestingStake: bigint
+  readonly totalStake: bigint
   readonly reasons: string[]
 }

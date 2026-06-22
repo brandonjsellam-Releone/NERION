@@ -68,7 +68,8 @@ export interface QuorumReceipt {
 export interface QuorumVerdict {
   readonly ok: boolean
   readonly distinctValid: number
-  readonly threshold: number
+  /** Count threshold `k` (number) for the count variant, or stake threshold (bigint) for the stake variant. */
+  readonly threshold: number | bigint
   readonly reasons: string[]
 }
 
@@ -196,16 +197,17 @@ export function verifyQuorumReceipt(
 export function verifyQuorumReceiptByStake(
   receipt: QuorumReceipt,
   set: ValidatorSet,
-  stakeThreshold: number,
+  stakeThreshold: bigint,
   epoch: number,
 ): QuorumVerdict {
   const reasons: string[] = []
   // Fail-closed on a non-positive stake threshold (the k=0 analogue) and on a
   // malformed set carrying negative stake (defensive — the set is verifier-supplied).
-  if (!(stakeThreshold > 0)) reasons.push('stake threshold must be positive')
-  if (!Number.isInteger(stakeThreshold)) reasons.push('stake threshold must be an integer')
-  if (set.validators.some((v) => !Number.isInteger(v.stake) || v.stake < 0)) {
-    reasons.push('validator set has negative or non-integer stake (malformed)')
+  if (typeof stakeThreshold !== 'bigint' || stakeThreshold <= 0n) {
+    reasons.push('stake threshold must be a positive bigint')
+  }
+  if (set.validators.some((v) => typeof v.stake !== 'bigint' || v.stake < 0n)) {
+    reasons.push('validator set has a non-bigint or negative stake (malformed)')
   }
   const q = receipt.body.quorum
   if (q.epoch !== epoch) reasons.push(`committed epoch ${q.epoch} != expected ${epoch}`)
@@ -224,12 +226,12 @@ export function verifyQuorumReceiptByStake(
     receipt,
     (v) => stakeOf.has(v),
     (v) => {
-      const s = stakeOf.get(v) ?? 0
-      stake += Number.isInteger(s) ? BigInt(s) : 0n
+      const s = stakeOf.get(v)
+      stake += typeof s === 'bigint' && s >= 0n ? s : 0n
       counted += 1
     },
   )
-  if (Number.isInteger(stakeThreshold) && stake < BigInt(stakeThreshold))
+  if (stake < stakeThreshold)
     reasons.push(`distinct valid stake ${stake} < required ${stakeThreshold}`)
   return { ok: reasons.length === 0, distinctValid: counted, threshold: stakeThreshold, reasons }
 }

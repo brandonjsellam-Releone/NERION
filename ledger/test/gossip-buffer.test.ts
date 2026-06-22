@@ -27,7 +27,7 @@ function fixture() {
     signer.keygen(new Uint8Array(32).fill(i + 1)),
   )
   const set: ValidatorSet = {
-    validators: keys.map((k) => ({ pubkey: bytesToHex(k.publicKey), stake: 1 })),
+    validators: keys.map((k) => ({ pubkey: bytesToHex(k.publicKey), stake: 1n })),
   }
   return { keys, set }
 }

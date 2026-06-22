@@ -19,10 +19,10 @@ const keys = Array.from({ length: 4 }, () => s.keygen())
 const hx = keys.map((k) => bytesToHex(k.publicKey))
 const set: ValidatorSet = {
   validators: [
-    { pubkey: hx[0]!, stake: 10 },
-    { pubkey: hx[1]!, stake: 20 },
-    { pubkey: hx[2]!, stake: 30 },
-    { pubkey: hx[3]!, stake: 40 },
+    { pubkey: hx[0]!, stake: 10n },
+    { pubkey: hx[1]!, stake: 20n },
+    { pubkey: hx[2]!, stake: 30n },
+    { pubkey: hx[3]!, stake: 40n },
   ],
 }
 // Distinct prevHash per draw (any string is fine — it is hashed into the seed).
@@ -63,7 +63,7 @@ describe('selectLeader — verifiable stake-weighted sortition (A10)', () => {
     const total = totalStake(set)
     for (const v of set.validators) {
       const observed = (counts.get(v.pubkey) ?? 0) / N
-      const expected = v.stake / total
+      const expected = Number(v.stake) / Number(total)
       // 4000 draws → per-proportion std error ≲ 0.008; 0.05 is a wide, non-flaky bound.
       expect(Math.abs(observed - expected)).toBeLessThan(0.05)
     }
@@ -72,17 +72,17 @@ describe('selectLeader — verifiable stake-weighted sortition (A10)', () => {
   it('fails closed on a zero-stake set; a single validator always leads', () => {
     expect(() => selectLeader({ validators: [] }, prevAt(1), 0)).toThrow()
     expect(() =>
-      selectLeader({ validators: [{ pubkey: hx[0]!, stake: 0 }] }, prevAt(1), 0),
+      selectLeader({ validators: [{ pubkey: hx[0]!, stake: 0n }] }, prevAt(1), 0),
     ).toThrow()
-    const solo: ValidatorSet = { validators: [{ pubkey: hx[0]!, stake: 5 }] }
+    const solo: ValidatorSet = { validators: [{ pubkey: hx[0]!, stake: 5n }] }
     expect(selectLeader(solo, prevAt(9), 3)).toBe(hx[0])
   })
 
   it('selects exactly at large stake (LEDGER-PRECISION-001 BigInt walk, total = 2^53)', () => {
     const big: ValidatorSet = {
       validators: [
-        { pubkey: hx[0]!, stake: 4_503_599_627_370_496 }, // 2^52
-        { pubkey: hx[1]!, stake: 4_503_599_627_370_496 }, // 2^52 (total = 2^53)
+        { pubkey: hx[0]!, stake: 4_503_599_627_370_496n }, // 2^52
+        { pubkey: hx[1]!, stake: 4_503_599_627_370_496n }, // 2^52 (total = 2^53)
       ],
     }
     const ldr = selectLeader(big, prevAt(123), 0)
