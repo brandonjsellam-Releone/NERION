@@ -13,6 +13,7 @@ import {
   signerFor,
 } from '../src/suites.js'
 import { UnknownSuiteError, NoCommonSuiteError, NotImplementedError } from '../src/errors.js'
+import fc from 'fast-check'
 
 describe('SuiteID registry', () => {
   it('has both active tiers and resolves their primitives', () => {
@@ -50,6 +51,30 @@ describe('SuiteID registry', () => {
 
   it('negotiate never selects a pending suite even if both offer it', () => {
     expect(() => negotiate([SUITE_IDS.PS_5_HQC], [SUITE_IDS.PS_5_HQC])).toThrow(NoCommonSuiteError)
+  })
+
+  it('downgrade-resistant: over random suite-set pairs, negotiate yields the most-preferred ACTIVE common suite or rejects (TNO p.63/67)', () => {
+    const allIds = allSuites().map((s) => s.id)
+    const active = activeSuiteIds() // most-preferred first
+    fc.assert(
+      fc.property(fc.subarray(allIds), fc.subarray(allIds), (local, remote) => {
+        const commonActive = active.filter((id) => local.includes(id) && remote.includes(id))
+        let result: string
+        try {
+          result = negotiate(local, remote)
+        } catch (e) {
+          // the ONLY permitted failure is "no common active suite" — a downgrade is never silently chosen
+          expect(e).toBeInstanceOf(NoCommonSuiteError)
+          expect(commonActive.length).toBe(0)
+          return
+        }
+        // a returned suite must be ACTIVE, mutually supported, and the HIGHEST-preference such suite
+        expect(getSuite(result).status).toBe('active')
+        expect(local.includes(result) && remote.includes(result)).toBe(true)
+        expect(result).toBe(commonActive[0])
+      }),
+      { numRuns: 300 },
+    )
   })
 
   it('throws on unknown suite id', () => {
