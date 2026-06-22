@@ -104,7 +104,19 @@ export function encodeCoseSign1(msg: CoseSign1): Bytes {
 export function decodeCoseSign1(bytes: Bytes): CoseSign1 {
   const v = decodeCbor(bytes)
   if (!Array.isArray(v) || v.length !== 4) throw new Error('not a COSE_Sign1 4-element array')
-  return { protected: v[0] as Bytes, payload: v[2] as Bytes, signature: v[3] as Bytes }
+  // DECODE-TYPE-001 (Team Apex round-3): the decoded elements are untrusted `unknown`. Validate that
+  // the byte-string fields are actually Uint8Array BEFORE casting, so a malformed COSE (e.g.
+  // [123, {}, "x", null]) cannot smuggle a wrong-typed protected/payload/signature into verification
+  // — where coseSign1Verify's pre-try `constantTimeEqual(msg.protected, ...)` would otherwise throw
+  // uncaught on a non-Uint8Array. Fail closed at decode (this function already throws by contract).
+  if (
+    !(v[0] instanceof Uint8Array) ||
+    !(v[2] instanceof Uint8Array) ||
+    !(v[3] instanceof Uint8Array)
+  ) {
+    throw new Error('COSE_Sign1 protected/payload/signature must be byte strings')
+  }
+  return { protected: v[0], payload: v[2], signature: v[3] }
 }
 
 /**

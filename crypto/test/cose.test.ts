@@ -6,6 +6,7 @@ import { describe, it, expect } from 'vitest'
 import {
   signerFor,
   SUITE_IDS,
+  encodeCanonical,
   coseSign1,
   coseSign1Verify,
   encodeCoseSign1,
@@ -62,5 +63,26 @@ describe('COSE_Sign1 (RFC 9052) over ML-DSA-87 (COSE alg -50, provisional)', () 
       kp.secretKey,
     )
     expect(coseSign1Verify(msg, SUITE, kp.publicKey, COSE_ALG.ML_DSA_87)).toBe(true)
+  })
+
+  it('DECODE-TYPE-001: rejects a 4-element COSE whose fields are not byte strings (decode type-confusion)', () => {
+    // A malformed COSE_Sign1 whose elements decode to wrong types must be rejected AT DECODE — never
+    // cast `as Bytes` into verification, where coseSign1Verify's pre-try constantTimeEqual(msg.protected,
+    // ...) would otherwise throw uncaught on a non-Uint8Array (round-3 decode-surface hardening).
+    const malformed = encodeCanonical([123, new Map(), 'not-bytes', null])
+    expect(() => decodeCoseSign1(malformed)).toThrow(/byte strings/)
+    const wrongProtected = encodeCanonical([
+      { a: 1 },
+      new Map(),
+      new Uint8Array([1]),
+      new Uint8Array([2]),
+    ])
+    expect(() => decodeCoseSign1(wrongProtected)).toThrow()
+    // sanity: a genuine COSE still decodes + verifies (no regression on the happy path)
+    const kp = s.keygen()
+    const ok = decodeCoseSign1(
+      encodeCoseSign1(coseSign1(enc.encode('y'), SUITE, kp.secretKey, COSE_ALG.ML_DSA_87)),
+    )
+    expect(coseSign1Verify(ok, SUITE, kp.publicKey, COSE_ALG.ML_DSA_87)).toBe(true)
   })
 })
