@@ -70,4 +70,11 @@ describe('Cryptographic Bill of Materials (CBOM)', () => {
     expect(assets.every((a) => [0, 1, 3, 5].includes(a.nistLevel))).toBe(true)
     expect(assets.every((a) => Object.values(a.sizesBytes).every((n) => n > 0))).toBe(true)
   })
+
+  it('discloses that the ZK layer is not yet post-quantum (TNO p.18; honest advisory)', () => {
+    const adv = buildCbom().advisories
+    expect(adv.length).toBeGreaterThan(0)
+    expect(adv.some((a) => a.includes('ZK layer') && a.includes('NOT post-quantum'))).toBe(true)
+    expect(adv.some((a) => a.includes('UNAUDITED'))).toBe(true)
+  })
 })

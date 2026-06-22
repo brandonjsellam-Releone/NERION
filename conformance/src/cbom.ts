@@ -77,6 +77,12 @@ export interface Cbom {
   readonly assets: readonly CryptoAsset[]
   /** Names of the quantum-vulnerable (Shor-broken) assets — the migration headline. */
   readonly quantumVulnerable: readonly string[]
+  /**
+   * Honest caveats about cryptography NOT covered by the negotiable-suite inventory
+   * — most importantly that the disclosure-layer ZK proofs are not yet post-quantum.
+   * A reviewer of the signed CBOM must not assume "PQ everywhere" (TNO Handbook p.18/p.28).
+   */
+  readonly advisories: readonly string[]
 }
 
 const has = (s: string, sub: string): boolean => s.toUpperCase().includes(sub.toUpperCase())
@@ -265,6 +271,14 @@ export function buildCbom(now = 0): Cbom {
     .filter((a) => a.quantum === 'quantum-vulnerable')
     .map((a) => a.name)
 
+  const advisories = [
+    'ZK layer: the disclosure-layer range/policy proofs use classical ristretto255 Pedersen ' +
+      'commitments (discrete-log generators) which are NOT post-quantum (broken by a CRQC). ' +
+      'PQ-binding migration is design-gated (ADR-0022); see docs/FRONTIER.md.',
+    'Scope: this CBOM inventories the negotiable SUITE algorithms only. Primitives are the ' +
+      'audited @noble libraries; the Nerion compositions on top are UNAUDITED and pre-FTO.',
+  ]
+
   return {
     bomFormat: 'PolarSeek-CBOM',
     specVersion: '1.0',
@@ -273,6 +287,7 @@ export function buildCbom(now = 0): Cbom {
     suites,
     assets,
     quantumVulnerable,
+    advisories,
   }
 }
 
