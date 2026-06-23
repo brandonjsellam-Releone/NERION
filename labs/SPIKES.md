@@ -14,6 +14,8 @@ SPDX-License-Identifier: Apache-2.0
 | [VRF-001](spikes/vrf-001/RESULTS.md) | 2026-06-23 | TERMINAL | raw PQ hash-beacon sortition grindable (512 tries → 98% target install; proposer ≫); EC-VRF private+grind-resistant but classical | **INCONCLUSIVE → REOPEN (VRF-002)** | R&D: build quorum-seed + PQ-VDF sortition; settle whether private leader election is required (ADR-0004) |
 | [VRF-002](spikes/vrf-002/RESULTS.md) | 2026-06-23 | TERMINAL | real sloth VDF (verifies; asymmetry ~170–235×; proof 63–250 B); grind-resistance is a conditional/brittle deadline-barrier (realistic edge ~94×, not 38k); adds liveness floor + linear verify + public sortition | **GRADUATE** — closes VRF-001: **no free PQ replacement; EC-VRF hybrid vindicated** | R&D: PQ leader-election stays open (delay-calibration + last-revealer mitigation if pursued) |
 
-> Single-active-spike rule: at most one non-terminal spike at a time. NZK-001, NZK-002, KER-001, LED-001, VRF-001, VRF-002 are terminal.
+| [CAP-001](spikes/cap-001/RESULTS.md) | 2026-06-23 | TERMINAL | Nerion already has offline attenuation (sig-chains); Macaroon HMAC-chain tiny (64–241 B) but shared-secret (no public verify); **signed-root+HMAC hybrid 3.9–14.6× smaller, keeps public verify** | **NO KILL (sig-chain safe default) + GRADUATE the hybrid** | R&D: signed-root + HMAC-caveat hybrid for deep delegation (first-party-only + key-binding caveats) |
+
+> Single-active-spike rule: at most one non-terminal spike at a time. NZK-001, NZK-002, KER-001, LED-001, VRF-001, VRF-002, CAP-001 are terminal.
 > **LED-001 lesson:** the council reversed an over-eager KILL — quantify the gap, but weigh it against the status quo's minimal-TCB / fail-closed virtues before recommending a replacement.
 > **VRF-001/002 arc:** mapped the whole PQ leader-election option space (classical EC-VRF / raw beacon / VDF-beacon / no-PQ-VRF) — every PQ option has a real cost ⇒ the documented classical-hybrid choice is vindicated, not an oversight.

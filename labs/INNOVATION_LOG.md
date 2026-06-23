@@ -80,3 +80,17 @@ SPDX-License-Identifier: Apache-2.0
   `innovation/vrf-002-vdf-sortition` (stacked on vrf-001). Lesson: even a "build the contender the council
   asked for" spike must be re-adjudicated — the VDF looked like a clean win until the deadline/parallelism/
   last-revealer analysis showed it isn't. **6 stacked innovation branches now await human review.**
+
+- **2026-06-23 · CAP-001 · HMAC-chain (Macaroon) vs signature-chain capabilities.** Read-only intake
+  `capabilities/src/capability.ts` — premise corrected: Nerion ALREADY has offline-attenuable delegation via
+  ML-DSA-87 signature-chains (publicly verifiable vs a trusted root PUBLIC key). Measured the tradeoff: a
+  Macaroon HMAC-chain is tiny (64–241 B) + fast (offline attenuation verifies; removed/forged caveat
+  rejected) BUT verify needs the root SECRET → shared-secret verifiers only, NO public/decentralized
+  verification. Council: DeepSeek (claim correct — third-party/discharge macaroons don't remove the
+  root-secret requirement; pure-HMAC fast-path has blast-radius risk), Grok (**real measured upside**: a
+  signed-root + HMAC-caveat HYBRID keeps public verifiability AND is 3.9× @d=4 / ~14.6× @d=16 smaller; and
+  sig-chain size matters even at depth 1–3 in headers/mobile/IoT/audit). **Verdict: NO KILL (sig-chain stays
+  the safe default) + GRADUATE the signed-root+HMAC-caveat hybrid** (CAP-002) — the FIRST spike this run with
+  a council-validated CONSTRUCTIVE upside (vs pure vindication). Branch `innovation/cap-001-attenuable`
+  (stacked on vrf-002). Caveats: first-party caveats only; root-key binding; added impl surface. **7 stacked
+  innovation branches now await human review.**
