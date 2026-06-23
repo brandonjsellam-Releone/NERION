@@ -6,18 +6,20 @@ and/or cross-examined by **eight independent model lineages**, and a human maint
 adjudicates and is accountable. This is a *process for producing evidence*, not an
 autonomous author — exactly the posture disclosed in the grant application.
 
-## The eight seats
+## The ten seats
 
 | Seat | Lineage | Council tool(s) | Role |
 |------|---------|-----------------|------|
-| **Claude** | Anthropic (apex: Opus) | workflow `agent()` / main loop | Orchestrator + implementer + adversarial verifier |
+| **Claude** | Anthropic (apex: Opus / Fable 5) | workflow `agent()` / main loop | Orchestrator + implementer + adversarial verifier |
 | **ChatGPT** | OpenAI (apex) | `openai_review` / `openai_chat` | Independent review |
 | **Gemini** | Google (apex) | `gemini_verify_technical` / `gemini_fact_check` | Technical / standards verification |
 | **Grok** | xAI (apex) | `grok_review` / `grok_chat` | Independent review |
-| **DeepSeek** | DeepSeek V3/R1 | `deepseek_review` / `deepseek_chat` | Critical second opinion |
+| **DeepSeek** | DeepSeek V4-Pro | `deepseek_review` / `deepseek_chat` | Critical second opinion |
 | **Mistral** | Mistral (apex) | `mistral_independent_review` | EU-lineage independent review |
 | **Watsonx** | IBM watsonx | `watsonx_second_opinion` / `watsonx_due_diligence` | IP / governance diligence |
 | **Perplexity** | Sonar | `perplexity_research` | Live-web fact-check (SCOUT) |
+| **NVIDIA** | Nemotron Ultra (NIM) | `nvidia_review` / `nvidia_chat` | Systems/hardware-optimised independent review (added 2026-06-24) |
+| **Moonshot** | Kimi K2 | `moonshot_review` / `moonshot_chat` | Long-context / multilingual independent review (added 2026-06-24) |
 
 (Hermes is also available as an auxiliary review seat.)
 
