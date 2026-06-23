@@ -8,17 +8,20 @@ wire-tags/KATs untouched without a Track-B ADR, **branch/draft-only output**, an
 adjudicates** and merges/sends.
 
 ## The seats (shared across every team)
-| Seat | Model ID (apex, confirmed 2026-06-24) | Role on the team |
-|------|--------------------------------------|------------------|
-| **Claude** | `claude-fable-5` (main loop) | orchestrator · implementer · adversarial verifier |
-| **OpenAI / ChatGPT** | `gpt-5.5` (plugin default) | independent review · ideation |
-| **Gemini** | `gemini-2.5-pro` (plugin default) | technical / standards verification |
-| **Grok** | `grok-4.3` (plugin default) | contrarian · red-team |
-| **DeepSeek** | `deepseek-reasoner` (R1 — use for reviews; `deepseek-chat` for fast drafts) | deep reasoning · critique |
-| **Mistral** | `mistral-large-latest` (plugin default) | EU-lineage independent review |
-| **Watsonx** | `ibm/granite-3-8b-instruct` (confirmed) | IP · governance · diligence |
-| **Perplexity** | Sonar apex | live-web research |
-| **Hermes** | agentic | auxiliary review |
+
+Max-apex lineup — live-probed 2026-06-24. `apex-model-upgrade` (daily) keeps this current.
+
+| Seat | Max Apex Model ID | Cost tier | Role on the team |
+|------|-------------------|-----------|------------------|
+| **Claude** | `claude-fable-5` ← run `/model claude-fable-5` | highest | orchestrator · implementer · adversarial verifier |
+| **OpenAI / ChatGPT** | `gpt-5.5` (plugin default) | highest | independent review · ideation |
+| **Gemini** | `gemini-2.5-pro` (plugin default) | highest | technical / standards verification |
+| **Grok** | `grok-4.3` (plugin default) | highest | contrarian · red-team |
+| **DeepSeek** | `deepseek-reasoner` (R1) for reviews; `deepseek-chat` for fast drafts | R1 = highest | deep reasoning · critique |
+| **Mistral** | `mistral-large-2407` = `mistral-large-latest` (confirmed live) | highest | EU-lineage independent review |
+| **Watsonx** | `ibm/granite-3-8b-instruct` (confirmed live) | highest available | IP · governance · diligence |
+| **Perplexity** | `sonar-deep-research` for research; `sonar-reasoning-pro` for fast web tasks | deep-research = highest | live-web research |
+| **Hermes** | agentic | — | auxiliary review |
 
 ## 1. Security / Hardening — engine: `nerion-apex-sprint` *(every 6h, perpetual)*
 **Mission: harden + fix — the authoritative beyond-apex engine.** Each cycle picks the next item from
