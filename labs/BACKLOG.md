@@ -13,6 +13,7 @@ stays in R&D.
 | ID | Bet (core assumption it attacks) | Falsifiable threshold | State |
 |----|----------------------------------|-----------------------|-------|
 | **NZK-001** | Hash-only (PQ) range proof replaces the classical ristretto255 ZK layer | proof ≤2 KB, prove ≤100 ms, verify ≤50 ms | **DONE → KILL+GRADUATE** |
-| NZK-002 | *Optimized* hash-Σ (reduced reps + vector commitments) for offline / PQ-sig-dominated transport | ≤6× classical size at n=64 | proposed (from NZK-001 council steelman) |
+| NZK-002 | *Optimized* hash-Σ (MPCitH/GGM all-but-one tree) for offline / PQ-sig-dominated transport | ≤6× classical size at n=64 | **DONE → GRADUATE** (modeled ~1.1–1.9× under a prover budget; threshold met but comparator caveat — bake-off vs Bulletproofs/STARK/lattice) |
+| NZK-003 | PQ-disclosure **bake-off**: MPCitH vs STARK vs lattice, full impl, measured size×prover×verifier ms | beat Bulletproof-class size at ≤1 s prover, PQ-sound | proposed (NZK-002 handoff → R&D, ADR-0022/B7) |
 | KER-001 | Stateful-yet-equivalent admission kernel vs the stateless govern-the-verb model — throughput/latency | ≥2× throughput, equivalence preserved | proposed |
 | LAT-001 | Lattice (Module-LWE) range proof as the PQ disclosure path | proof ≤8 KB, verify ≤30 ms | proposed (pair with R&D ADR-0022/B7) |

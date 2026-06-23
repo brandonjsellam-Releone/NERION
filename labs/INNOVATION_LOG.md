@@ -13,3 +13,14 @@ SPDX-License-Identifier: Apache-2.0
   optimized hash-Σ could reach ~4–6× — NZK-002), OpenAI (unreachable), Watsonx (FTO clean, no claims).
   **Verdict: KILL (unoptimized hash-only drop-in) + GRADUATE** to R&D (FRI/STARK or lattice; ADR-0022/B7).
   Branch `innovation/nzk-001-hash-range`. No prod code, no KAT/SuiteID change, no novelty/FTO claim.
+
+- **2026-06-23 · NZK-002 · optimized hash-only (MPCitH/GGM) range proof.** Tested the NZK-001 Grok
+  steelman. The GGM all-but-one seed tree is really implemented + verified + tamper-tested (N=256 & 4096).
+  MODELED MPCitH size (±2×) is ~25–30× smaller than NZK-001's naive 23.6× → the naive blow-up is NOT
+  fundamental; but the win **relocates to prover time** — at a practical ~1 s prover budget the modeled
+  size is ~1.1–1.2× the *current* classical proof, sub-classical only at ~10 s. Two council rounds
+  (Grok + DeepSeek; OpenAI/Gemini seats flapped): prover time is MODELED not measured; budget points are
+  extrapolations; comparator bias — the real targets are Bulletproofs (<1 KB, non-PQ) + STARK/lattice (PQ),
+  not the weak linear classical baseline. **Verdict: GRADUATE (qualified, NOT a competitiveness claim)** —
+  R&D runs a PQ-disclosure bake-off (MPCitH vs STARK vs lattice; size×prover×verifier×assumptions; full
+  impl + measured ms before any claim). Branch `innovation/nzk-002-mpcith` (stacked on nzk-001).
