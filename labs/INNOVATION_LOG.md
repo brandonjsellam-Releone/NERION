@@ -37,3 +37,17 @@ SPDX-License-Identifier: Apache-2.0
   parallel path; R&D+counsel: out-of-kernel policy layer + SIGA claim analysis. Branch
   `innovation/ker-001-stateless-throughput` (stacked on nzk-002). Demonstrated the FTO firewall parking a
   real hazard. No prod code, no novelty/non-infringement claim.
+
+- **2026-06-23 · LED-001 · finality-certificate scaling (independent sigs vs aggregation).** Read-only
+  intake `receipts/src/quorum.ts` (k independent ML-DSA-87 sigs — deliberately PQ-safe; threshold deemed
+  classical). Measured (FIPS-204 real sizes; Ed25519 proxy verify; real+verified Merkle): independent cert
+  is LINEAR — k=256 → ~1.16 MB / 256 verifies; **Merkle gives no size win** (measured); modeled STARK-agg
+  (~44 KB constant) crossover k≈10. **Council REVERSED an over-eager KILL:** DeepSeek (STARK constant hides
+  ≥Ω(k) prover time, possibly > block interval → "mirage"; "prohibitive >10" overclaim; 44 KB ±2–10×),
+  Grok (status quo is the sound default — minimal TCB, fail-CLOSED vs alternatives' fail-OPEN, no DKG,
+  churn-tolerant; k≈256 rare; gap is asymptotic), Gemini (503 unreachable — FIPS sizes standard but
+  seat-unverified). **Verdict: NO KILL (independent-sig cert stays the right default) + CONDITIONAL
+  GRADUATE** — evaluate STARK-agg (hard prover budget + fail-open) / threshold-lattice (DKG robustness)
+  only IF Nerion targets a large-set + light-client + high-frequency-finality regime. Branch
+  `innovation/led-001-finality-aggregation` (stacked on ker-001). **Lesson: the council prevents Innovation
+  from manufacturing a false "win" — quantify the gap, but weigh it against the status quo's virtues.**
