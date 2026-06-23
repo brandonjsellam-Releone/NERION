@@ -1,0 +1,86 @@
+{
+  "defaultModel": "claude-opus-4-8",
+  "agentTeams": { "enabled": true },
+  "permissions": {
+    "allow": [
+      "Read(**)",
+      "Write(crypto/**)",
+      "Write(kernel/**)",
+      "Write(ledger/**)",
+      "Write(keystore/**)",
+      "Write(attest/**)",
+      "Write(disclosure/**)",
+      "Write(governance/**)",
+      "Write(capabilities/**)",
+      "Write(conformance/src/**)",
+      "Write(conformance/test/**)",
+      "Write(planes/**)",
+      "Write(ops/**)",
+      "Write(receipts/**)",
+      "Write(sdks/**)",
+      "Write(docs/**)",
+      "Write(rust/**)",
+      "Write(.claude/**)",
+      "Bash(npm *)",
+      "Bash(git status)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git fetch *)",
+      "Bash(git checkout *)",
+      "Bash(git branch *)",
+      "Bash(git worktree *)",
+      "Bash(git stash *)",
+      "Bash(tsc *)",
+      "Bash(vitest *)",
+      "Bash(npx *)",
+      "Bash(node *)",
+      "Bash(cargo fmt *)",
+      "Bash(cargo clippy *)",
+      "Bash(cargo test *)",
+      "Bash(cargo build *)",
+      "Bash(~/.local/bin/reuse *)"
+    ],
+    "ask": [
+      "Bash(git push *)",
+      "Bash(docker *)",
+      "WebFetch(*)",
+      "Bash(npm run kat*)",
+      "Bash(node tools/gen-kat*)"
+    ],
+    "deny": [
+      "Read(.env*)",
+      "Read(**/*.key)",
+      "Read(**/*.pem)",
+      "Read(**/*.p12)",
+      "Read(**/*.pfx)",
+      "Read(~/.ssh/**)",
+      "Write(.env*)",
+      "Write(**/*.key)",
+      "Write(**/*.pem)",
+      "Write(**/*.p12)",
+      "Write(**/*.pfx)",
+      "Write(conformance/vectors/**)",
+      "Bash(rm -rf *)",
+      "Bash(git push --force*)",
+      "Bash(git push origin main*)"
+    ]
+  },
+  "autoCompact": true,
+  "autoCompactThreshold": 0.70,
+  "preferredShell": "bash",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Write|Edit|Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node C:/Users/User/polarseek/.claude/hooks/block-sensitive-writes.mjs"
+          }
+        ]
+      }
+    ]
+  }
+}
