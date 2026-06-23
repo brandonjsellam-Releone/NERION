@@ -24,6 +24,8 @@ export {
 export { encodeCanonical, decodeCbor, decodeCanonical, canonicalRoundTrip } from './cbor.js'
 export { KEM_IDS, getKem, implementedKemIds } from './kem.js'
 export type { KemId } from './kem.js'
+export { sealToKem, openSealed } from './seal.js'
+export type { SealedMessage, SealParams } from './seal.js'
 export { SIG_IDS, getSigner, implementedSigIds } from './sign.js'
 export type { SigId } from './sign.js'
 export {
