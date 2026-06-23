@@ -22,6 +22,8 @@ Max-apex lineup — live-probed 2026-06-24. `apex-model-upgrade` (daily) keeps t
 | **Watsonx** | `ibm/granite-3-8b-instruct` (confirmed live) | highest available | IP · governance · diligence |
 | **Perplexity** | `sonar-deep-research` for research; `sonar-reasoning-pro` for fast web tasks | deep-research = highest | live-web research |
 | **Hermes** | `hermes-3-llama-3.1-405b` (Nous Research apex; plugin default = `hermes-agent`) | highest | agentic reasoning · auxiliary review |
+| **Nemotron** | `nvidia/nemotron-3-ultra-550b-a55b` · base: `https://integrate.api.nvidia.com/v1` · key: `NVIDIA_API_KEY` | highest (550B MoE) | deep agentic reasoning · long-context planning |
+| **Kimi K2** | `kimi-k2.7-code` · base: `https://api.moonshot.ai/v1` · key: `MOONSHOT_API_KEY` | highest | code + reasoning · adversarial probe |
 
 ## 1. Security / Hardening — engine: `nerion-apex-sprint` *(every 6h, perpetual)*
 **Mission: harden + fix — the authoritative beyond-apex engine.** Each cycle picks the next item from
