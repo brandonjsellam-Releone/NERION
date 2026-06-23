@@ -13,7 +13,7 @@
  */
 
 import { encodeCanonical, signerFor, type Bytes, type KeyPair } from '../../crypto/src/index.js'
-import { bytesToHex } from '@noble/hashes/utils.js'
+import { bytesToHex, hexToBytes } from '@noble/hashes/utils.js'
 
 export class SettlementError extends Error {
   constructor(m: string) {
@@ -132,16 +132,10 @@ export class MeteringLedger {
       return signerFor(g.suite).verify(
         g.sig,
         encodeCanonical([GRANT_CONTEXT, g.account, g.amount, g.nonce]),
-        hexToBytesLocal(g.issuer),
+        hexToBytes(g.issuer),
       )
     } catch {
       return false
     }
   }
-}
-
-function hexToBytesLocal(hex: string): Bytes {
-  const out = new Uint8Array(hex.length / 2)
-  for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16)
-  return out
 }

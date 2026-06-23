@@ -56,6 +56,17 @@ describe('settlement hardening (SETTLE-001 / SETTLE-002)', () => {
     expect(real.verifyGrant(forged, bytesToHex(attacker.publicKey))).toBe(true)
   })
 
+  it('SETTLE-HEX-001: a malformed issuer hex field is rejected, not silently decoded to garbage', () => {
+    const ledger = new MeteringLedger(suite, issuer)
+    const g = ledger.grant(ACCT, 100, 'n-hex')
+    const malformed = { ...g, issuer: 'NOTHEX!!' }
+    const oddLength = { ...g, issuer: 'abc' }
+    // Must return false — not throw, not silently verify against garbage bytes.
+    expect(ledger.verifyGrant(malformed)).toBe(false)
+    expect(ledger.verifyGrant(malformed, issuerHex)).toBe(false)
+    expect(ledger.verifyGrant(oddLength)).toBe(false)
+  })
+
   it('SETTLE-METER-001: a reused (account, ref) cannot be metered twice — no account drain', () => {
     const ledger = new MeteringLedger(suite, issuer)
     ledger.grant(ACCT, 100, 'n1')
