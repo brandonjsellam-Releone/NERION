@@ -65,3 +65,18 @@ SPDX-License-Identifier: Apache-2.0
   classical VRF stays the pragmatic interim, but the PQ path is plausibly a VDF/threshold beacon, NOT "wait
   for a PQ VRF." Branch `innovation/vrf-001-pq-sortition` (stacked on led-001). Lesson: don't close the
   option space after the first (naive) construction — the council found the better PQ contender I skipped.
+
+- **2026-06-23 · VRF-002 · quorum-seed + sloth-VDF sortition (VRF-001 reopen).** Built a REAL sloth VDF
+  (sequential modular-sqrt chain mod 256-bit p≡3 mod4; PQ-safe via sequentiality, not factoring/DL).
+  Measured: verifies + tamper-rejected; eval/verify asymmetry ~170–235×; proof 63–250 B. **Council corrected
+  my over-eager "recovers grind-resistance (38,766×)" draft:** DeepSeek (right mechanism = a deadline-barrier
+  not a compute multiplier; parallel adversary → realistic edge ~94×; security needs VDF_delay > the
+  seed-commit decision window, calibrated vs the GLOBAL-fastest adversary), Grok (the barrier is BRITTLE —
+  last-revealer head-start, withholding+selective-reveal, ASIC/rental; the VDF's real gain over EC-VRF is
+  PQ-safety + no secret-key SPOF, NOT clean grind-resistance; adds a liveness floor + linear verify + PUBLIC
+  (non-private) sortition). **Verdict: GRADUATE; CLOSES VRF-001 — there is NO free PQ replacement for the
+  EC-VRF** (raw beacon grindable; VDF-beacon conditional/brittle + costly + non-private; true PQ VRF doesn't
+  exist). The code's classical-hybrid choice (ADR-0004) is **vindicated**. Branch
+  `innovation/vrf-002-vdf-sortition` (stacked on vrf-001). Lesson: even a "build the contender the council
+  asked for" spike must be re-adjudicated — the VDF looked like a clean win until the deadline/parallelism/
+  last-revealer analysis showed it isn't. **6 stacked innovation branches now await human review.**
