@@ -81,6 +81,25 @@ SPDX-License-Identifier: Apache-2.0
   asked for" spike must be re-adjudicated — the VDF looked like a clean win until the deadline/parallelism/
   last-revealer analysis showed it isn't. **6 stacked innovation branches now await human review.**
 
+- **2026-06-24 · REV-001 · Sparse-Merkle revocation accumulator.** Read-only intake
+  `capabilities/src/capability.ts` — confirmed: `verifyChain()` has NO runtime revocation path; the only
+  temporal bound is the signed `notAfter` timestamp. Built a real SHA3-256 Sparse Merkle Tree (DEPTH=32,
+  2³² cap-ID slots). MEASURED (valid): revoke 0.1012 ms/op (32 hash-ops), proof size 1024 B (constant),
+  prove 0.0025 ms, verify 0.0694 ms at N=0. Bug disclosed: `capIndex()` takes first 4 bytes of
+  hex-padded cap-ID → sequential small integers collide to the same leaf; N>0 table rows are INVALID.
+  DeepSeek (FIX-FIRST: collision is an **architectural defect** not just a harness bug; three required
+  fixes: collision-resistant index, root freshness model, threat-model vs short-TTL), Grok (DO NOT
+  GRADUATE: "short-TTL degrades gracefully under key compromise; SMT converts that same compromise into
+  an availability/freshness attack on the revocation surface"; root-custody options all have fatal gaps).
+  **Verdict: KILL (underspecified)** — SMT primitive plausible but three unresolved gaps block GRADUATE.
+  Durable finding: revocation is only as fresh as the SMT root the verifier holds; without a
+  root-distribution protocol at least as live as `notAfter`, SMT adds state/complexity without meaningful
+  security margin over short-TTL. **Path forward: R&D design doc on root-distribution first; then
+  REV-002 only if that doc demonstrates a clear win over short-TTL for some realistic grant-lifetime
+  regime.** Branch `innovation/rev-001-revocation` (stacked on cap-001). **8 stacked innovation branches
+  now await human review.** Lesson: "status quo is complex to attack" keeps appearing — six of eight
+  spikes now partially or fully vindicate the existing design.
+
 - **2026-06-23 · CAP-001 · HMAC-chain (Macaroon) vs signature-chain capabilities.** Read-only intake
   `capabilities/src/capability.ts` — premise corrected: Nerion ALREADY has offline-attenuable delegation via
   ML-DSA-87 signature-chains (publicly verifiable vs a trusted root PUBLIC key). Measured the tradeoff: a
