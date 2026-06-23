@@ -48,6 +48,7 @@ import {
   checkConsistency,
   checkInclusion,
   detectEquivocation,
+  signTreeHead,
 } from '../../translog/src/index.js'
 import {
   buildReceipt,
@@ -352,9 +353,13 @@ const CHECKS: Array<() => ConformanceResult> = [
       const from = log.size()
       for (let i = 3; i < 8; i++) log.append(new TextEncoder().encode(`r${i}`))
       const consistent = checkConsistency(log.proveConsistency(from))
+      // STH-VERIFY-001: detectEquivocation discards unsigned/forged STHs, so the conflicting pair
+      // must be GENUINELY signed by one operator (two different roots at the same size).
+      const op = signerFor(SUITE).keygen()
+      const enc = new TextEncoder()
       const eq = detectEquivocation([
-        { operator: 'op', size: 4, rootHex: 'aa', suite: SUITE, sig: new Uint8Array() },
-        { operator: 'op', size: 4, rootHex: 'bb', suite: SUITE, sig: new Uint8Array() },
+        signTreeHead(4, enc.encode('root-A'), SUITE, op),
+        signTreeHead(4, enc.encode('root-B'), SUITE, op),
       ])
       return consistent && eq.length === 1
     }),

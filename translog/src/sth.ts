@@ -58,6 +58,21 @@ export function verifyTreeHead(sth: SignedTreeHead, operatorPublicKey: Bytes): b
   )
 }
 
+/**
+ * Self-verify an STH against the operator public key embedded in its own `operator` field. An STH
+ * that does not verify under its claimed operator key is a FORGERY, not evidence — so the
+ * equivocation / append-only monitors below discard it. This makes them fail-safe by construction: a
+ * bogus gossiped STH `{operator: victimHex, …}` cannot FRAME an honest operator, because the attacker
+ * cannot produce a valid signature under the victim's key (STH-VERIFY-001, Team Apex sweep).
+ */
+export function verifyTreeHeadSelf(sth: SignedTreeHead): boolean {
+  try {
+    return verifyTreeHead(sth, hexToBytesLocal(sth.operator))
+  } catch {
+    return false
+  }
+}
+
 export interface Equivocation {
   readonly operator: string
   readonly size: number
@@ -73,6 +88,9 @@ export function detectEquivocation(sths: readonly SignedTreeHead[]): Equivocatio
   const seen = new Map<string, string>() // `${operator}@${size}` -> rootHex
   const out: Equivocation[] = []
   for (const sth of sths) {
+    // Only an AUTHENTIC STH is evidence — discard forgeries so a bogus STH cannot frame an honest
+    // operator (STH-VERIFY-001).
+    if (!verifyTreeHeadSelf(sth)) continue
     const key = `${sth.operator}@${sth.size}`
     const prior = seen.get(key)
     if (prior === undefined) seen.set(key, sth.rootHex)
@@ -93,6 +111,8 @@ export function checkAppendOnly(
   newer: SignedTreeHead,
   proof: readonly Bytes[],
 ): boolean {
+  // Both STHs must be AUTHENTIC before they can witness an append-only violation (STH-VERIFY-001).
+  if (!verifyTreeHeadSelf(older) || !verifyTreeHeadSelf(newer)) return false
   if (older.operator !== newer.operator) return false
   if (older.size > newer.size) return false
   return verifyConsistency(

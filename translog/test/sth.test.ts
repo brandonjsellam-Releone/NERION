@@ -45,20 +45,36 @@ describe('signed tree heads', () => {
 })
 
 describe('split-view / equivocation detection', () => {
-  it('flags one operator presenting two roots at the same size', () => {
-    const opHex = Buffer.from(op.publicKey).toString('hex')
-    const a = { operator: opHex, size: 3, rootHex: 'aa', suite, sig: new Uint8Array() }
-    const b = { operator: opHex, size: 3, rootHex: 'bb', suite, sig: new Uint8Array() }
+  it('flags one operator presenting two AUTHENTIC roots at the same size', () => {
+    const a = signTreeHead(3, data('root-A'), suite, op)
+    const b = signTreeHead(3, data('root-B'), suite, op)
     const eq = detectEquivocation([a, b])
     expect(eq.length).toBe(1)
     expect(eq[0]?.size).toBe(3)
   })
 
   it('does not flag consistent, distinct sizes', () => {
-    const opHex = Buffer.from(op.publicKey).toString('hex')
-    const a = { operator: opHex, size: 3, rootHex: 'aa', suite, sig: new Uint8Array() }
-    const b = { operator: opHex, size: 4, rootHex: 'bb', suite, sig: new Uint8Array() }
+    const a = signTreeHead(3, data('root-A'), suite, op)
+    const b = signTreeHead(4, data('root-B'), suite, op)
     expect(detectEquivocation([a, b]).length).toBe(0)
+  })
+
+  it('STH-VERIFY-001: a FORGED STH cannot frame an honest operator', () => {
+    const opHex = Buffer.from(op.publicKey).toString('hex')
+    const genuine = signTreeHead(5, data('honest-root'), suite, op)
+    // An attacker (no access to op's secret key) fabricates a conflicting STH at the same operator+size.
+    const forged = {
+      operator: opHex,
+      size: 5,
+      rootHex: '00'.repeat(32),
+      suite,
+      sig: new Uint8Array(64),
+    }
+    // The forged STH fails self-verification → discarded → the honest operator is NOT reported.
+    expect(detectEquivocation([genuine, forged])).toEqual([])
+    // Sanity: two GENUINE conflicting STHs ARE flagged.
+    const genuine2 = signTreeHead(5, data('honest-root-2'), suite, op)
+    expect(detectEquivocation([genuine, genuine2]).length).toBe(1)
   })
 })
 
