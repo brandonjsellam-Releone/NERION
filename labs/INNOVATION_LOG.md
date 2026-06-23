@@ -24,3 +24,16 @@ SPDX-License-Identifier: Apache-2.0
   not the weak linear classical baseline. **Verdict: GRADUATE (qualified, NOT a competitiveness claim)** —
   R&D runs a PQ-disclosure bake-off (MPCitH vs STARK vs lattice; size×prover×verifier×assumptions; full
   impl + measured ms before any claim). Branch `innovation/nzk-002-mpcith` (stacked on nzk-001).
+
+- **2026-06-23 · KER-001 · stateful vs stateless admission kernel (throughput).** STEP-4 FTO pre-screen
+  **PARKED** the stateful-kernel framing (= in-gate cross-decision state = SIGA F5/commit-point territory
+  the design-around avoids). Measured the FTO-clean reframe (real worker_threads + Atomics, Ed25519 proxy
+  for ML-DSA-87): stateless admission scales 1.94× @P=2 → 6.08× @16 cores → **clears ≥2× trivially**, so a
+  stateful kernel is unnecessary. Council: Watsonx (park is correct; not a non-infringement opinion —
+  counsel-level claim analysis still needed), DeepSeek (proxy bias → **RETRACT "stateful is
+  counterproductive"**; the plateau is proxy-fragile spinlock contention), Grok (KILL is narrow — stateful
+  genuinely wins for global rate-limits/quotas/batching/caching, but those are cross-decision-state =
+  FTO-parked → belong out-of-kernel). **Verdict: KILL (narrow) + GRADUATE** — Eng: confirm stateless
+  parallel path; R&D+counsel: out-of-kernel policy layer + SIGA claim analysis. Branch
+  `innovation/ker-001-stateless-throughput` (stacked on nzk-002). Demonstrated the FTO firewall parking a
+  real hazard. No prod code, no novelty/non-infringement claim.

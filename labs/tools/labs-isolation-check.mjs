@@ -55,7 +55,12 @@ function scanImports() {
 function frozenDiffViolations() {
   let changed = []
   try {
-    const out = execSync('git diff --name-only origin/main', { cwd: repoRoot, encoding: 'utf8' })
+    // Diff against the MERGE-BASE (this branch's fork point), NOT the live origin/main tip —
+    // origin/main moves forward under the concurrent engines, and diffing the tip would
+    // falsely flag upstream files this branch never touched. The merge-base shows exactly
+    // what THIS innovation stack changed.
+    const base = execSync('git merge-base origin/main HEAD', { cwd: repoRoot, encoding: 'utf8' }).trim()
+    const out = execSync(`git diff --name-only ${base}`, { cwd: repoRoot, encoding: 'utf8' })
     changed = out.split('\n').map((s) => s.trim()).filter(Boolean)
   } catch {
     return { skipped: true, violations: [] }
