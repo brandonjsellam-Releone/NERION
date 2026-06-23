@@ -17,10 +17,12 @@
  * non-active status so they appear in the catalog but are never negotiated.
  */
 
-import type { Suite } from './types.js'
+import type { Suite, Bytes } from './types.js'
 import { UnknownSuiteError, NoCommonSuiteError } from './errors.js'
 import { KEM_IDS, getKem } from './kem.js'
 import { SIG_IDS, getSigner } from './sign.js'
+import { encodeCanonical } from './cbor.js'
+import { SHA3_SHAKE256, constantTimeEqual } from './symmetric.js'
 import type { Kem, SignatureScheme } from './types.js'
 
 export const SUITE_IDS = {
@@ -121,6 +123,74 @@ export function negotiate(local: readonly string[], remote: readonly string[]): 
   const best = candidates[0]
   if (best === undefined) throw new NoCommonSuiteError()
   return best
+}
+
+const NEGOTIATION_LABEL = 'polarseek/suite-negotiation'
+const NEGOTIATION_VERSION = 1
+
+/** The full negotiation context bound by {@link negotiationTranscript} (ADR-0029). */
+export interface NegotiationContext {
+  /**
+   * A FRESH per-session binder — e.g. SHA3 of both peers' handshake nonces, or a unique handshake id.
+   * Its freshness is what makes a PRIOR session's signed transcript un-replayable; the caller MUST
+   * ensure it is unique per session (never reused).
+   */
+  readonly sessionId: Bytes
+  /** Initiator long-term identity (hex public key) — binds the transcript to this peer pair. */
+  readonly initiatorId: string
+  /** Responder long-term identity (hex public key). */
+  readonly responderId: string
+  /** Initiator's full offered suite list, exactly as sent (never sorted). */
+  readonly initiatorOffered: readonly string[]
+  /** Responder's full offered suite list, exactly as sent. */
+  readonly responderOffered: readonly string[]
+  /** The suite both sides believe was chosen. */
+  readonly chosen: string
+}
+
+/**
+ * Downgrade-resistant negotiation transcript (ADR-0029). `negotiate` alone picks the best common
+ * suite, but if the offered lists are exchanged over an UNAUTHENTICATED channel a MITM can STRIP the
+ * stronger suites from a peer's offer, forcing a weaker common suite with nothing to detect it. This
+ * commits a fresh `sessionId` + both peer identities + BOTH peers' FULL offered lists (exactly as
+ * sent, by explicit initiator/responder role) + the chosen suite into one canonical hash. That
+ * transcript MUST be signed in the first authenticated handshake message and cross-checked by the
+ * peer: a stripped/reordered offer changes the transcript, so the signature over it no longer matches
+ * the peer's recomputation and the downgrade is detected (the TLS-1.3 "Finished over the full
+ * transcript" pattern).
+ *
+ * Binding `sessionId` defeats CROSS-SESSION replay of an old signed transcript; binding the two
+ * identities defeats CROSS-PEER replay (council R3 review). Roles disambiguate whose list is whose,
+ * and lists are bound AS-OFFERED (never sorted) — a strip is a removal, and the exact offered
+ * sequence is what both sides must agree on.
+ */
+export function negotiationTranscript(ctx: NegotiationContext): Bytes {
+  return SHA3_SHAKE256.digest(
+    encodeCanonical([
+      NEGOTIATION_LABEL,
+      NEGOTIATION_VERSION,
+      ctx.sessionId,
+      ctx.initiatorId,
+      ctx.responderId,
+      [...ctx.initiatorOffered],
+      [...ctx.responderOffered],
+      ctx.chosen,
+    ]),
+  )
+}
+
+/**
+ * Recompute the negotiation transcript from the locally-known view and constant-time-compare it to a
+ * peer-supplied (signed) transcript. Returns false on ANY mismatch — a stripped/downgraded or
+ * reordered offer, a different chosen suite, a different session, or a different peer pair (ADR-0029).
+ * The caller MUST still verify the signature over `peerTranscript` independently; this only detects
+ * the downgrade once that signature is confirmed authentic.
+ */
+export function verifyNegotiationTranscript(
+  peerTranscript: Bytes,
+  ctx: NegotiationContext,
+): boolean {
+  return constantTimeEqual(peerTranscript, negotiationTranscript(ctx))
 }
 
 /** Resolve the KEM for a suite (throws for pending suites when instantiated). */

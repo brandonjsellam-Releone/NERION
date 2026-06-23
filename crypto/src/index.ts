@@ -53,10 +53,12 @@ export {
   allSuites,
   activeSuiteIds,
   negotiate,
+  negotiationTranscript,
+  verifyNegotiationTranscript,
   kemFor,
   signerFor,
 } from './suites.js'
-export type { SuiteId } from './suites.js'
+export type { SuiteId, NegotiationContext } from './suites.js'
 export { assessCnsa20 } from './cnsa.js'
 export type { CnsaAssessment, CnsaFinding, CnsaStatus } from './cnsa.js'
 export {
