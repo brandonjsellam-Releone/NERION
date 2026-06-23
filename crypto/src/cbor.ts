@@ -21,9 +21,29 @@ export function encodeCanonical(value: unknown): Bytes {
   return encode(value, { dcbor: true })
 }
 
-/** Decode CBOR bytes back to a JS value. */
+/** Decode CBOR bytes back to a JS value (permissive — accepts non-canonical input). */
 export function decodeCbor(bytes: Bytes): unknown {
   return decode(bytes)
+}
+
+/**
+ * Strictly decode CANONICAL (dCBOR) bytes: decode, then RE-ENCODE and require the result to be
+ * byte-identical to the input. This REJECTS every non-canonical encoding cbor2's permissive
+ * `decode()` silently accepts — unsorted OR duplicate map keys, non-minimal integers,
+ * indefinite-length items, and non-canonical floats. Any of these breaks the determinism the
+ * receipt/replay invariant rests on; the sharpest is a DUPLICATE-KEY map, where CBOR decoders
+ * disagree on first-vs-last value and so can split replay/consensus. Use on ANY externally-supplied
+ * bytes whose DECODED value is subsequently trusted (R7 hardening).
+ */
+export function decodeCanonical(bytes: Bytes): unknown {
+  const value = decode(bytes)
+  const reencoded = encodeCanonical(value)
+  if (reencoded.length !== bytes.length || !reencoded.every((b, i) => b === bytes[i])) {
+    throw new Error(
+      'non-canonical CBOR: input is not the deterministic encoding of its decoded value',
+    )
+  }
+  return value
 }
 
 /**

@@ -83,4 +83,18 @@ describe('ReplayBundle determinism', () => {
     expect(deny.decision.effect).toBe('deny')
     expect(allow.receiptHash).not.toBe(deny.receiptHash)
   })
+
+  it('REPLAY-CANON-001 (R7): a non-canonical inputBytes bundle fails CLOSED, not silently re-derived', () => {
+    const fromHex = (s: string): Uint8Array =>
+      new Uint8Array(s.match(/../g)!.map((h) => parseInt(h, 16)))
+    // A duplicate-key map ({1:0,1:1}) decodes under cbor2 (last wins) but is NOT canonical — other
+    // CBOR decoders resolve it first-wins, so accepting it would split replay across verifiers, or let
+    // one decision carry many receipt hashes. replay() must refuse it (strict canonical decode).
+    const bundle = { inputBytes: fromHex('a201000101'), evaluatorVersion: 'v' }
+    const r = replay(bundle)
+    expect(r.decision.effect).toBe('deny')
+    expect(r.decision.reasons.join(' ')).toMatch(/canonical/)
+    // Regression: the strict guard does NOT break the normal canonical happy path.
+    expect(replay(buildReplayBundle(mkInput(500, 1000, 0))).decision.effect).toBe('allow')
+  })
 })

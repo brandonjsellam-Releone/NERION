@@ -21,7 +21,7 @@ export {
   HKDF_SHA384,
   SHA3_SHAKE256,
 } from './symmetric.js'
-export { encodeCanonical, decodeCbor, canonicalRoundTrip } from './cbor.js'
+export { encodeCanonical, decodeCbor, decodeCanonical, canonicalRoundTrip } from './cbor.js'
 export { KEM_IDS, getKem, implementedKemIds } from './kem.js'
 export type { KemId } from './kem.js'
 export { SIG_IDS, getSigner, implementedSigIds } from './sign.js'

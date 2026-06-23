@@ -11,7 +11,12 @@
  * "replayable" mean *byte-identical*, not merely "similar".
  */
 
-import { encodeCanonical, decodeCbor, SHA3_SHAKE256, type Bytes } from '../../crypto/src/index.js'
+import {
+  encodeCanonical,
+  decodeCanonical,
+  SHA3_SHAKE256,
+  type Bytes,
+} from '../../crypto/src/index.js'
 import { bytesToHex } from '@noble/hashes/utils.js'
 import { decide } from './kernel.js'
 import { evaluatorVersion } from './policy.js'
@@ -36,20 +41,36 @@ export function buildReplayBundle(input: KernelInput): ReplayBundle {
 }
 
 export function replay(bundle: ReplayBundle): ReplayResult {
-  const input = decodeCbor(bundle.inputBytes) as KernelInput
-  let decision = decide(input)
-  // Enforce the pinned evaluator version: a bundle whose recorded version does
-  // not match the re-derived one is tampered or drifted — fail closed (PS-KERNEL-01).
-  if (decision.evaluatorVersion !== bundle.evaluatorVersion) {
+  const inputHash = bytesToHex(SHA3_SHAKE256.digest(bundle.inputBytes))
+  // REPLAY-CANON-001 (R7): inputHash is taken over the RAW inputBytes, but decide() runs on the
+  // DECODED value. A NON-canonical encoding — notably a duplicate-key map, which CBOR decoders resolve
+  // first-vs-last differently — would let ONE decision carry many distinct receipt hashes, or split
+  // replay across decoders. Decode STRICTLY and fail closed: a bundle whose inputBytes are not the
+  // canonical encoding of their value is tampered or non-conforming.
+  let decision: Decision
+  try {
+    const input = decodeCanonical(bundle.inputBytes) as KernelInput
+    decision = decide(input)
+    // Enforce the pinned evaluator version: a bundle whose recorded version does not match the
+    // re-derived one is tampered or drifted — fail closed (PS-KERNEL-01).
+    if (decision.evaluatorVersion !== bundle.evaluatorVersion) {
+      decision = {
+        effect: 'deny',
+        tier: 3,
+        reasons: ['replay evaluator-version mismatch (bundle tampered or policy drift)'],
+        obligations: [],
+        evaluatorVersion: decision.evaluatorVersion,
+      }
+    }
+  } catch {
     decision = {
       effect: 'deny',
       tier: 3,
-      reasons: ['replay evaluator-version mismatch (bundle tampered or policy drift)'],
+      reasons: ['replay bundle inputBytes are not canonical CBOR (REPLAY-CANON-001)'],
       obligations: [],
-      evaluatorVersion: decision.evaluatorVersion,
+      evaluatorVersion: '',
     }
   }
-  const inputHash = bytesToHex(SHA3_SHAKE256.digest(bundle.inputBytes))
   const receiptHash = bytesToHex(
     SHA3_SHAKE256.digest(encodeCanonical([decision.evaluatorVersion, inputHash, decision])),
   )

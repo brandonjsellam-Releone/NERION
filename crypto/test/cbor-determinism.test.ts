@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { describe, it, expect } from 'vitest'
-import { encodeCanonical, decodeCbor, canonicalRoundTrip } from '../src/cbor.js'
+import { encodeCanonical, decodeCbor, decodeCanonical, canonicalRoundTrip } from '../src/cbor.js'
 
 /**
  * Foundational canonical-encoder determinism + injectivity (Team Apex sweep,
@@ -89,5 +89,45 @@ describe('canonical CBOR — determinism + injectivity (foundational)', () => {
     const v = { suite: 'PS-5', commit: new Uint8Array([3, 1, 4, 1, 5]), tier: 2, ok: true }
     const first = encodeCanonical(v)
     expect(hex(encodeCanonical(decodeCbor(first)))).toBe(hex(first))
+  })
+})
+
+/**
+ * decodeCanonical strictly enforces canonical INPUT (R7 / REPLAY-CANON-001). cbor2's permissive
+ * decode() silently accepts non-canonical bytes — unsorted/duplicate map keys, non-minimal integers,
+ * indefinite-length items, non-canonical floats — any of which breaks the determinism the
+ * receipt/replay invariant rests on. The strict decoder re-encodes and rejects on any byte mismatch.
+ */
+describe('decodeCanonical — rejects non-canonical input (R7)', () => {
+  const fromHex = (s: string): Uint8Array =>
+    new Uint8Array(s.match(/../g)!.map((h) => parseInt(h, 16)))
+  // Each hex decodes to a value whose canonical re-encoding differs from these bytes → must reject.
+  const nonCanonical: Record<string, string> = {
+    'unsorted map keys {2:0,1:0}': 'a202000100',
+    'duplicate map keys {1:0,1:1}': 'a201000101',
+    'non-minimal uint (uint64 for 5)': '1b0000000000000005',
+    'non-minimal uint (uint8 for 5)': '1805',
+    'indefinite-length array': '9f0102ff',
+    'indefinite-length map': 'bf0102ff',
+    'non-canonical float (1.0 as f64)': 'fb3ff0000000000000',
+    'negative-zero float': 'fb8000000000000000',
+  }
+  for (const [name, hexs] of Object.entries(nonCanonical)) {
+    it(`rejects ${name}`, () => {
+      expect(() => decodeCanonical(fromHex(hexs))).toThrow(/non-canonical/)
+    })
+  }
+
+  it('accepts genuinely canonical bytes and returns the value', () => {
+    const v = { suite: 'PS-5', tier: 2, items: [1, 2, 3], ok: true }
+    const canonical = encodeCanonical(v)
+    expect(() => decodeCanonical(canonical)).not.toThrow()
+    expect(hex(encodeCanonical(decodeCanonical(canonical)))).toBe(hex(canonical))
+  })
+
+  it('a duplicate-key map cannot smuggle a chosen value (first-vs-last ambiguity is refused)', () => {
+    // {1:0,1:1}: cbor2 keeps the LAST (→ {1:1}); a first-wins decoder would see {1:0}. The bytes are
+    // not canonical either way, so strict decode refuses the ambiguity outright.
+    expect(() => decodeCanonical(fromHex('a201000101'))).toThrow(/non-canonical/)
   })
 })
