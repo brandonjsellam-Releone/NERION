@@ -93,6 +93,14 @@ Post-quantum all the way down. Govern the verb, never the eye. Decentralize
 trust, centralize accountability. Prove everything; reveal nothing unnecessary.
 No security theater — if something is only evidence, we label it evidence.
 
+## Funding / ecosystem
+
+Nerion is applying to [NLnet / NGI Restack](https://nlnet.nl/) for research
+funding (call opens approximately September 2026). Not yet funded; no
+affiliation implied. If accepted, the grant would support the independent
+cryptographic audit and the deferred ZK equality-proof work described in
+[docs/grants/](docs/grants/).
+
 ## License
 
 Licensed under the [Apache License, Version 2.0](LICENSE) — see [`NOTICE`](NOTICE)

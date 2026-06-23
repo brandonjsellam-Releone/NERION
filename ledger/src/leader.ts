@@ -87,6 +87,7 @@ export function verifyViewChangeCert(
   finalityNum = 2,
   finalityDen = 3,
 ): boolean {
+  if (!Number.isSafeInteger(certRound) || certRound < 0) return false
   if (!cert || cert.round !== certRound) return false
   const total = totalStake(set)
   if (total <= 0n) return false

@@ -7,11 +7,12 @@ SuiteID identity, mirroring the TypeScript reference contract.
 
 ## Status (honest)
 
-- **Compiles + type-checks here** via `cargo build` and `cargo test --no-run`,
+- **Compiles, type-checks, and all tests pass** via `cargo build` + `cargo test`,
   against RustCrypto's audited `ml-dsa` 0.1.1 + `sha3`.
-- **Tests were NOT executed in this environment.** The build sandbox blocks
-  running freshly-built binaries, so the test binary builds but cannot run here.
-  Run `cargo test` on a normal machine to execute the round-trip assertions.
+- **`cargo test` is green: 13 tests (9 unit + 4 KAT).** The KAT integration test
+  (`tests/kat.rs`) reproduces `conformance/vectors/ps-kat.json` byte-exact for
+  SHA3-256, SHAKE256 (outLen 16 / 32 / 64), HMAC-SHA-384, and AES-256-GCM.
+  CI runs the full suite on every push (`gate-rust` job).
 - Scope is deliberately small (signatures + hashing + SuiteID). Porting the
   KEM, kernel, capabilities, receipts, etc. is the next step — each must pass the
   cross-implementation contract in `../conformance`.
@@ -21,8 +22,9 @@ SuiteID identity, mirroring the TypeScript reference contract.
 ```bash
 # (this repo is set up for a self-contained windows-gnu toolchain; see .cargo/config.toml)
 cargo build           # compile + type-check
-cargo test --no-run   # compile the test binary
-cargo test            # run the tests (on a host that permits executing built binaries)
+cargo test            # run all 13 tests (9 unit + 4 KAT)
+cargo fmt --check     # style gate (run by CI)
+cargo clippy --all-targets -- -D warnings   # lint gate (run by CI)
 ```
 
 `.cargo/config.toml` pins `getrandom`'s `rdrand` backend only for the
@@ -40,6 +42,7 @@ seed), so no OS entropy is used at runtime.
 - `hmac_sha384` / `hmac_sha384_verify` — the Plane-1 PermitToken MAC (constant-time).
 - `aes256gcm_seal` / `aes256gcm_open` — transport AEAD (never panics on bad input).
 - `sha3_256` — the PolarSeek commitment hash.
+- `shake256(input, out_len)` — XOF output (outLen 16 / 32 / 64 verified byte-exact against ps-kat.json).
 
 Together these are the **complete Plane-1 hot-path crypto** (HMAC-SHA-384 +
 AES-256-GCM) plus the PQ primitives — the part Rust exists for (constant-time,
