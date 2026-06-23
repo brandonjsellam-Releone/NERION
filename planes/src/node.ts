@@ -158,7 +158,15 @@ export class PolarSeekNode {
       audience: req.audience,
       actionHash: actionHash(req.intent),
       tier: decision.tier,
-      exp: req.now + this.cfg.permitTtlSeconds,
+      // PERMIT-EXP-CLAMP (Team Apex sweep): a permit must not OUTLIVE the attestation freshness that
+      // authorized its session. Without the clamp, a permit minted just before the session's
+      // attestation `notAfter` stays honored for the full TTL past it, extending the very window
+      // ATTEST-EXP-001 enforces at admit time (defeating re-attestation / revocation for up to one
+      // TTL). Clamp to the (finite) attestation notAfter; a non-finite notAfter keeps the plain TTL
+      // (an attested session with a non-finite notAfter is already rejected by checkAttestedSession).
+      exp: Number.isSafeInteger(req.session.claims.notAfter)
+        ? Math.min(req.now + this.cfg.permitTtlSeconds, req.session.claims.notAfter)
+        : req.now + this.cfg.permitTtlSeconds,
       evaluator: decision.evaluatorVersion,
       effect: decision.effect,
     }

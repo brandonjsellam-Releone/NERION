@@ -97,6 +97,16 @@ describe('default-deny resolver', () => {
       resolve(pay(500), [root], trustedRoots, baseCtx({ holder: delegateeHex })).authorized,
     ).toBe(false)
   })
+  it('DOS-VERIFY-003: denies an over-large candidate array (caps hot-path verify cost)', () => {
+    const flood = new Array(65).fill(root) // > MAX_CANDIDATES (64)
+    const r = resolve(pay(500), flood, trustedRoots, baseCtx())
+    expect(r.authorized).toBe(false)
+    expect(r.reason).toMatch(/too many candidate/)
+    // a within-bound array of the same valid capability still authorizes
+    expect(resolve(pay(500), new Array(64).fill(root), trustedRoots, baseCtx()).authorized).toBe(
+      true,
+    )
+  })
 
   it('denies non-finite / non-integer / negative amounts (PS-CAP-01/02 fail-closed)', () => {
     expect(resolve(pay(Number.NaN), [root], trustedRoots, baseCtx()).authorized).toBe(false)

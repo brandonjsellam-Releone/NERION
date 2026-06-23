@@ -126,4 +126,19 @@ describe('attestation hardening (ATTEST-TIME-001 / ATTEST-NOFM-001)', () => {
     // Regression guard: the SAME session by 2 distinct attesters still forms a valid 2-of-2.
     expect(appraiseNofM([evidenceA, tdxEvidence(B)], basePolicy(), 2, verifiers).valid).toBe(true)
   })
+
+  it('ATTEST-SUITE-THROW: a bogus evidence.suite fails CLOSED, never throwing or aborting a quorum', () => {
+    // evidence.suite is an attacker-controlled wire field; signerFor() throws on an unknown suite, so
+    // appraise() must resolve it defensively (return invalid) rather than crash.
+    const hostile: Evidence = { ...evidenceA, suite: 'PS-EVIL-9000' }
+    expect(() => appraise(hostile, basePolicy())).not.toThrow()
+    expect(appraise(hostile, basePolicy()).valid).toBe(false)
+    // a single hostile-suite evidence must NOT abort an otherwise-valid n-of-m quorum (it is discarded)
+    expect(() =>
+      appraiseNofM([evidenceA, hostile, tdxEvidence(B)], basePolicy(), 2, verifiers),
+    ).not.toThrow()
+    expect(
+      appraiseNofM([evidenceA, hostile, tdxEvidence(B)], basePolicy(), 2, verifiers).valid,
+    ).toBe(true)
+  })
 })

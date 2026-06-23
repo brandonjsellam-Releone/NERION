@@ -108,14 +108,24 @@ export function appraise(
   if (!policy.trustedAttesters.some((k) => constantTimeEqual(k, evidence.attesterPublicKey))) {
     reasons.push('attester key is not in the trusted set')
   }
-  if (
-    !signerFor(evidence.suite).verify(
+  // ATTEST-SUITE-THROW (Team Apex sweep): `evidence.suite` is an attacker-controlled wire field, and
+  // signerFor() THROWS UnknownSuiteError on a bogus suite — which would crash appraise()/appraiseNofM()
+  // (one hostile evidence aborting the whole n-of-m quorum) and establishSession, instead of returning
+  // invalid. Resolve the signer defensively and fail closed on any throw, mirroring ledger's safeVerify
+  // (LEDGER-003/004). The suite is bound into the signed message (ATTEST-SUITE-001), so a bogus suite
+  // can never yield a VALID result — this only converts the crash into a clean rejection.
+  let sigValid = false
+  try {
+    sigValid = signerFor(evidence.suite).verify(
       evidence.sig,
       attestSigningMessage(evidence.suite, evidence.claims),
       evidence.attesterPublicKey,
     )
-  ) {
-    reasons.push('evidence signature is invalid')
+  } catch {
+    sigValid = false
+  }
+  if (!sigValid) {
+    reasons.push('evidence signature is invalid (or unresolvable suite)')
   }
   if (evidence.claims.nonce !== policy.expectedNonce) {
     reasons.push('nonce mismatch (stale or replayed attestation)')

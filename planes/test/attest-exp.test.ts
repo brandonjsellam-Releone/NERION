@@ -4,7 +4,7 @@
 
 import { describe, it, expect } from 'vitest'
 import { bytesToHex } from '@noble/hashes/utils.js'
-import { signerFor, SUITE_IDS, randomBytes } from '../../crypto/src/index.js'
+import { signerFor, SUITE_IDS, randomBytes, decodeCbor } from '../../crypto/src/index.js'
 import { issueRoot, type ActionIntent } from '../../capabilities/src/index.js'
 import { DEFAULT_POLICY } from '../../kernel/src/index.js'
 import { TransparencyLog } from '../../translog/src/index.js'
@@ -115,5 +115,27 @@ describe('ATTEST-EXP-001 — attested session expires at its attestation notAfte
       observedAggregate: 0,
     })
     expect(out.decision.effect).toBe('deny')
+  })
+
+  it('PERMIT-EXP-CLAMP: a permit expiry never outlives the attestation notAfter', () => {
+    const node = attestedNode() // permitTtlSeconds: 30; attestation NOT_AFTER = NOW + 300
+    const session = node.establishSession(evidence, attPolicy)
+    const expOf = (now: number): number => {
+      const out = node.admit({
+        intent: pay(500),
+        capabilities: [cap],
+        session,
+        audience: 'acct://treasury',
+        now,
+        observedAggregate: 0,
+      })
+      expect(out.decision.effect).toBe('allow')
+      return (decodeCbor(out.permit!.body) as { exp: number }).exp
+    }
+    // Early: now + ttl (NOW+30) is well within notAfter → plain TTL, not clamped.
+    expect(expOf(NOW)).toBe(NOW + 30)
+    // Late: now + ttl (NOT_AFTER-10 + 30 = NOT_AFTER+20) would outlive the attestation → clamped DOWN
+    // to notAfter, so a permit can never be honored past the freshness window ATTEST-EXP-001 enforces.
+    expect(expOf(NOT_AFTER - 10)).toBe(NOT_AFTER)
   })
 })
