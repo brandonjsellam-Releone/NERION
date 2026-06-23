@@ -51,3 +51,17 @@ SPDX-License-Identifier: Apache-2.0
   only IF Nerion targets a large-set + light-client + high-frequency-finality regime. Branch
   `innovation/led-001-finality-aggregation` (stacked on ker-001). **Lesson: the council prevents Innovation
   from manufacturing a false "win" — quantify the gap, but weigh it against the status quo's virtues.**
+
+- **2026-06-23 · VRF-001 · PQ sortition vs classical ECVRF leader election.** Read-only intake
+  `ledger/src/vrf.ts` (classical ECVRF-EDWARDS25519 — code already discloses the deliberate liveness/
+  fairness residual; safety stays ML-DSA-87). Built a raw PQ hash-beacon sortition; measured: PQ + 0-byte
+  proof + cheap, but **grindable** (target p=1/128: T tries → install prob {1:.008, 64:.40, 512:.98}). EC-VRF
+  is classical but private + grind-resistant. **Council expanded the option space I prematurely closed:**
+  DeepSeek (RETRACT the quorum-beacon mitigation — a *proposer* grinds the block hash pre-proposal; ≫512
+  tries ⇒ ~100%; leader prediction → DoS/bribery), Grok (the real PQ contender = quorum-seed + PQ-VDF or PQ
+  threshold beacon, which keeps grind-resistance AND is PQ — UNTESTED here; and whether *private* sortition
+  is even load-bearing is unexamined). **Verdict: INCONCLUSIVE → REOPEN as VRF-002** (build quorum-seed +
+  PQ-VDF sortition; settle the private-vs-public-unbiasable question from the ADR-0004 threat model). The
+  classical VRF stays the pragmatic interim, but the PQ path is plausibly a VDF/threshold beacon, NOT "wait
+  for a PQ VRF." Branch `innovation/vrf-001-pq-sortition` (stacked on led-001). Lesson: don't close the
+  option space after the first (naive) construction — the council found the better PQ contender I skipped.

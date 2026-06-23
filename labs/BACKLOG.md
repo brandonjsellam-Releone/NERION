@@ -19,3 +19,5 @@ stays in R&D.
 | LAT-001 | Lattice (Module-LWE) range proof as the PQ disclosure path | proof ≤8 KB, verify ≤30 ms | proposed (pair with R&D ADR-0022/B7) |
 | LED-001 | Aggregated finality cert (STARK-of-sigs / threshold-lattice) vs k independent ML-DSA-87 sigs | smaller AND fail-closed/PQ/minimal-TCB | **DONE → NO KILL (status quo sound) + CONDITIONAL GRADUATE** (linear gap real but only bites large-set+light-client; alternatives hide prover-time/fail-open/DKG costs) |
 | LED-002 | (R&D) STARK-aggregated finality under a hard prover-time budget + fail-open analysis | succinct AND meets block-finality prover budget | proposed (LED-001 conditional handoff → R&D) |
+| VRF-001 | PQ sortition vs classical ECVRF leader election | PQ AND grind-resistant AND ≤ EC-VRF cost | **DONE → INCONCLUSIVE / REOPEN** (raw hash-beacon grindable; real PQ contender = quorum-seed+VDF untested) |
+| VRF-002 | Quorum-finalized-seed + PQ-VDF (or PQ threshold beacon) sortition | grind-resistant + PQ at acceptable latency | proposed (VRF-001 handoff → R&D) |
