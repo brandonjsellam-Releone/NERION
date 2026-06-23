@@ -8,16 +8,16 @@ wire-tags/KATs untouched without a Track-B ADR, **branch/draft-only output**, an
 adjudicates** and merges/sends.
 
 ## The seats (shared across every team)
-| Seat | Lineage | Role on the team |
-|------|---------|------------------|
-| **Claude** | Anthropic (Opus) | orchestrator · implementer · adversarial verifier |
-| **ChatGPT** | OpenAI (apex) | independent review · ideation |
-| **Gemini** | Google (apex) | technical / standards verification |
-| **Grok** | xAI (apex) | contrarian · red-team |
-| **DeepSeek** | DeepSeek V3/R1 | deep reasoning · critique |
-| **Mistral** | Mistral (apex, EU) | EU-lineage independent review |
-| **Watsonx** | IBM watsonx | IP · governance · diligence |
-| **Perplexity** | Sonar (Scout) | live-web research |
+| Seat | Model ID (apex, confirmed 2026-06-24) | Role on the team |
+|------|--------------------------------------|------------------|
+| **Claude** | `claude-fable-5` (main loop) | orchestrator · implementer · adversarial verifier |
+| **OpenAI / ChatGPT** | `gpt-5.5` (plugin default) | independent review · ideation |
+| **Gemini** | `gemini-2.5-pro` (plugin default) | technical / standards verification |
+| **Grok** | `grok-4.3` (plugin default) | contrarian · red-team |
+| **DeepSeek** | `deepseek-reasoner` (R1 — use for reviews; `deepseek-chat` for fast drafts) | deep reasoning · critique |
+| **Mistral** | `mistral-large-latest` (plugin default) | EU-lineage independent review |
+| **Watsonx** | `ibm/granite-3-8b-instruct` (confirmed) | IP · governance · diligence |
+| **Perplexity** | Sonar apex | live-web research |
 | **Hermes** | agentic | auxiliary review |
 
 ## 1. Security / Hardening — engine: `nerion-apex-sprint` *(every 6h, perpetual)*
