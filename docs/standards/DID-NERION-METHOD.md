@@ -3,268 +3,254 @@ SPDX-FileCopyrightText: 2026 TRELYAN
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# did:nerion DID Method Specification Outline
+# did:nerion DID Method Specification (Draft Outline)
 
-**Status:** Design document — NOT a W3C-registered DID method. NOT a W3C conformance claim.
-**Date:** 2026-06-24
+**Status:** DRAFT OUTLINE. Not submitted to the W3C DID Working Group or any registry.
+Not a final specification. Provided for design review and community feedback.
 
 ---
 
 ## Abstract
 
-`did:nerion` is a proposed Decentralized Identifier (DID) method for identifying AI agents'
-governance authorities in the Nerion protocol. A `did:nerion` DID resolves to a DID Document
-describing the public keys and service endpoints associated with a Nerion admission kernel or
-governance authority. This enables W3C DID ecosystem integration for Nerion-issued permits
-and receipts.
+The `did:nerion` method identifies an AI agent governance authority context - the principal
+that holds capability delegation roots within the Nerion protocol. It leverages Nerion Plane-2
+receipt chains to bind public keys to authority contexts in a deterministic manner that requires
+no mutable registry for read operations. The DID Document can be derived solely from a Nerion
+receipt history, making it suitable for offline-first and air-gapped verification.
 
-**Note:** `did:nerion` is NOT currently registered in the W3C DID Method Registry. This
-document is a design outline, not a specification submission. No W3C conformance claim is
-made.
-
----
-
-## 1. Introduction
-
-### 1.1 Motivation
-
-Nerion PermitTokens and Plane-2 receipts bind authorizations to specific AI agent actions.
-For external ecosystem interoperability (W3C Verifiable Credentials, eIDAS-2.0 EUDI wallets,
-IETF agent-auth), the issuer of a PermitToken must be identified by a resolvable, portable
-identifier. A DID is the appropriate primitive: it is cryptographically verifiable,
-decentralized, and not dependent on a central registry.
-
-`did:nerion` specifically identifies a **governance authority** — the entity that operates
-an admission kernel and issues PermitTokens. It does NOT identify the AI agent itself (that
-is a `did:key` over the agent's ML-DSA-87 key, as described in ADR-0030).
-
-### 1.2 Relationship to did:key
-
-For simple deployments, a `did:key` DID constructed from the admission authority's
-ML-DSA-87 public key (see ADR-0030, `buildDidKey`) is sufficient. `did:nerion` is the
-richer method for production deployments where:
-- The governance authority has multiple keys (rotation, recovery).
-- The DID Document needs to declare service endpoints (permit issuance, receipt log).
-- The authority participates in a ledger-backed governance registry.
+The `did:nerion` method governs the *authority context* - what actions a governance
+principal is authorized to govern - not the personal identity of the agent operator.
+This is the "govern the verb, never the eye" principle expressed as a DID.
 
 ---
 
-## 2. Method Name
+## Nerion DID Syntax
 
-The method name is `nerion`.
-
-A `did:nerion` DID has the form:
 ```
-did:nerion:<method-specific-id>
+did:nerion:<nerion-node-id>:<authority-context-id>
+```
+
+Components:
+
+- **nerion-node-id:** `z` + base58btc(SHAKE-256(ML-DSA-87 public key of genesis receipt signer))
+  The `z` prefix is the multibase prefix for base58btc encoding.
+
+- **authority-context-id:** `z` + base58btc(SHAKE-256(encodeCanonical(authority-context)))
+  where `authority-context` is the canonical CBOR of the allowed verbs and delegation boundary.
+
+Both components use the same base58btc encoding as `did:key` (`z` prefix, multibase base58btc).
+The SHAKE-256 output length is 32 bytes (256 bits) for both components.
+
+**Example:**
+```
+did:nerion:zFp7RKqBt9mXs3nYvW2dJcLe4kUhG8aMpR6xTwQyA1bC:zDr9WnZvQ4kMsXjPt7YeL3gFmRc2nKhB8xV5wTuAiN1E
 ```
 
 ---
 
-## 3. Method-Specific Identifier Syntax
+## DID Document Structure
 
-The method-specific identifier is a base64url-encoded (no padding) identifier derived from
-the governance authority's initial ML-DSA-87 public key, with a version prefix:
-
-```
-method-specific-id = "v1:" base64url(SHA3-256(ML-DSA-87-public-key-bytes))
-```
-
-Example:
-```
-did:nerion:v1:3q2_7bD1kLmNpQrSt...
-```
-
-**Rationale:** SHA3-256 of the public key is compact (32 bytes), collision-resistant, and
-deterministically derivable from the key. The `v1:` prefix enables future version evolution
-without ambiguity. The DID is stable across key rotations (the initial key is committed at
-DID creation; the DID Document carries the current verification key set).
-
-### 3.1 Key type
-
-`did:nerion` uses ML-DSA-87 (FIPS 204 / NIST Module-Lattice-Based Digital Signature
-Standard, security category 5) as the primary verification method key type. This provides
-post-quantum security against Cryptanalytically Relevant Quantum Computers (CRQCs).
-
-**Note:** ML-DSA-87 is not yet in the W3C DID specification's registered key type list.
-A future registration or extension would be required for full W3C conformance. This
-specification treats ML-DSA-87 as a provisional key type using the JSON-LD type
-`JsonWebKey2020` with `crv: "ML-DSA-87"` (provisional; not a registered JWK curve).
-
----
-
-## 4. CRUD Operations
-
-### 4.1 Create
-
-A `did:nerion` DID is created by:
-1. Generating an ML-DSA-87 key pair (using Nerion's `crypto/src/sign.ts` ML_DSA_87 scheme
-   or any FIPS 204 implementation).
-2. Computing the method-specific identifier: `v1:` + base64url(SHA3-256(publicKeyBytes)).
-3. Constructing the initial DID Document (see §5).
-4. Publishing the DID Document to the chosen ledger or registry (see §6).
-
-The DID is determined solely by the initial public key; no central authority assigns DIDs.
-
-### 4.2 Read (Resolve)
-
-A resolver for `did:nerion` retrieves the DID Document from the backing storage layer (see
-§6) keyed by the method-specific identifier. The resolver MUST:
-1. Verify the DID Document's integrity via the embedded ML-DSA-87 signature (the DID
-   Document MUST be signed by the current active verification key).
-2. Return the DID Document if the signature is valid, or a `notFound` / `invalidDid` error
-   otherwise.
-3. Fail closed on any malformed or unauthenticated document.
-
-### 4.3 Update
-
-A governance authority may rotate its verification key by publishing a new DID Document
-signed by the current active verification key. The new document replaces the previous one.
-Key rotation MUST NOT change the method-specific identifier (the DID is stable; only the
-document changes).
-
-Revoked keys MUST be removed from the `verificationMethod` array and SHOULD be listed in
-a `revokedKeys` extension property for audit purposes.
-
-### 4.4 Deactivate
-
-A `did:nerion` DID is deactivated by publishing a final DID Document (signed by the current
-active key) with `deactivated: true` in the DID Document metadata. Deactivated DIDs MUST
-NOT be used to issue new PermitTokens or receipts.
-
----
-
-## 5. DID Document Structure
-
-A `did:nerion` DID Document follows the W3C DID Core 1.0 structure:
+The DID Document is deterministically derived from the Nerion Plane-2 receipt chain.
+No external mutable registry is required for the Read operation.
 
 ```json
 {
   "@context": [
     "https://www.w3.org/ns/did/v1",
-    "https://nerion.trelyan.com/contexts/did/v1"
+    "https://nerion.dev/vocab/v1"
   ],
-  "id": "did:nerion:v1:<method-specific-id>",
+  "id": "did:nerion:<nerion-node-id>:<authority-context-id>",
   "verificationMethod": [
     {
-      "id": "did:nerion:v1:<msid>#key-0",
-      "type": "JsonWebKey2020",
-      "controller": "did:nerion:v1:<msid>",
-      "publicKeyJwk": {
-        "kty": "OKP",
-        "crv": "ML-DSA-87",
-        "x": "<base64url(publicKeyBytes)>"
-      }
+      "id": "did:nerion:<nerion-node-id>:<authority-context-id>#key-0",
+      "type": "JsonWebKey",
+      "controller": "did:nerion:<nerion-node-id>:<authority-context-id>",
+      "publicKeyMultibase": "z<base58btc(varint(0xed01) || mldsa87-pubkey)>",
+      "comment": "ML-DSA-87 key; multicodec 0xed01 is PROVISIONAL pending final registry assignment"
     }
   ],
-  "authentication": ["did:nerion:v1:<msid>#key-0"],
-  "assertionMethod": ["did:nerion:v1:<msid>#key-0"],
-  "service": [
-    {
-      "id": "did:nerion:v1:<msid>#permit-issuer",
-      "type": "NerionPermitIssuer",
-      "serviceEndpoint": "https://example.com/nerion/permits"
-    },
-    {
-      "id": "did:nerion:v1:<msid>#receipt-log",
-      "type": "NerionReceiptLog",
-      "serviceEndpoint": "https://example.com/nerion/receipts"
-    }
-  ]
+  "assertionMethod": [
+    "did:nerion:<nerion-node-id>:<authority-context-id>#key-0"
+  ],
+  "nerionAuthorityContext": {
+    "contextDigest": "<authority-context-id>",
+    "allowedVerbs": ["finance.transfer.usd", "infra.deploy.k8s"],
+    "riskClassCeiling": "T2",
+    "currentReceiptHash": "<hex-SHAKE256-of-latest-receipt>",
+    "genesisReceiptHash": "<hex-SHAKE256-of-genesis-receipt>"
+  }
 }
 ```
 
-**Notes:**
-- `JsonWebKey2020` with `crv: "ML-DSA-87"` is provisional — ML-DSA-87 is not a registered
-  JWK curve as of June 2026.
-- `NerionPermitIssuer` and `NerionReceiptLog` are provisional service types.
-- The DID Document itself MUST be signed (as a COSE_Sign1 with the ML-DSA-87 key) for
-  integrity verification during resolution.
+The `nerionAuthorityContext` property is an extension and MUST be ignored by resolvers
+that do not understand it, per the DID Core specification.
 
 ---
 
-## 6. Storage and Resolution Infrastructure
+## CRUD Operations
 
-`did:nerion` is designed to support multiple backing storage options:
+### Create
 
-1. **Nerion settlement ledger.** DID Documents stored in the Nerion ledger module
-   (`ledger/`), providing a cryptographically verifiable, append-only audit trail.
+The DID comes into existence when the first Plane-2 receipt is produced that contains:
+1. The ML-DSA-87 public key (genesis key).
+2. The authority context (allowed verbs, risk ceiling, delegation boundary).
+3. A valid ML-DSA-87 signature under the genesis key.
 
-2. **HTTPS well-known endpoint.** For simple deployments, the DID Document MAY be served
-   at `https://<domain>/.well-known/did.json` following the `did:web` convention, with the
-   method-specific identifier encoding the domain. This is a transitional option.
+The resolver computes `nerion-node-id` as `z` + base58btc(SHAKE-256(genesis-public-key)) and
+`authority-context-id` as `z` + base58btc(SHAKE-256(encodeCanonical(authority-context))).
+No registration action is required; the DID is derived deterministically.
 
-3. **IPFS / content-addressed storage.** For fully decentralized deployments, the DID
-   Document MAY be stored on IPFS with the CID committed into the method-specific
-   identifier. This is a future option; not specified here.
+### Read
 
----
+Resolution is deterministic. The resolver:
+1. Obtains the receipt chain for the node (from a transparency log, on-chain store, or local
+   receipt archive).
+2. Verifies each receipt's ML-DSA-87 signature.
+3. Assembles the DID Document from the chain's current state (latest active key, latest
+   authority context).
 
-## 7. Security Considerations
+No network write is required. A resolver that has access to the receipt chain can resolve
+the DID offline.
 
-### 7.1 Key Compromise
+### Update (Key Rotation)
 
-If the active ML-DSA-87 signing key is compromised, the governance authority MUST
-immediately publish a key rotation (§4.3) signed by the compromised key (if possible) or
-invoke a recovery mechanism. All PermitTokens and receipts issued under the compromised
-key SHOULD be revoked.
+A new receipt containing:
+- The new ML-DSA-87 public key (`rotation-to` field in the receipt).
+- A reference to the previous receipt hash (`previous-receipt-hash`).
+- A valid signature under the CURRENTLY ACTIVE key.
 
-### 7.2 DID Document Integrity
+rotates the authority to the new key. The DID identifier is unchanged (it is derived from
+the genesis key); only the active `verificationMethod` changes.
 
-DID Documents MUST be signed by the active verification key. Resolvers MUST verify this
-signature before trusting any DID Document content. An unsigned or improperly signed DID
-Document MUST be rejected.
+### Deactivate
 
-### 7.3 Quantum Security
-
-ML-DSA-87 (FIPS 204) provides NIST security category 5 post-quantum security. This is the
-same signature scheme used in Nerion's Plane-2 receipts and COSE supply-chain statements.
-Classical algorithms (RSA, ECDSA) MUST NOT be used as verification method key types in
-`did:nerion` documents.
-
-### 7.4 Method Identifier Stability
-
-The method-specific identifier is derived from the INITIAL public key. Key rotation does
-not change the DID. This binds the DID to the governance authority's identity, not to a
-specific key.
+An explicit revocation receipt (a Plane-2 `SignedEnvelope` with `effect: "revoke"` in the
+manifest) marks the authority context as deactivated. After deactivation:
+- The DID Document includes `"deactivated": true`.
+- No new permits can be issued under this authority context.
+- Historical receipts remain valid (they were issued before deactivation).
 
 ---
 
-## 8. Privacy Considerations
+## Security Considerations
 
-`did:nerion` DIDs identify governance authorities (admission kernels), not individual users.
-PermitToken `credentialSubject` DIDs (`did:key` over the agent's key) identify agent
-instances. Care must be taken not to correlate agent DIDs across sessions in ways that
-enable re-identification of the human principal behind the agent. Nerion's `counterparty`
-field in ActionIntent is explicitly labeled "never re-identified across calls."
+### ML-DSA-87 Multicodec Provisional Status
+
+The multicodec code `0xed01` for ML-DSA-87 keys is a community-provisional value. The final
+code has not been assigned in the upstream multicodec registry as of June 2026. All DID
+identifiers and DID Documents produced using this code MUST be labeled as provisional.
+When the canonical code is assigned, a migration receipt (key rotation to the same key, with
+updated multicodec encoding) can be issued. This does not change the DID identifier.
+
+### Key Rotation Security
+
+A rotation receipt MUST be signed by the currently active key. Resolvers MUST reject rotation
+receipts signed by any key other than the currently active verification method. This prevents
+an attacker who obtains a deactivated key from issuing backdated rotation receipts.
+
+### Receipt Chain Ordering
+
+Each receipt includes a `previous-receipt-hash` field (SHAKE-256 of the preceding receipt).
+This creates a strictly ordered chain. Resolvers MUST reject receipts with a
+`previous-receipt-hash` that does not match the most recently accepted receipt in the chain.
+
+### Replay Protection
+
+PermitTokens issued under a `did:nerion` authority context include a nonce and audience
+binding (ADR-0015). Historical permits cannot be replayed; each permit is tied to a specific
+action hash and audience key derivation.
+
+### Receipt Chain Availability
+
+The receipt chain is an external dependency of the resolver. The `did:nerion` method does
+not specify how the chain is stored. Implementers may use:
+- A public transparency log (e.g., a Merkle tree commitment service).
+- A distributed ledger.
+- A TEE-managed append-only store.
+- A local file (for closed-environment deployments).
+
+The choice of storage affects availability guarantees; this is outside the scope of the
+DID method itself.
 
 ---
 
-## 9. Relationship to IETF Agent-Auth
+## Privacy Considerations
 
-`did:nerion` DIDs are intended to be usable as `iss` values in IETF agent-auth-token
-descriptors (draft-klrc-aiagent-auth) and as `issuer` values in W3C VC projections
-(ADR-0030). This enables a consistent, resolvable identity for Nerion governance authorities
-across the emerging agent-auth standards landscape.
+### Authority Context, Not Personal Identity
+
+`did:nerion` identifies a governance authority context, not a natural person. The DID
+does not encode any information about the operator of the agent. It is action-scoped
+and authority-scoped. This aligns with the Nerion design principle:
+"govern the verb, never the eye."
+
+### Correlation Risk
+
+Multiple agents using the same authority context share the same `authority-context-id`
+component of the DID. This is intentional for pooled capabilities (e.g., a fleet of agents
+operating under the same governance policy). Operators who wish to prevent correlation between
+agents must issue separate authority contexts per agent.
+
+### Receipt Chain Linkability
+
+The receipt chain links all actions authorized under a given DID. In deployments where
+the receipt chain is public, all governed actions are linkable. Deployments with
+confidentiality requirements should use a private receipt store with selective disclosure
+(a Phase-B research item).
 
 ---
 
-## 10. Limitations and Future Work
+## Conformance
 
-- `did:nerion` is NOT registered in the W3C DID Method Registry.
-- ML-DSA-87 as a JWK key type is provisional (not in the IANA JWK curves registry).
-- The method does not yet specify a formal JSON-LD context for `NerionPermitIssuer`,
-  `NerionReceiptLog`, or ML-DSA-87 key types.
-- Ledger-backed resolution infrastructure is under development.
-- No W3C DID Core conformance claim is made.
+A conforming resolver MUST:
+1. Use `encodeCanonical` (deterministic CBOR) for all hashed structures.
+2. Use SHAKE-256 (256-bit output) for all component digests.
+3. Use base58btc encoding with the `z` multibase prefix.
+4. Verify all receipt ML-DSA-87 signatures before constructing the DID Document.
+5. Reject receipts with invalid `previous-receipt-hash` references.
+6. Treat `nerionAuthorityContext` as an extension (ignore-if-not-understood per DID Core).
+
+A conforming resolver MUST NOT:
+1. Use a mutable external registry to resolve or update the DID.
+2. Accept rotation receipts signed by non-current keys.
+3. Treat deactivated authority contexts as active.
 
 ---
 
-## References
+## Relationship to did:key and did:web
 
-- W3C DID Core 1.0, https://www.w3.org/TR/did-core/
-- W3C DID Method Registry, https://www.w3.org/TR/did-extensions-methods/
-- ADR-0030 (VC-Projection Implementation), this repo
-- ADR-0025 (Standards-Binding Profile), this repo
-- FIPS 204 (ML-DSA), NIST 2024
-- draft-klrc-aiagent-auth (IETF agent-authorization, working draft)
-- did:key method, https://w3c-ccg.github.io/did-method-key/
+### did:key
+
+`did:key` is used within the `verificationMethod` of the `did:nerion` DID Document to
+express the ML-DSA-87 public key in a self-describing format. The `didKeyFromPublicKey()`
+function from `capabilities/src/profile.ts` is the implementation. `did:key` is NOT used
+as a replacement for `did:nerion`; it is embedded as the key expression format.
+
+### did:web
+
+`did:web` could serve as an alternative discovery mechanism (via a `.well-known/did.json`
+endpoint) to locate a receipt-chain resolver endpoint. The core resolution remains
+receipt-chain-based; `did:web` would only provide resolver discovery, not substitute for
+it. This integration is optional and deployment-specific.
+
+---
+
+## Open Questions
+
+1. **Optional authority-context-id:** Should `<authority-context-id>` be optional to support
+   ephemeral agents that do not need a stable authority context identifier?
+
+2. **DID Document serialization format:** JSON-LD (current outline) vs. CBOR-LD for native
+   CBOR environments?
+
+3. **IETF alignment:** How to align the authority context model with the IETF agent-auth-token
+   "authorization context" concept to avoid fragmentation?
+
+4. **Threshold ML-DSA:** For multi-agent quorum decisions (ADR-0005), should the genesis key
+   be a threshold ML-DSA key? If so, the multicodec encoding needs extension.
+
+5. **Selective disclosure in the receipt chain:** Phase-B research item. How to allow
+   a resolver to verify the chain without seeing all governed actions?
+
+---
+
+*(This is a DRAFT OUTLINE. It has not been submitted to any standards body.)*
