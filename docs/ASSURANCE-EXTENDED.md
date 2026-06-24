@@ -5,134 +5,297 @@ SPDX-License-Identifier: Apache-2.0
 
 # Nerion — Extended Assurance Matrix (A39-EXTENDED)
 
-**Purpose.** This document supplements `docs/ASSURANCE.md` with a denser
-**guarantee × artifact × verification-method** matrix. Each row names a concrete
-cryptographic or protocol-level security guarantee, the in-repo artifact (code,
-ADR, KAT, test, or proof sketch) that is supposed to deliver it, and the
-verification method(s) applied. A separate column records whether any cell is
-currently **unverifiable** — no artifact, no test — which is the signal that
-flags an audit gap.
+**Status: PROPOSED — design-only additions. Not a security result. Not audited.**
+Date: 2026-06-24. Produced by PhD Panel Sprint 1 (Track-B). Extends `docs/ASSURANCE.md` with a
+guarantee × artifact × verification-method matrix covering the claims an external auditor (OSTIF,
+OTF Security Lab / Radically Open Security, or a cryptography dissertation committee) would look for
+beyond the P0–P4 claims in the base matrix. Nothing here overrides the base matrix.
 
-Produced by the Nerion R&D PhD Panel (Sprint 1, 2026-06-24). This is a
-**design document, not a security result**. Nothing here is audited, FIPS-
-validated, or a non-infringement claim. Every "UNAUDITED" label is intentional
-and load-bearing — do not remove without a completed independent audit.
-
-**Evidence tiers used in this matrix (inherited from ASSURANCE.md):**
-
-| Symbol | Meaning |
-|---|---|
-| `P` | Formal proof in a published paper or verified model |
-| `F` | Mechanized / machine-checked proof (Coq, Lean, EasyCrypt, etc.) |
-| `A` | External independent audit report exists |
-| `R` | ROM/QROM security argument written down (internal, unaudited) |
-| `K` | Known-Answer Test (pinned deterministic vector) |
-| `T` | Automated regression / example-based test |
-| `PT` | Property-based / randomized test (fast-check / proptest) |
-| `C` | In-repo conformance-suite check (Nerion's own spec — conformant ≠ validated) |
-| `N` | No artifact / no test — explicit gap |
-
-**Verification columns (matrix header):**
-
-1. **Formal proof** — published/mechanized reduction
-2. **ROM argument** — informal written security argument in ROM
-3. **KAT** — deterministic known-answer test vector
-4. **Property test** — randomized invariant test
-5. **Conformance** — in-repo `npm run conformance` check
-6. **Regression test** — automated example-based test
-7. **Unverifiable gap** — cell is `N` (no artifact/test exists yet)
+The words "audited", "FIPS", "certified", and "non-infringement" do NOT apply to anything in Nerion
+unless explicitly and externally established.
 
 ---
 
-## Section 1 — Zero-Knowledge Layer Guarantees
+## How to read this matrix
 
-| # | Guarantee | Artifact | Formal proof | ROM argument | KAT | Property test | Conformance | Regression | Gap / Notes |
-|---|---|---|---|---|---|---|---|---|---|
-| ZK-1 | **Pedersen commitment is perfectly hiding** — `commit(v, r) = v·G + r·H` reveals nothing about `v` for any choice of `H` (even adversarially chosen), because `r` is uniform over the full scalar group | `disclosure/src/zkrange.ts:70-72` | `P` — standard Pedersen over prime-order group; unconditional (information-theoretic) | — | — | — | — | — | Hiding is **unconditional / information-theoretic** — no discrete-log assumption needed; PQ-safe |
-| ZK-2 | **Pedersen commitment is computationally binding** — opening is unique up to discrete-log hardness: no PPT adversary can find `(v', r') ≠ (v, r)` with the same commitment, provided `dlog_G(H)` is unknown | `disclosure/src/zkrange.ts`; `ADR-0016` | `N` — hardness reduction to DLOG not written out; reduction is standard but unlabeled | `R` — ADR-0016 §soundness argument | `K` — H_PINNED_HEX in ADR-0016 (planned; not yet in ps-kat.json) | — | `N` — planned C24 (not yet) | `N` — generators.test.ts planned (not yet) | **Critical:** DLOG assumption is **classical only** — quantum adversary breaks binding; QROM not analyzed (FORMAL-SECURITY gap) |
-| ZK-3 | **`dlog_G(H)` is unknown** — the NUMS construction guarantees no party possesses a trapdoor `t` with `H = t·G` | `ADR-0016 §(a)`; DST `"ristretto255_XMD:SHA-512_R255MAP_RO_"` | `N` — no formal proof; heuristic ROM argument only | `R` — ADR-0016 §(a) residual assumption | — | — | — | — | **Not provable at runtime**; heuristic NUMS argument only; external audit obligation |
-| ZK-4 | **Generator H is well-formed at load time** — H ≠ identity, H ≠ G, H has prime order, H matches pinned bytes | `ADR-0016 §(c)` invariants 1–6; planned `disclosure/src/generators.ts` | — | `R` — ADR-0016 §(c) | `K` — planned KAT vector | — | `N` — planned C24 | `N` — planned `generators.test.ts` | Startup invariants specified in ADR-0016; **not yet implemented** |
-| ZK-5 | **Per-bit OR-proof is 2-special-sound** — from two transcripts sharing the same first message with distinct challenges, an extractor recovers a genuine bit-witness (b_i ∈ {0,1}) | `disclosure/src/zkrange.ts` (`proveBit`/`verifyBit`); `ADR-0017 §(a)` | `N` — no published/mechanized reduction | `R` — ADR-0017 §(a) written argument | — | `PT` — `zkrange.property.test.ts` | `C` — C11 | `T` — `zkrange.test.ts` | **Grok PhD finding:** per-bit extraction argument is self-consistent; extraction error is 1/|challenge_space| per bit — negligible for ≥128-bit challenges; QROM not addressed |
-| ZK-6 | **OR-composition is HVZK** — simulator produces transcripts identically distributed to honest ones without the witness, using CDS false-clause pre-commitment | `ADR-0017 §(b)` | `N` | `R` — ADR-0017 §(b) | — | `PT` — `zkrange.property.test.ts` | `C` — C11 | `T` | Simulator argument written; unconditional ZK (Pedersen perfectly hiding) — **hiding survives quantum adversaries** |
-| ZK-7 | **Fiat-Shamir transcript is not malleable** — the challenge binds the full statement (all bit commitments, both sub-proofs, params); Frozen Heart class closed | `zkrange.ts:statementHash`; `ADR-0017 §(c)` | `N` | `R` — ADR-0017 §(c) | — | `N` | `C` — C11 (partial) | `T` | **Gap flagged by Grok PhD:** generators G and H are NOT currently hashed into the transcript; single-transcript binding (tightening proposed in ADR-0017) pending audit ratification |
-| ZK-8 | **No wraparound in range recomposition** — `Σ b_i·2^i ∈ [0, 2^n)` holds over the integers (not mod L), for n ≤ 251 | `zkrange.ts` n≤251 cap; `ADR-0017 §(d)`; ZKRANGE-002 fix | `N` | `R` — ADR-0017 §(d) | `K` — existing `ps-kat.json` range vectors | `PT` | `C` — C11 | `T` | Priority audit item — one off-by-one already found (ZKRANGE-002); `n+1` margin argument must be verified externally |
-| ZK-9 | **Dual-range soundness** — proving BOTH `amount ∈ [0,2^n)` AND `diff = threshold-1-amount ∈ [0,2^n)` is strictly necessary; single-range sufficiency proof | `zkrange.ts` dual-range structure; `ADR-0006` | `N` | `R` — ADR-0006 / ADR-0017 | — | `PT` | `C` — C11 / C13 | `T` | `diff` commitment is **verifier-reconstructed** (load-bearing — prevents prover from supplying a dishonest `C_diff`) |
-| ZK-10 | **OR-proof soundness in QROM** — the Fiat-Shamir transform applied to the CDS OR-proof is sound against quantum adversaries querying the random oracle in superposition | `N` — no quantum analysis exists | `N` | `N` | `N` | `N` | `N` | **CRITICAL UNVERIFIABLE GAP** — quantum adversary can break soundness/binding; amount hiding remains safe (perfectly hiding), but proof integrity does not |
+Each row names a **guarantee** (the property), its **mechanism** (the artifact that delivers it), its
+**substantiation** (how you verify the property today), and its **verification method and honest scope**
+(what level of evidence the substantiation represents, and what it does NOT prove).
 
----
+**Verification method codes:**
+- `KAT` — pinned known-answer test vector; cross-implementation reproducible.
+- `PROP` — randomized property test (fast-check); invariant survived a generated input space.
+- `CONF(Cn)` — Nerion in-repo conformance check Cn; passes `npm run conformance`.
+- `FUZZ` — fuzzing / mutation; no panic / no silent wrong answer over hostile inputs.
+- `LOGIC` — internal design/logic argument in an ADR; not externally verified.
+- `EXT-AUDIT` — external independent review (none completed; pending OSTIF / OTF).
+- `FORMAL` — NIST-standardized algorithm or machine-checked proof.
 
-## Section 2 — Commitment and Binding Guarantees
-
-| # | Guarantee | Artifact | Formal proof | ROM argument | KAT | Property test | Conformance | Regression | Gap / Notes |
-|---|---|---|---|---|---|---|---|---|---|
-| CB-1 | **v:2 commitment-to-intent binding** — the public `boundIntentDigest` is a SHA3 pre-image that binds `commit(amount,r).toBytes()` so the issuer cannot substitute a different amount after commitment | `disclosure/src/commitbind.ts`; `ADR-0013`; CB-001 fix | `N` | `R` — ADR-0013 | `K` — `ps-kat.json` | `PT` | `C` — C21 | `T` | CB-001 FIXED: amount was previously in the digest pre-image (bruteforceable); now omitted, bound only by the perfectly-hiding commitment |
-| CB-2 | **Salted intent commitment log-leaf hiding** — the v:1 log leaf uses `SHA3(canonical{domain, salt, intent})` so a low-entropy amount cannot be brute-forced from the public leaf | `ADR-0014`; RCPT-001 fix | `N` | `R` — ADR-0014 | — | — | `C` — C23 | `T` | Salt carried off-leaf; classical/ROM; hiding applies to the leaf **not** to the full disclosure path |
-| CB-3 | **Canonical encoding injectivity** — distinct logical values produce distinct dCBOR bytes; no two distinct values share a canonical encoding | `crypto/src/cbor.ts`; `crypto/test/cbor-determinism.test.ts` | `N` | `R` — dCBOR spec | `K` — existing CBOR KATs | `PT` | — | `T` | No cross-SDK fuzzing / differential harness yet |
+Planned items are annotated **(planned)** — the control does not exist yet.
 
 ---
 
-## Section 3 — Quorum Receipt and Threshold Guarantees
+## Layer 1: Cryptographic Primitives
 
-| # | Guarantee | Artifact | Formal proof | ROM argument | KAT | Property test | Conformance | Regression | Gap / Notes |
-|---|---|---|---|---|---|---|---|---|---|
-| QR-1 | **k-of-n quorum finalization** — a receipt finalizes iff ≥k distinct valid member signatures over a fixed named signer set are presented | `receipts/src/quorum.ts`; `ADR-0005` | `N` | `R` — ADR-0005 | `K` — `ps-kat.json` | `PT` — `quorum.property.test.ts` | `C` — C12 | `T` | Proves quorum **signed**, not that signers are independent / Sybil-resistant |
-| QR-2 | **Set-binding in quorum receipts** — the quorum is bound to a named, fixed signer set; a receipt from a different signer set or a permutation of signers does not cross-verify | `receipts/src/quorum.ts`; `ADR-0020` | `N` | `R` — ADR-0020 | — | `PT` — set-substitution rejection test | `C` — C12 | `T` | **Gap flagged by Grok PhD:** binding to participant identity set in threshold receipts is tested but the formal binding definition is not written out — see CONSENSUS-CAVEATS.md §set-binding |
-| QR-3 | **Per-audience HKDF permit key isolation** — each resource is provisioned with only its HKDF-derived audience key; a key-holding resource cannot re-MAC a different-audience permit | `capabilities/`; `ADR-0015`; PERMIT-001 fix | `N` | `R` — ADR-0015 | `K` — `ps-kat.json` | — | `C` — C22 | `T` | Correct key distribution is a deployment obligation, not a protocol guarantee |
-
----
-
-## Section 4 — Consensus and Ledger Guarantees
-
-| # | Guarantee | Artifact | Formal proof | ROM argument | KAT | Property test | Conformance | Regression | Gap / Notes |
-|---|---|---|---|---|---|---|---|---|---|
-| CL-1 | **VRF leader sortition unpredictability** — the VRF output is unforgeable and unpredictable to validators who do not hold the leader's private key | `ledger/src/leader.ts`; `ADR-0004` | `N` | `R` — ADR-0004 | `K` — VRF KATs | — | — | `T` — `vrf-chain.test.ts` | ML-DSA-87 VRF; security reduces to MLWE/MSIS (classical + QROM with tightness gap — see FORMAL-SECURITY) |
-| CL-2 | **View-change certificate quorum integrity** — a ViewChangeCert is valid iff ≥2/3 distinct stake-weighted validators signed a TimeoutVote for the same `(height, prevHash, round)` | `ledger/src/leader.ts:verifyViewChangeCert`; `ADR-0004` | `N` | `R` — ADR-0004 | — | — | — | `T` — `vrf-chain.test.ts` | Current threshold uses BigInt cross-multiply (LEDGER-PRECISION-002); stateless verifier |
-| CL-3 | **Round-skip cost is linear (chained ViewChangeCert)** — advancing N rounds requires N independently-quorum-signed certs; LEDGER-007 fairness gap closed | `ADR-0019` (PROPOSED, not yet implemented) | `N` | `R` — ADR-0019 §soundness sketch | `N` — no KAT yet | `N` | `N` — planned C24 | `N` | **Biggest open gap in CL:** cert-availability residual unresolved; digest canonicalisation must be audited; Grok PhD: quorum threshold MUST be 2f+1 (not t+1), confirmed in ADR-0019 |
-| CL-4 | **Equivocation slashing comparability** — same-height attestations from all rounds are equivocation-comparable; round is deliberately excluded from `attestMessage` | `ledger/src/equivocation.ts`; `docs/SECURITY_FINDINGS.md` LEDGER-EQUIV-001 | `N` | `R` — SECURITY_FINDINGS | — | — | — | `T` | Interaction with ADR-0019 chaining verified to be safe (LEDGER-EQUIV-001 adjudication recorded in ADR-0019) |
-| CL-5 | **Transparency-log append-only consistency** — an appended Merkle log cannot be silently rewritten; split-view detection is included | `translog/src/`; RFC 6962 style | `N` | `R` — RFC 6962 / SCITT | — | — | `C` — C10 | `T` — `merkle-soundness.test.ts` | Single-operator log unless externally gossiped; split-view **detection** not prevention |
+| Guarantee | Mechanism | Substantiation | Verification method | Honest scope |
+|---|---|---|---|---|
+| **ML-DSA-87 signature correctness** — verify iff signed by matching key under FIPS 204. | `crypto/src/mldsa.ts`; `@noble/post-quantum`. | KAT in `crypto/vectors/`; reproduced by `crypto/test/kat.test.ts`. | KAT · FORMAL (FIPS 204 algorithm) | Algorithm-compatible, NOT FIPS-validated; side-channel unassessed; `@noble` unaudited software. |
+| **ML-DSA-87 secret-key representation safety** — canonical FIPS 204 encoding; wrong representation caught. | ADR-0024; key serialization tests. | KAT for secret-key-to-public round-trip; negative tests (ADR-0024). | KAT · TEST | Representation correctness only; key-compromise and side-channel not covered. |
+| **ML-KEM-1024 encap/decap correctness** | `crypto/src/mlkem.ts`; FIPS 203. | KAT vectors. | KAT · FORMAL (FIPS 203) | Hybrid KEM retains classical P-384 leg (quantum-vulnerable, CBOM-flagged). |
+| **SLH-DSA-SHAKE-256f correctness** | `crypto/src/slhdsa.ts`; FIPS 205. | KAT pubkey SHA3 from seed; Rust A24 (planned). | KAT · FORMAL (FIPS 205) | Same caveats. |
+| **SHAKE256 / SHA3-512 output stability** | `@noble/hashes`; NIST FIPS 202. | KAT vectors; Rust A13 (planned). | KAT · FORMAL (FIPS 202) | Side-channel unassessed; `@noble` unaudited. |
+| **HKDF-SHA-384 per-audience key isolation** — each (session, audience) pair yields a distinct key; a resource cannot derive a sibling audience's key from its own derived key. | `kernel/src/permit.ts`; ADR-0015; RFC 5869 HKDF-SHA-384. | KAT for derived key hex; CONF(C22); negative: wrong-audience token rejected. | KAT · CONF(C22) · TEST | Cryptographic isolation is sound; **key distribution obligation** (provision derived keys only, never the session master) is a deployment obligation, not protocol-enforced. |
+| **dCBOR canonical encoding injectivity** — distinct values produce distinct canonical bytes; re-encoding is byte-stable. | `crypto/src/cbor.ts`; deterministic CBOR profile. | `crypto/test/cbor-determinism.test.ts` (PROP: injectivity + round-trip + key-order independence). | PROP · TEST | No cross-SDK differential fuzzing yet; injectivity proven only over fast-check's generated input space. |
+| **dCBOR parser safety** — decoder never panics or throws uncaught exceptions on hostile input. | `crypto/src/cbor.ts`; A2 fuzz target (planned). | A2 fuzz: random/truncated bytes produce value or typed error, never uncaught throw. (planned) | FUZZ (planned) | Not yet implemented. Row is LOGIC-only until A2 lands. |
 
 ---
 
-## Section 5 — Post-Quantum and ML-DSA-87 Guarantees
+## Layer 2: Zero-Knowledge Layer
 
-| # | Guarantee | Artifact | Formal proof | ROM argument | KAT | Property test | Conformance | Regression | Gap / Notes |
-|---|---|---|---|---|---|---|---|---|---|
-| PQ-1 | **ML-DSA-87 unforgeability (classical)** — no PPT adversary can forge a valid ML-DSA-87 signature without the signing key, under MLWE + MSIS assumptions | `crypto/`; FIPS 204 | `P` — FIPS 204 security argument (ROM) | `R` — ADR-0001 / ADR-0025 | `K` — NIST KATs | — | `C` — C1–C5 | `T` | Algorithm-compatible; **NOT FIPS-validated** (no CMVP) |
-| PQ-2 | **ML-DSA-87 unforgeability (QROM)** — same guarantee against a quantum adversary querying the random oracle in superposition | `N` — not analyzed for Nerion's usage | `N` | `N` | `N` | `N` | `N` | **Gap flagged by Grok PhD:** MLWE/MSIS are sound in QROM (Kiltz et al. 2018; post-quantum security proven for Dilithium/ML-DSA), but the reduction has a **tightness gap** — the concrete quantum security level is lower than the classical level. The residual gap has NOT been analyzed for Nerion's specific usage. |
-| PQ-3 | **No nonce-reuse failure mode** — ML-DSA-87 uses deterministic signing (FIPS 204 hedged variant); no per-signature randomness requirement that could fail under RNG weakness | `crypto/`; FIPS 204 | `P` — FIPS 204 deterministic variant | `R` | `K` | — | — | `T` | Hedged (randomized) variant also defined in FIPS 204 — Nerion must document which variant is in use and confirm the KAT vectors match |
-| PQ-4 | **Hybrid KEM forward secrecy** — ML-KEM-1024 + P-384 hybrid provides forward secrecy; compromise of long-term keys does not expose past sessions | `crypto/`; `ADR-0002` | `N` | `R` — ADR-0002 | `K` | — | `C` | `T` | **Known caveat:** P-384 leg is quantum-vulnerable (CBOM flagged); hybrid KEM still provides classical forward secrecy; pure-PQ forward secrecy requires ML-KEM only |
-| PQ-5 | **CNSA 2.0 alignment** — Nerion uses algorithm suites (ML-DSA-87, ML-KEM-1024, SHA-384+) that satisfy CNSA 2.0 category PS-5 / Cat-5 requirements | `ADR-0008`; CNSA oracle; `ADR-0025` | `N` | `R` — ADR-0008 / ADR-0025 | `K` — CNSA verdict KAT | — | `C` — C15/C16 | `T` | **"Transitional" not pure-CNSA** (hybrid KEM + SHA3); alignment ≠ NSA validation or approval |
-
----
-
-## Section 6 — Governance and Protocol-Level Guarantees
-
-| # | Guarantee | Artifact | Formal proof | ROM argument | KAT | Property test | Conformance | Regression | Gap / Notes |
-|---|---|---|---|---|---|---|---|---|---|
-| GP-1 | **Default-deny admission (fail-closed)** — `decide()` returns `deny` unless a verified capability authorized the intent; any throw denies at tier 3 | `kernel/src/kernel.ts`; `ADR-0007` | `N` | `R` — ADR-0007 | — | — | `C` — C8 | `T` — `kernel.test.ts` | Team Apex 2026-06-21 validated no fail-open path |
-| GP-2 | **Govern-the-verb invariance** — admission decision is byte-identical under injection of any perception-shaped side-data | `conformance/src/negative.ts`; `ADR-0007` | `N` | `R` — ADR-0007 | `K` — `ps-negative.json` | — | `C` — C14 | `T` | pre-FTO; invariance is the design-around runtime fence, not a legal claim |
-| GP-3 | **Capability attenuation never amplifies** — a delegated grant authorizes only a subset of its parent across every dimension | `capabilities/src/grant.ts` | `N` | `R` — capabilities design | — | `PT` — `attenuation.property.test.ts` | — | `T` | Monotone subset semantics; property-checked |
+| Guarantee | Mechanism | Substantiation | Verification method | Honest scope |
+|---|---|---|---|---|
+| **Pedersen commitment perfect hiding** — commitment reveals zero information about v, even to an unbounded or quantum adversary. | Pedersen algebraic structure: C = v·G + r·H, r uniform. | Standard algebraic / information-theoretic argument. | FORMAL (algebraic) | **Perfect hiding is unconditional and post-quantum.** Holds for any generator pair, even a maliciously chosen H. Amount confidentiality is independent of generator provenance. |
+| **Pedersen commitment computational binding** — no efficient adversary opens a commitment to two distinct (v, r) pairs. | ristretto255 prime-order group; NUMS-derived H (ADR-0016). | ADR-0016 NUMS argument; load-time invariant `assertGeneratorsWellFormed()` (planned); KAT C24 (planned). | LOGIC · KAT (planned) | **Classical assumption only** — reduces to discrete-log on ristretto255. A quantum computer with a discrete-log oracle breaks binding. QROM analysis of the Pedersen binding assumption is not done and is a labeled gap. |
+| **Generator-H provenance and drift detection** — H is derived from a fixed public NUMS seed; any silent change to H (seed, library, encoding) is caught at build-time (KAT) and load-time (invariant). | `disclosure/src/generators.ts` (planned); seed `"PolarSeek/disclosure/generator-H/v1"`; `assertGeneratorsWellFormed()` (planned); KAT C24 (planned). | ADR-0016 design; invariants: H valid, H matches pin, H ≠ G, H ≠ O, H ≠ identity. | LOGIC (current) · KAT (planned) | **Not yet implemented.** Pinning checks well-formedness; does NOT prove dlog_G(H) is unknown — that remains a heuristic ROM assumption. |
+| **ZK range proof soundness (classical)** — a proof `amount ∈ [0, threshold)` verifies only if the prover knows such an opening; forging requires breaking discrete log. | `disclosure/src/zkrange.ts`; dual-range CDS OR-proof; n ≤ 251 cap (ZKRANGE-002 fix). | CONF(C11); `zkrange.property.test.ts`; ZKRANGE-002 regression; ADR-0017 soundness argument. | PROP · CONF(C11) · LOGIC | **UNAUDITED; CLASSICAL (discrete-log + ROM); NOT QROM.** ZKRANGE-002 off-by-one caught and fixed 2026-06-21. External audit is the next gate. |
+| **ZK range proof zero-knowledge (classical)** — the proof reveals nothing about `amount` beyond its range. | CDS OR-proof HVZK simulator; perfectly-hiding Pedersen commitments. | ADR-0017 HVZK argument; `zkrange.property.test.ts`. | LOGIC · PROP | **Classical ROM.** HVZK programs the random oracle. FS ZK in the QROM is not analyzed. Amount confidentiality is information-theoretic regardless (see hiding row above). |
+| **Fiat-Shamir transcript binding (current, per-bit)** — challenge binds full statement (all bit commitments + params + per-bit first-messages); weak-FS / Frozen-Heart class partially closed. | `statementHash` + per-bit `challenge` in `zkrange.ts`. | ADR-0017 analysis §(c). | LOGIC | **Gap flagged for auditors:** generators G, H are not currently hashed into the transcript; per-bit challenges do not jointly bind all bits' first-messages. The ADR-0017 v3 tightening (single-transcript binding) closes this gap. Pending external audit ruling before implementation. |
+| **Fiat-Shamir single-transcript tightening (v3, proposed)** — one root challenge binds all first-messages, all bit commitments, and generator bytes jointly; Frozen-Heart checklist passes cleanly. | ADR-0017 §(c) proposed v3 tightening; `statementHash` v3; single-pass commit-then-challenge. | ADR-0017 LOGIC argument; implementation and KAT pending audit approval. | LOGIC (design only) | **Not implemented; audit-gated.** Proposed, not ratified. |
+| **n ≤ 251 no-wraparound bound** — for ristretto255 (L = 2^252 + d, d ≈ 2^124.7), requiring n ≤ 251 ensures 2^(n+1) ≤ L so bit recomposition sums cannot alias mod L. | `proveBelow`/`verifyBelow` hard cap n ≤ 251 (ZKRANGE-002). | `zkrange.test.ts` ZKRANGE-002 regression; ADR-0017 §(d) argument. | TEST · LOGIC | **Arithmetic is correct given L > 2^252.** Flagged as a priority external audit item because one off-by-one (n=252) already occurred. The bound must be verified by independent arithmetic, not trusted from this codebase. |
+| **PSP soundness** — a PSP verifies only if `amount ≤ ceiling` (and `aggregate + amount ≤ cap`) for the committed amount; same opening binds both clauses. | `disclosure/src/policyproof.ts`; composes two range proofs (ADR-0006). | CONF(C13); `policyproof.test.ts`. | CONF(C13) · TEST | **UNAUDITED protocol composition.** Inherits range proof soundness (classical/ROM). Linkage contract (issuer commits the correct decided amount) is a deployment obligation. |
+| **Commitment-to-intent binding** — `boundIntentDigest` binds the Pedersen commitment bytes into the signed receipt; a commitment substitution is detectable. | `disclosure/src/commitbind.ts`; ADR-0013; CB-001 fix (amount omitted from digest). | CONF(C21). | CONF(C21) · TEST | **UNAUDITED.** Does not defend against a kernel malicious at admission. |
 
 ---
 
-## Section 7 — Summary: Unverifiable Gap Inventory
+## Layer 3: Consensus / Ledger Layer
 
-The following guarantees currently have **no artifact or no test** (`N` in all verification columns). These are the rows an external auditor will flag first:
+| Guarantee | Mechanism | Substantiation | Verification method | Honest scope |
+|---|---|---|---|---|
+| **VRF leader sortition determinism and uniqueness** — each (prevHash, round) yields a unique VRF output that uniquely identifies the leader. | `ledger/src/leader.ts`; ECVRF (RFC 9381). | A9 planned property test: determinism, uniqueness, key-binding, 1-byte tamper rejection. | PROP (planned, A9) | VRF RFC 9381 is standardized; the ristretto VRF variant is unaudited. |
+| **View-change cert quorum soundness** — a cert is accepted iff ≥ 2/3 stake of distinct, suite-matched, signature-valid votes for the correct (height, prevHash, round). | `ledger/src/leader.ts` `verifyViewChangeCert`; BigInt cross-multiply (LEDGER-PRECISION-002). | `ledger/test/vrf-chain.test.ts`; A12 negative tests (sub-2/3, dup-vote, cross-prevHash) planned. | TEST (partial) · CONF (C24 planned) | Stateless verifier. Does not detect a colluding ≥ 2/3 that legitimately signs a bad cert. |
+| **View-change cert chain linearity — LEDGER-007 fix** — skipping N rounds requires N independently-signed chained certs; a lone high-round cert is rejected. | `verifyViewChangeCertChain` (planned); `prevCertDigest` link; ADR-0019. | ADR-0019 design; planned CONF(C24); planned negative tests (lone high-round cert, broken link, cross-fork splice, sub-2/3 intermediate, missing cert). | LOGIC · CONF (planned) | **DESIGN ONLY, NOT IMPLEMENTED.** Cert availability is an open design question (see CONSENSUS-CAVEATS.md). Constrains fairness; does not make skipping impossible for a willing ≥ 2/3. |
+| **Validator-set binding on consensus messages** — consensus messages include a validator-set commitment so they cannot be replayed against a different epoch. | ADR-0020. | ADR-0020 design and implementation. | TEST | Per ADR-0020 status. |
+| **Equivocation detection and slash evidence** — a validator signing conflicting attestations at the same height produces detectable, slash-eligible evidence. | `ledger/src/equivocation.ts`. | A27 planned property test: honest never flagged; double-signer flagged once. | PROP (planned, A27) | Detection only; slashing requires governance / execution outside Nerion. |
+| **Accountable BFT safety** — with ≥ 2/3 honest stake, two conflicting finalized blocks at the same height are impossible without detectable equivocation. | ≥ 2/3 attestation threshold; round omitted from `attestMessage` (LEDGER-EQUIV-001). | `vrf-chain.test.ts` finality tests. | TEST | Classical BFT assumption. Not formally model-checked. |
+| **Transparency-log append-only consistency** — every logged decision is in an append-only Merkle log; split-views are detectable. | `translog/src/`; RFC 6962-style Merkle log. | CONF(C10); Merkle soundness test (forged root rejected). | TEST · CONF(C10) | Single-operator log without external gossip; split-view detection, not prevention. |
 
-| Gap ID | Guarantee lacking verification | Recommended remediation |
+---
+
+## Layer 4: Protocol Composition
+
+| Guarantee | Mechanism | Substantiation | Verification method | Honest scope |
+|---|---|---|---|---|
+| **Default-deny admission (fail-closed)** — any unexpected condition or exception yields `deny`. | `kernel/src/kernel.ts` `decide()` catch-all; PS-KERNEL-02. | CONF(C8); Team Apex 2026-06-21 validated no fail-open path. | TEST · CONF(C8) | Enforcement at admission only; actuator must honor the permit. |
+| **Capability attenuation monotonicity** — a delegated grant narrows, never widens, the parent. | `capabilities/src/grant.ts` `narrow()` / `isAttenuationOf()`. | PROP: randomized "child authorizes ⇒ parent authorizes". | PROP · TEST | Sybil-resistance of the signer set is outside Nerion. |
+| **Salted intent-commitment hiding** — the public log leaf does not leak a low-entropy amount via brute-force. | ADR-0014; RCPT-001 fix; per-receipt high-entropy salt; SHA3 over canonical{domain, salt, intent}; salt off-leaf. | CONF(C23). | TEST · CONF(C23) | Classical / ROM. Salt off-leaf protects the leaf; adversary with the salt recovers amount. |
+| **Per-audience permit key isolation** | ADR-0015; PERMIT-001 fix; HKDF-SHA-384. | CONF(C22). | CONF(C22) · TEST | See Layer 1 HKDF row for deployment obligation. |
+| **Govern-the-verb invariance** | Negative oracle; `ps-negative.json`; C14. | CONF(C14). | CONF(C14) | Pre-FTO. Runtime fence only; not a legal claim. |
+
+---
+
+## Guarantees absent from the base P0–P4 matrix that auditors expect
+
+The following properties are NOT substantiated by existing evidence and represent gaps an external
+auditor or dissertation committee would flag. They are the primary motivation for this extended matrix.
+
+1. **QROM soundness of the Fiat-Shamir transform** — FS soundness in the quantum random-oracle model
+   (QROM) is not analyzed for Nerion's range proofs. A quantum adversary making superposition queries to
+   SHA3-512 may break soundness. Verification method required: **EXT-AUDIT + FORMAL**. This gap means
+   the ZK soundness leg is labeled classical and any quantum forger of range proofs is unaddressed.
+
+2. **Formal independence of G and H** — ADR-0016 correctly states that the NUMS argument justifies
+   unknownness of dlog_G(H) heuristically in the ROM but provides no formal independence proof, and no
+   efficient test exists. Verification method required: **LOGIC** (heuristic only, permanent unless a
+   formal independence result exists for hash-to-curve). This is the root assumption of all commitment
+   binding and is the single most load-bearing unproven claim in the protocol.
+
+3. **Single-transcript FS tightening** — generators G, H not in the current challenge hash; per-bit
+   challenges do not jointly bind all first-messages. ADR-0017 documents the gap and proposes a fix.
+   Verification method required: **EXT-AUDIT** before implementation.
+
+4. **n ≤ 251 arithmetic bound audit** — One off-by-one (n=252) has already occurred. The exact
+   arithmetic argument (2^(n+1) ≤ L for n ≤ 251, with L = 2^252 + d) must be independently verified.
+   Verification method required: **EXT-AUDIT** (independent arithmetic check).
+
+5. **Cert availability for ADR-0019 chain linearity** — Without a resolved availability protocol for
+   intermediate certs, the linearity property is unenforceable at verifier / light-client level.
+   Verification method required: **LOGIC resolved** (open design question must be decided before
+   ADR-0019 can be implemented).
+
+6. **ML-DSA-87 QROM reduction in Nerion's usage context** — The QROM reduction for ML-DSA-87 exists
+   in the academic literature (EUROCRYPT 2018) but has not been analyzed for Nerion's specific usage
+   (key reuse across sessions, batch verification, composition with ZK proofs). Verification method
+   required: **EXT-AUDIT**.
+
+7. **Side-channel resistance** — No timing, fault-injection, or power-analysis assessment has been done
+   for any primitive. Verification method required: **EXT-AUDIT** (hardware / implementation level).
+
+8. **Canonical vote set collision resistance** — ADR-0019's `canonicalVoteSet` must be injective over all
+   distinct honest quorums. The argument follows from SHAKE256 collision resistance (128-bit security)
+   but is not stated explicitly. Verification method required: **LOGIC** (should be stated explicitly
+   in ADR-0019).
+
+---
+
+## Verification method coverage summary
+
+| Method | Coverage | Gap |
 |---|---|---|
-| GAP-ZK-10 | OR-proof soundness in QROM | Commission formal QROM analysis (EasyCrypt / ProVerif) as part of the external ZK/crypto audit |
-| GAP-ZK-3 | `dlog_G(H)` genuinely unknown | Cannot be proven at runtime; must be argued formally in the audit scope |
-| GAP-ZK-7 | G and H not hashed into transcript | Implement ADR-0017 §(c)(1) tightening after audit ratification |
-| GAP-CL-3 | Linear round-skip cost (chained ViewChangeCert) | Implement ADR-0019 after cert-availability residual is resolved; add C24 conformance check |
-| GAP-PQ-2 | ML-DSA-87 QROM tightness gap analyzed for Nerion usage | Internal memo on concrete quantum security margin needed before production |
-| GAP-QR-2 | Formal set-binding definition for threshold receipts | Write out the formal binding predicate in ADR-0005 and CONSENSUS-CAVEATS.md |
-| GAP-CB-1 | DLOG reduction for Pedersen binding not written out | Write the standard reduction into ADR-0016 (or a new FORMAL-SECURITY memo) |
-| GAP-PQ-3 | Confirm deterministic vs. hedged ML-DSA-87 variant in use | Audit the crypto/ KAT against FIPS 204 deterministic test vectors |
+| KAT | Good for primitives (ML-DSA, ML-KEM, SLH-DSA, SHAKE256, HKDF, dCBOR); partial for composition | Generator-H KAT (C24) planned but not done |
+| PROP | Attenuation, quorum receipts, range proof, Merkle; VRF / equivocation planned | Several key items planned, not yet implemented |
+| CONF (C1–C23) | All implemented planes covered | C24 (cert chain) planned |
+| FUZZ | dCBOR decoder, Rust AEAD — planned | Largely not yet implemented |
+| LOGIC (ADR) | ZK soundness, NUMS, BFT, FS binding | Not externally verified; cannot substitute for EXT-AUDIT |
+| EXT-AUDIT | **NONE completed** | P0 gap: all ZK, QROM, side-channel, integer bounds, cert availability |
+| FORMAL | FIPS 204/203/205 algorithms only | Composition, QROM, BFT safety not formally verified |
 
 ---
 
-*This matrix is reviewed by the Nerion R&D PhD Panel (Sprint 1) and is
-intended to be updated as gaps are closed. It is explicitly a living document —
-an `N` cell means work remains, not that the guarantee is false. Conformant is
-not validated; built is not audited; property-checked is not proven.*
+*This document is a living artifact. It MUST be updated when the external audit completes, when new
+ADRs land, or when conformance checks are added. The base `docs/ASSURANCE.md` remains the authoritative
+claims matrix; this document is the deeper artifact-level evidence map for auditors.*
+
+---
+
+## PhD Panel Sprint 1 addendum — verification-method depth review (2026-06-24)
+
+This section records the findings of the Track-B PhD panel (Mistral Large as PhD-seat reviewer,
+cross-checked by Claude Sonnet 4.6 as orchestrator) from Sprint 1 (2026-06-24). It adds precision
+to the verification-method column for the five highest-priority items. Nothing here changes the
+status of any row above — it deepens the honest gap analysis.
+
+### ADR-0016 (B1): Generator-H provenance — PhD panel findings
+
+**Design assessment:** The NUMS construction (hash-to-curve with a human-readable domain-separated
+seed) is the correct approach and the ADR is well-specified. The load-time invariants (valid decode,
+H matches pin, H != identity, H != G, G is BASE) are necessary and correct.
+
+**Gaps the ADR correctly flags and PhD panel confirms:**
+
+- **Subtraction attack surface**: H != G and H != identity are not sufficient to prevent H = G^a for
+  a known scalar a. The NUMS construction is what closes this, not the inequality checks alone. The
+  inequality checks remove the trivially-broken degenerate cases; the ROM/NUMS argument is what
+  eliminates the general discrete-log trapdoor. ADR-0016 is correct in its scope: it provides the
+  checks it claims and documents the residual assumption honestly.
+
+- **No efficient unknownness test**: The load-time invariant cannot verify that dlog_G(H) is unknown
+  (no efficient algorithm exists for this). This is correctly flagged in ADR-0016 as an audit
+  obligation, not a code obligation.
+
+- **KAT is necessary but not sufficient**: Pinning H_PINNED_HEX prevents silent drift; it does NOT
+  prove the pin itself is clean. An auditor must re-derive H from the public seed and the RFC 9380
+  specification independently, verifying the hash-to-curve is applied faithfully.
+
+**PhD panel recommendation:** Add a note to ADR-0016 that G and H bytes MUST be bound into the FS
+challenge hash (ADR-0017 tightening gap c-1) because if they are not, a future code path with a
+parameterized H could silently reuse challenges across different generators. This is low-risk defense
+in depth, not a fix for a known break.
+
+**Verification method for this guarantee (updated):** KAT (PROPOSED) + CONF C24 (PROPOSED) + ROM-ARG
+(UNAUDITED) + EXT-AUDIT (REQUIRED before production). The "unknownness of dlog_G(H)" sub-assumption
+has no verification method stronger than ROM-ARG.
+
+### ADR-0017 (B2): ZK transcript soundness — PhD panel findings
+
+**Design assessment:** The dual-range CDS OR-proof structure is standard and the 2-special-soundness
+extraction argument in ADR-0017 section (a) is correctly stated. The ZKRANGE-002 fix (n <= 251) is
+arithmetically correct given L = 2^252 + d (d > 0), since 2^{n+1} <= 2^252 < L for n <= 251.
+
+**Key mathematical precision points:**
+
+- **Soundness error for per-bit binding**: For a k-bit range proof with per-bit challenges drawn from
+  a challenge space of size |C|, the soundness error per bit is 1/|C|. With SHAKE256 challenges
+  (256-bit challenge space), this is negligible. Per-bit challenges do NOT degrade soundness to 2^{-k}
+  (the 2^{-k} figure would apply if the prover could choose the challenge bits, not if the challenges
+  are derived from a random oracle). ADR-0017 is correct on this point.
+
+- **QROM gap**: Fiat-Shamir's soundness in the QROM requires a quantum-accessible hash function with
+  reprogramming resistance. SHAKE256 as a quantum random oracle does admit Unruh's transform analysis,
+  but this has not been done for this specific construction. The gap is correctly labeled in ADR-0017
+  and in the table above.
+
+- **OR-proof HVZK under XOR vs AND challenges**: ADR-0017 uses the CDS construction where c_0 + c_1 = c
+  (additive split over the scalar field, not XOR over bits). This is the correct CDS form and preserves
+  HVZK. XOR-split would NOT be HVZK in general because the simulator cannot independently program
+  both sub-challenges to sum to a randomly-programmed c. ADR-0017 is correct.
+
+**PhD panel recommendation:** The single-transcript tightening (v3) remains the recommended path for
+auditor certification. The current per-bit binding is assessed as probably sound for this specific
+construction, but the tightening removes ambiguity at minimal implementation cost.
+
+### ADR-0018/ADR-0019 (B3): View-change cert chain — PhD panel findings
+
+**Design assessment:** The chained ViewChangeCert design in ADR-0019 correctly makes round-skipping
+O(N) in verification cost. The per-link >=2/3 quorum threshold is correct for BFT safety (not f+1,
+which is only sufficient for liveness; 2f+1 = >=2/3n ensures no two valid quorums can disagree).
+
+**Key BFT precision points:**
+
+- **Quorum threshold**: 2/3 + epsilon for distinct, non-equivocating validators is the correct
+  threshold for accountable BFT safety. f+1 is NOT sufficient against a Byzantine adversary; it only
+  guarantees liveness (at least one honest node). ADR-0019 correctly uses the >=2/3 threshold per link.
+
+- **Embedded data requirement**: The certDigest commits to (height, prevHash, round, prevCertDigest,
+  voteSet). ADR-0019 correctly promotes height and prevHash onto the cert struct (section 3) to prevent
+  cross-fork splicing. The last committed log index is NOT embedded (it is not in the current design).
+  This is a known residual: if a malicious leader wants to truncate the log while constructing a valid
+  chain, they cannot do so without forging >=2/3 signatures at each round (since finality is separately
+  >=2/3-attested). Log truncation attacks are therefore gated by the same threshold as safety. This is
+  acceptable for the current design scope but should be confirmed by the external audit.
+
+- **Cert availability gap (critical)**: This remains the most significant unresolved design question.
+  ADR-0019 correctly flags it. The PhD panel confirms: without cert availability guarantees, the
+  linearity property is NOT enforceable at the light client. A block proposer can assert they have the
+  chain; a verifier who cannot fetch intermediate certs must fail-closed, which can itself become a
+  liveness vector. The resolution (carry-in-block vs gossip vs accumulator) MUST be decided before
+  ADR-0019 can be implemented.
+
+### ML-DSA-87 formal security memo — PhD panel findings
+
+**Design assessment:** ML-DSA-87 (FIPS 204, k=8, l=7, eta=2) provides NIST security level 5
+(>=256-bit classical, >=128-bit quantum). The underlying hardness assumptions are Module-LWE for
+key-recovery resistance and Module-SIS for existential unforgeability (EU-CMA). Both are well-studied
+lattice problems with no known classical or quantum polynomial-time algorithms.
+
+**ROM vs QROM gap (precise):** ML-DSA's Fiat-Shamir-with-aborts construction is proven EU-CMA secure
+in the ROM under Module-LWE/SIS (Ducas-Durmus-Lepoint-Lyubashevsky, CRYPTO 2018). A QROM security
+proof exists (Kiltz-Lyubashevsky-Schaffner, EUROCRYPT 2018) but the reduction is not perfectly tight:
+the QROM proof requires slightly larger parameters or accepts a small tightness loss. For ML-DSA-87
+specifically, the NIST-selected parameters provide sufficient margin that this tightness loss does not
+affect the claimed security level in practice. However, Nerion has not formally analyzed the tightness
+loss in its specific deployment context (key reuse, session-bound usage, composition with ZK proofs).
+
+**Residual formal analysis gaps:**
+1. EU AI Act + NIST AI RMF: Nerion is infrastructure, not an AI system per the Act. ML-DSA-87 is an
+   appropriate choice for a post-quantum infrastructure component. Algorithm agility documentation is
+   needed (ADR gap, not a FIPS gap).
+2. Side-channel resistance: Not addressed by FIPS 204 or any current Nerion document. Required for
+   production hardware deployments.
+3. QROM composition: The ZK layer (classical soundness) and the ML-DSA-87 layer (QROM-analyzed
+   signatures) have different post-quantum profiles. The composition is not formally analyzed. The
+   honest framing: receipt integrity is PQ (ML-DSA-87); ZK soundness is classical; amount confidentiality
+   is information-theoretic/PQ. These three legs are correctly documented in ASSURANCE.md but the
+   composition is unaudited.
+
+### A39-EXTENDED matrix design — PhD panel recommendations
+
+**Verification methods not yet in the matrix that should be added for completeness:**
+
+| Method | Use case | Status |
+|---|---|---|
+| TLA+/PlusCal | BFT consensus safety/liveness model | Not planned; recommended for ADR-0019 post-audit |
+| EasyCrypt | ZK range proof soundness mechanized proof | Not planned; stretch goal post external audit |
+| Cryptol | ML-DSA-87 implementation correctness | Not planned; stretch goal |
+| PROVERIF/Tamarin | Quorum receipt protocol, transparency log | Not planned; stretch goal |
+
+**Honest framing from the PhD panel**: The gap between "KAT passes" and "formally proven secure" is
+large. For the ZK layer specifically: KAT proves the implementation matches the spec's own vectors;
+PROP proves an invariant over a generated input space; ROM-ARG is a manual argument that could
+contain errors; EXT-AUDIT is the first independent check; only EasyCrypt/Coq provides machine-checked
+confidence. Nerion is currently at PROP + ROM-ARG for the ZK layer, which is appropriate for the
+current maturity level but must not be confused with the later tiers.
+
+---
+
+*PhD Panel Sprint 1 addendum added 2026-06-24 by orchestrator (Claude Sonnet 4.6) based on Mistral Large
+PhD-seat review. Not a security result. Routes to the external ZK/crypto audit.*
