@@ -1,7 +1,7 @@
 # PolarSeek — STATUS
 
 **Phase: P0–P4 software build complete; conformance ✔; Rust foundation compiles.** Updated 2026-06-20.
-**365 tests pass** (`npm run gate`). **`npm run conformance` → 23/23 CONFORMANT.**
+**469 tests pass** (`npm run gate`). **`npm run conformance` → 23/23 CONFORMANT.**
 
 ## Modules — all implemented, tested, and conformance-checked
 
@@ -21,15 +21,15 @@
 | `settlement/` | **Non-transferable metering credits** (issuer-signed; meter-down; no transfer op; token deferred) |
 | `keystore/` | **Key-custody abstraction**: `KeyProvider` + working software backend + **HSM/KMS provider stubs** (PKCS#11, cloud KMS); keys never leave the provider |
 | `conformance/` | The certification suite — **23 checks** across every guarantee, incl. **C14 govern-the-verb negative oracle** (decision invariant to perception-shaped inputs — [ADR-0007](./adr/ADR-0007-govern-the-verb-oracle.md)) |
-| `rust/` | **Compiler-verified** Rust hot-path: **full Plane-1 crypto** (HMAC-SHA-384 + AES-256-GCM) + **ML-DSA-87 + ML-KEM-1024** + SuiteID + SHA3 (RustCrypto). Builds + type-checks; tests compile (not executed here) |
+| `rust/` | **Compiler-verified** Rust hot-path: **full Plane-1 crypto** (HMAC-SHA-384 + AES-256-GCM) + **ML-DSA-87 + ML-KEM-1024** + SuiteID + SHA3 (RustCrypto). **13 tests pass** (9 unit + 4 KAT byte-exact against `conformance/vectors/ps-kat.json`); `gate-rust` CI job runs on every push |
 
 ## Runnable
 
-- `npm run gate` — clean-room lint + prettier + tsc + 365 tests
+- `npm run gate` — clean-room lint + prettier + tsc + 469 tests
 - `npm run demo` — end-to-end T2 governed payment
 - `npm run build && npm run bundle && npm run verify:cli` — independent external receipt verification
 - `npm run conformance` — certification report (23/23)
-- `cd rust && cargo build && cargo test --no-run` — Rust foundation compiles + type-checks (run `cargo test` on a host that permits executing built binaries)
+- `cd rust && cargo test` — Rust foundation: 13 tests pass (9 unit + 4 KAT); `gate-rust` CI runs on every push
 
 ## Deployment maturity — Local/Private dev (honest)
 
@@ -40,7 +40,7 @@ Everything **software can supply** is built and tested. **NOT yet** (and mostly 
 | Patent-counsel **FTO** | counsel | ❌ (FTO_TODO.md) |
 | External **security/crypto audit** (incl. the ZK protocol) | audit firm | ❌ |
 | Real **TEE silicon** (TDX/SEV-SNP/CCA) + physical **HSM/cloud-KMS** | hardware/cloud creds | ❌ — but the **TEE quote-verifier adapter** (`attest/`) and **KeyProvider** custody (`keystore/`, software backend + HSM/KMS stubs) frameworks are built and tested; wiring real hardware is config/credentials, not new architecture |
-| Executing Rust **tests** + the full Rust **port** (kernel/receipts/…) | a host that permits running built binaries (this sandbox blocks it) + more build | ✅ (foundation: ML-DSA-87 + ML-KEM-1024 compile + type-check here) |
+| Full Rust **port** (kernel/receipts/…) beyond the Plane-1 foundation | more build | ✅ (foundation ships 13 tests + KAT; full port is future work) |
 | **Public** ledger network (external validators, real economic stake) vs the local pure-PoS engine | pilot + deploy | ✅ engine built; networked deployment pending |
 | Machine-checked **TLA⁺**; threshold-**MPC** (vs M-of-N independent sigs); ECVRF/**PQ-VRF** sortition; Python/Go SDKs | more build | ✅ |
 
