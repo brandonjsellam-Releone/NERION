@@ -18,8 +18,8 @@ autonomous author — exactly the posture disclosed in the grant application.
 | **Mistral** | Mistral (apex) | `mistral_independent_review` | EU-lineage independent review |
 | **Watsonx** | IBM watsonx | `watsonx_second_opinion` / `watsonx_due_diligence` | IP / governance diligence |
 | **Perplexity** | Sonar | `perplexity_research` | Live-web fact-check (SCOUT) |
-| **NVIDIA** | Nemotron Ultra (NIM) | `nvidia_review` / `nvidia_chat` | Systems/hardware-optimised independent review (added 2026-06-24) |
-| **Moonshot** | Kimi K2 | `moonshot_review` / `moonshot_chat` | Long-context / multilingual independent review (added 2026-06-24) |
+| **NVIDIA** | Nemotron-3 Super 120B (NIM) | `nvidia_review` / `nvidia_chat` | Systems/hardware-optimised independent review (added 2026-06-24; 550B ultra is catalogue-listed but not currently serving, so the largest serving Nemotron-3 is used) |
+| **Moonshot** | Kimi K2.7 | `moonshot_review` / `moonshot_chat` | Long-context / multilingual independent review (added 2026-06-24) |
 
 (Hermes is also available as an auxiliary review seat.)
 
