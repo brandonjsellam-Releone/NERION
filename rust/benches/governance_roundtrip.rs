@@ -18,10 +18,7 @@
 //! HTML reports land at: target/criterion/report/index.html
 
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
-use polarseek_crypto::{
-    MlDsaKeypair, aes256gcm_open, aes256gcm_seal, hmac_sha384, hmac_sha384_verify,
-    mlkem1024_roundtrip_ok, sha3_256,
-};
+use polarseek_crypto::{MlDsaKeypair, aes256gcm_seal, hmac_sha384, sha3_256};
 
 // ---------------------------------------------------------------------------
 // Fixed test inputs — deterministic, no OS RNG in benchmarks.
@@ -58,7 +55,6 @@ const HMAC_KEY: [u8; 32] = [0xbeu8; 32];
 /// Benchmark ML-KEM-1024 encapsulation (key agreement sender side).
 /// Uses the deterministic (non-randomized) API so results are reproducible.
 fn bench_ml_kem_1024_encap(c: &mut Criterion) {
-    use ml_kem::kem::Encapsulate;
     use ml_kem::{B32 as KemB32, DecapsulationKey, MlKem1024, Seed};
 
     let dk = DecapsulationKey::<MlKem1024>::from_seed(Seed::from(KEM_SEED));
@@ -74,7 +70,7 @@ fn bench_ml_kem_1024_encap(c: &mut Criterion) {
 
 /// Benchmark ML-KEM-1024 decapsulation (key agreement receiver side).
 fn bench_ml_kem_1024_decap(c: &mut Criterion) {
-    use ml_kem::kem::{Decapsulate, Encapsulate};
+    use ml_kem::kem::TryDecapsulate;
     use ml_kem::{B32 as KemB32, DecapsulationKey, MlKem1024, Seed};
 
     let dk = DecapsulationKey::<MlKem1024>::from_seed(Seed::from(KEM_SEED));
@@ -83,7 +79,7 @@ fn bench_ml_kem_1024_decap(c: &mut Criterion) {
 
     c.bench_function("ml_kem_1024_decap", |b| {
         b.iter(|| {
-            let ss = dk.decapsulate(black_box(&ct)).expect("decapsulate");
+            let ss = dk.try_decapsulate(black_box(&ct)).expect("decapsulate");
             black_box(ss)
         })
     });
@@ -174,7 +170,7 @@ fn bench_aes_256_gcm_encrypt(c: &mut Criterion) {
 /// quorum logic. It benchmarks the underlying cryptographic primitives in
 /// the same order they appear on the hot path.
 fn bench_governance_roundtrip(c: &mut Criterion) {
-    use ml_kem::kem::{Decapsulate, Encapsulate};
+    use ml_kem::kem::TryDecapsulate;
     use ml_kem::{B32 as KemB32, DecapsulationKey, MlKem1024, Seed};
 
     // Pre-generate long-lived keypairs outside the timed section.
@@ -214,7 +210,7 @@ fn bench_governance_roundtrip(c: &mut Criterion) {
             );
 
             // Step 7: receiver decaps to confirm shared secret agreement.
-            let ss_recv = dk.decapsulate(black_box(&ct)).expect("decapsulate");
+            let ss_recv = dk.try_decapsulate(black_box(&ct)).expect("decapsulate");
 
             black_box((verified, permit_tag, ct_payload, ss_recv, receipt_hash))
         })

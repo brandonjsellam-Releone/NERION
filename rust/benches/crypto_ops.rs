@@ -176,7 +176,7 @@ fn bench_aes256gcm_ops(c: &mut Criterion) {
 
 /// ML-KEM-1024 keygen, encap, and decap as isolated operations.
 fn bench_ml_kem_1024_ops(c: &mut Criterion) {
-    use ml_kem::kem::{Decapsulate, Encapsulate};
+    use ml_kem::kem::TryDecapsulate;
     use ml_kem::{B32 as KemB32, DecapsulationKey, MlKem1024, Seed};
 
     let mut group = c.benchmark_group("ml_kem_1024");
@@ -204,7 +204,7 @@ fn bench_ml_kem_1024_ops(c: &mut Criterion) {
     let (ct, _) = ek.encapsulate_deterministic(&KemB32::from(KEM_M));
     group.bench_function("decap", |b| {
         b.iter(|| {
-            let ss = dk.decapsulate(black_box(&ct)).expect("decap");
+            let ss = dk.try_decapsulate(black_box(&ct)).expect("decap");
             black_box(ss)
         })
     });
