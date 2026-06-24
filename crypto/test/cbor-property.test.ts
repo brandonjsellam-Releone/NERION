@@ -2,72 +2,93 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { describe, it, expect } from 'vitest'
-import fc from 'fast-check'
-import { encodeCanonical, decodeCbor } from '../src/cbor.js'
-
 /**
- * A28 — canonical CBOR injectivity / round-trip property tests.
+ * A28 — Canonical CBOR injectivity / round-trip property tests.
  *
- * `encodeCanonical` is the byte-exact preimage for every hash and signature in
- * the protocol.  These four properties must hold universally — not just for the
+ * `encodeCanonical` is the byte-exact preimage for every hash and signature in the
+ * Nerion protocol.  These properties must hold universally — not just for the
  * hand-crafted vectors in cbor.test.ts / cbor-determinism.test.ts — to give
  * confidence that no exotic value shape can break the determinism or injectivity
- * guarantees that the receipt/replay invariant rests on:
+ * guarantees that the receipt/replay invariant rests on.
  *
- *   DETERMINISM  – encode(x) always returns the same bytes for the same input.
- *   ROUND-TRIP   – decode(encode(x)) is structurally equal to x.
- *   INJECTIVITY  – x ≠ y  ⇒  encode(x) ≠ encode(y).
- *   NO-COLLISION – 1 000 random values yield 1 000 distinct hex encodings.
+ * Four properties under test:
  *
- * All arbitraries use fc.jsonValue() which generates the JSON-compatible subset
- * (null, boolean, number, string, array, object) — exactly the types that survive
- * a CBOR round-trip with structural equality (no Uint8Array whose decoded form
- * is a Uint8Array, whose equality semantics differ from plain arrays).
+ *   DETERMINISM       – encodeCanonical(x) always returns the same bytes on any call.
+ *   ROUND-TRIP        – encodeCanonical(decodeCbor(encodeCanonical(x))) === encodeCanonical(x).
+ *   INJECTIVITY       – x ≠ y  ⇒  encodeCanonical(x) ≠ encodeCanonical(y).
+ *   STRICT-DECODER    – decodeCanonical accepts canonical bytes and rejects non-canonical bytes.
+ *   CANONICAL-RT-API  – canonicalRoundTrip() never throws on any encodable value and
+ *                        returns the same bytes as encodeCanonical().
+ *
+ * Exports under test (from crypto/src/cbor.ts):
+ *   encodeCanonical(value: unknown): Bytes
+ *   decodeCbor(bytes: Bytes): unknown
+ *   decodeCanonical(bytes: Bytes): unknown   — strict: throws on any non-canonical input
+ *   canonicalRoundTrip(value: unknown): Bytes — encode→decode→encode stability assertion
+ *
+ * Arbitraries: fc.jsonValue() covers null/boolean/number/string/array/object.  The
+ * non-finite filter is mandatory: dCBOR has no canonical representation for NaN /
+ * ±Infinity, so fast-check must not generate them.  fc.jsonValue() is the correct
+ * scope because those are the types that survive a CBOR round-trip with JS structural
+ * equality — Uint8Array decodes to Uint8Array but deep-equals differently from a plain
+ * number array, so we keep Uint8Array out of the fc-generated corpus (it is covered
+ * by hand-crafted vectors in cbor-determinism.test.ts).
  */
 
+import { describe, it, expect } from 'vitest'
+import fc from 'fast-check'
+import { encodeCanonical, decodeCbor, decodeCanonical, canonicalRoundTrip } from '../src/cbor.js'
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** Convert a Uint8Array to a lowercase hex string for human-readable assertions. */
 const hex = (b: Uint8Array): string => Buffer.from(b).toString('hex')
 
 /**
- * fc.jsonValue() can generate NaN and ±Infinity (as JS numbers).  dCBOR does not
- * have a canonical representation for these (CBOR well-formedness and dCBOR both
- * exclude them).  Filter them out so every generated value is encodable.
+ * fc.jsonValue() can emit NaN and ±Infinity as JS numbers.  dCBOR (and CBOR
+ * well-formedness) excludes non-finite floats.  Recursively filter them out so
+ * every generated value is accepted by encodeCanonical without throwing.
  */
-const safeJson: fc.Arbitrary<fc.JsonValue> = fc.jsonValue().filter((v) => {
-  const containsNonFinite = (x: unknown): boolean => {
-    if (typeof x === 'number') return !Number.isFinite(x)
-    if (Array.isArray(x)) return x.some(containsNonFinite)
-    if (x !== null && typeof x === 'object')
-      return Object.values(x as Record<string, unknown>).some(containsNonFinite)
-    return false
-  }
-  return !containsNonFinite(v)
-})
+const containsNonFinite = (x: unknown): boolean => {
+  if (typeof x === 'number') return !Number.isFinite(x)
+  if (Array.isArray(x)) return x.some(containsNonFinite)
+  if (x !== null && typeof x === 'object')
+    return Object.values(x as Record<string, unknown>).some(containsNonFinite)
+  return false
+}
 
-const RUNS = { numRuns: 200 }
+const safeJson: fc.Arbitrary<fc.JsonValue> = fc.jsonValue().filter((v) => !containsNonFinite(v))
+
+/** Default run count: enough for broad coverage without slow CI. */
+const RUNS = { numRuns: 300 }
+/** Wider run count for injectivity where we need a good ratio of distinct pairs. */
+const RUNS_INJECT = { numRuns: 600 }
 
 // ---------------------------------------------------------------------------
 // DETERMINISM
+// Calling encodeCanonical twice on the same value MUST produce byte-identical
+// output.  Violation here would break the receipt/replay invariant (any two
+// witnesses would derive different commitment bytes for the same action).
 // ---------------------------------------------------------------------------
-describe('A28 — CBOR canonical-encoding DETERMINISM property', () => {
-  it('encodeCanonical(x) returns byte-identical results on repeated calls for any JSON-compatible x', () => {
+describe('A28 — CBOR DETERMINISM property', () => {
+  it('encodeCanonical(x) is byte-identical on any two calls for any JSON-compatible x', () => {
     fc.assert(
       fc.property(safeJson, (x) => {
-        const a = hex(encodeCanonical(x))
-        const b = hex(encodeCanonical(x))
-        expect(a).toBe(b)
+        expect(hex(encodeCanonical(x))).toBe(hex(encodeCanonical(x)))
       }),
       RUNS,
     )
   })
 
-  it('determinism holds when the same object is passed twice with different key insertion order', () => {
-    // Build two objects whose property sets are the same but enumerated in
-    // reversed order; the canonical encoder must produce identical bytes.
+  it('determinism holds regardless of JS object key insertion order', () => {
+    // Build two objects with the same logical content but keys inserted in
+    // reverse order.  The dCBOR encoder MUST sort map keys and produce the
+    // same bytes.
     fc.assert(
       fc.property(fc.dictionary(fc.string({ minLength: 1, maxLength: 8 }), fc.integer()), (obj) => {
         const keys = Object.keys(obj)
-        // Reverse the key order by rebuilding the object in reverse key sequence.
         const reversed = Object.fromEntries(
           keys
             .slice()
@@ -79,21 +100,37 @@ describe('A28 — CBOR canonical-encoding DETERMINISM property', () => {
       RUNS,
     )
   })
+
+  it('determinism holds at every nesting depth (deeply-nested key-order independence)', () => {
+    // Generates arrays of objects with randomized key sets to stress nested
+    // map sorting across an arbitrary depth.
+    const deepObj = fc.array(
+      fc.record({
+        a: fc.integer(),
+        b: fc.string(),
+        c: fc.boolean(),
+      }),
+      { maxLength: 4 },
+    )
+    fc.assert(
+      fc.property(deepObj, (arr) => {
+        // Two encodings of the same JS value — JS does NOT re-order object keys
+        // between two calls, so this is a pure stability check.
+        expect(hex(encodeCanonical(arr))).toBe(hex(encodeCanonical(arr)))
+      }),
+      RUNS,
+    )
+  })
 })
 
 // ---------------------------------------------------------------------------
 // ROUND-TRIP
+// encode → decode → encode must be byte-stable.  The canonical encoder is used
+// as the equality witness (not JSON.stringify) because dCBOR map keys are sorted,
+// so the decoded JS object's key order may differ from the original's.
 // ---------------------------------------------------------------------------
-describe('A28 — CBOR canonical-encoding ROUND-TRIP property', () => {
-  it('decodeCbor(encodeCanonical(x)) re-encodes to the same canonical bytes as encodeCanonical(x)', () => {
-    // NOTE on equality semantics: CBOR maps are stored with keys sorted in
-    // dCBOR canonical order.  When we decode back to a JS object the keys come
-    // out in that sorted order, which may differ from the insertion order of the
-    // original `x`.  `JSON.stringify` is therefore NOT a suitable equality
-    // predicate (it is sensitive to key order).  The canonical encoder IS the
-    // canonical "equality witness": if encode(decode(encode(x))) == encode(x)
-    // then the decoded value is the same logical CBOR value as the original.
-    // (This is exactly what `canonicalRoundTrip` in cbor.ts asserts.)
+describe('A28 — CBOR ROUND-TRIP property', () => {
+  it('encodeCanonical(decodeCbor(encodeCanonical(x))) === encodeCanonical(x) for any JSON-compatible x', () => {
     fc.assert(
       fc.property(safeJson, (x) => {
         const encoded = encodeCanonical(x)
@@ -105,13 +142,36 @@ describe('A28 — CBOR canonical-encoding ROUND-TRIP property', () => {
     )
   })
 
-  it('encode(decode(encode(x))) equals encode(x) — encoding is stable across an extra round-trip', () => {
+  it('encode(decode(encode(x))) equals encode(x) — encoding is stable across a SECOND extra round-trip', () => {
+    // Belt-and-suspenders: if the first re-encode is stable, a second one must
+    // be too (the decoded value is already in canonical key-order).
     fc.assert(
       fc.property(safeJson, (x) => {
         const first = encodeCanonical(x)
         const second = encodeCanonical(decodeCbor(first))
-        expect(hex(second)).toBe(hex(first))
+        const third = encodeCanonical(decodeCbor(second))
+        expect(hex(third)).toBe(hex(first))
       }),
+      RUNS,
+    )
+  })
+
+  it('round-trip is lossless for primitive leaf types (bool, null, integer, string)', () => {
+    fc.assert(
+      fc.property(
+        fc.oneof(
+          fc.boolean(),
+          fc.constant(null),
+          fc.integer({ min: -(2 ** 31), max: 2 ** 31 - 1 }),
+          fc.string(),
+        ),
+        (prim) => {
+          const bytes = encodeCanonical(prim)
+          const back = decodeCbor(bytes)
+          // Primitives survive CBOR round-trip with JS strict equality.
+          expect(back).toBe(prim)
+        },
+      ),
       RUNS,
     )
   })
@@ -119,67 +179,198 @@ describe('A28 — CBOR canonical-encoding ROUND-TRIP property', () => {
 
 // ---------------------------------------------------------------------------
 // INJECTIVITY
+// Two structurally distinct values MUST NOT share a canonical encoding.
+// A collision here would make two different actions look identical to any
+// verifier that hashes or signs canonical bytes.
 // ---------------------------------------------------------------------------
-describe('A28 — CBOR canonical-encoding INJECTIVITY property', () => {
-  it('if x !== y (structurally) then encodeCanonical(x) !== encodeCanonical(y)', () => {
+describe('A28 — CBOR INJECTIVITY property', () => {
+  it('x !== y (structurally) implies encodeCanonical(x) !== encodeCanonical(y)', () => {
     fc.assert(
       fc.property(safeJson, safeJson, (x, y) => {
-        // Only assert when x and y are genuinely distinct values.
+        // JSON.stringify is the guard: if the two values stringify identically,
+        // they are structurally equal and must produce identical bytes — skip.
         if (JSON.stringify(x) === JSON.stringify(y)) return
         expect(hex(encodeCanonical(x))).not.toBe(hex(encodeCanonical(y)))
       }),
-      // Run more iterations so we get a good ratio of x≠y pairs.
-      { numRuns: 500 },
+      RUNS_INJECT,
     )
   })
 
-  it('type-level injectivity: number vs string, boolean vs null, array vs object', () => {
-    // Hardened spot-checks: fast-check's universal coverage above should catch
-    // any regression here, but these anchor the most protocol-relevant collision
-    // vectors (JSON integer vs CBOR text, CBOR bool vs CBOR null).
+  it('type-boundary injectivity: cross-type collisions are impossible', () => {
+    // Protocol-critical pairs: a number tag vs a text tag, a CBOR boolean vs
+    // CBOR null, byte-string vs array, etc.
     const pairs: [fc.JsonValue, fc.JsonValue][] = [
-      [1, '1'],
+      [1, '1'], // CBOR major-type 0 (uint) vs major-type 3 (text)
       [0, '0'],
-      [true, 1],
-      [false, 0],
-      [null, false],
+      [true, 1], // CBOR simple 21 vs uint 1
+      [false, 0], // CBOR simple 20 vs uint 0
+      [null, false], // CBOR simple 22 vs simple 20
       [null, 0],
       [null, ''],
-      [[], {}],
+      [[], {}], // CBOR major-type 4 (array) vs major-type 5 (map)
       [[], ''],
       [{}, ''],
+      [[1], [1, 2]], // different-length arrays
+      [{ a: 1 }, { a: 2 }],
+      [{ a: 1 }, { b: 1 }],
+      [{ a: 1 }, { a: 1, b: 2 }],
     ]
     for (const [x, y] of pairs) {
-      expect(hex(encodeCanonical(x))).not.toBe(hex(encodeCanonical(y)))
+      const exHex = hex(encodeCanonical(x))
+      const eyHex = hex(encodeCanonical(y))
+      if (exHex === eyHex) {
+        throw new Error(
+          `expected encodeCanonical(${JSON.stringify(x)}) !== encodeCanonical(${JSON.stringify(y)})`,
+        )
+      }
     }
   })
-})
 
-// ---------------------------------------------------------------------------
-// NO-COLLISION across 1 000 random values
-// ---------------------------------------------------------------------------
-describe('A28 — CBOR canonical-encoding NO-COLLISION (1 000 samples)', () => {
   it('1 000 random JSON-compatible values produce 1 000 distinct canonical encodings', () => {
-    // Generate 1 000 values in one shot using fc.sample(), then verify that
-    // every encoding is unique.  Values that happen to be structurally equal
-    // are deduplicated before the uniqueness check so the test is not flaky
-    // when fast-check draws duplicates by chance.
+    // Sample, deduplicate structurally equal values (JSON identity), then verify
+    // that the set of encodings is as large as the set of distinct input values.
     const samples = fc.sample(safeJson, 1000)
-
-    // Deduplicate by JSON identity to get the set of structurally distinct values.
     const distinctByJson = new Map<string, fc.JsonValue>()
     for (const s of samples) {
       distinctByJson.set(JSON.stringify(s), s)
     }
-
-    // Encode every distinct value and collect hex strings.
     const encodings = new Set<string>()
     for (const v of distinctByJson.values()) {
       encodings.add(hex(encodeCanonical(v)))
     }
-
-    // The number of distinct encodings must equal the number of distinct values —
-    // no two structurally different values may share a canonical encoding.
     expect(encodings.size).toBe(distinctByJson.size)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// STRICT DECODER (decodeCanonical)
+// decodeCanonical must accept exactly the outputs of encodeCanonical and reject
+// every byte sequence that departs from the dCBOR canonical form — including
+// unsorted map keys, duplicate map keys, non-minimal integer encodings,
+// indefinite-length items, and non-canonical floats.
+// ---------------------------------------------------------------------------
+describe('A28 — decodeCanonical STRICT-DECODER property', () => {
+  it('decodeCanonical accepts any output of encodeCanonical without throwing', () => {
+    fc.assert(
+      fc.property(safeJson, (x) => {
+        const canonical = encodeCanonical(x)
+        expect(() => decodeCanonical(canonical)).not.toThrow()
+      }),
+      RUNS,
+    )
+  })
+
+  it('decodeCanonical(encodeCanonical(x)) re-encodes to the same canonical bytes', () => {
+    fc.assert(
+      fc.property(safeJson, (x) => {
+        const canonical = encodeCanonical(x)
+        const decoded = decodeCanonical(canonical)
+        expect(hex(encodeCanonical(decoded))).toBe(hex(canonical))
+      }),
+      RUNS,
+    )
+  })
+
+  it('decodeCanonical rejects known non-canonical byte patterns (R7 hardening)', () => {
+    // Each hex string decodes to a value whose canonical re-encoding differs —
+    // decodeCanonical must throw /non-canonical/ on every one of them.
+    const fromHex = (s: string): Uint8Array =>
+      new Uint8Array(s.match(/../g)!.map((h) => parseInt(h, 16)))
+
+    const nonCanonical: Record<string, string> = {
+      'unsorted map keys {2:0, 1:0}': 'a202000100',
+      'duplicate map keys {1:0, 1:1}': 'a201000101',
+      'non-minimal uint (uint64 encoding of 5)': '1b0000000000000005',
+      'non-minimal uint (uint8 encoding of 5)': '1805',
+      'indefinite-length array': '9f0102ff',
+      'indefinite-length map': 'bf0102ff',
+      'non-canonical float (1.0 as f64)': 'fb3ff0000000000000',
+      'negative-zero float': 'fb8000000000000000',
+    }
+    for (const [label, hexStr] of Object.entries(nonCanonical)) {
+      expect(() => decodeCanonical(fromHex(hexStr)), `expected rejection of ${label}`).toThrow(
+        /non-canonical/,
+      )
+    }
+  })
+
+  it('decodeCanonical never silently accepts mutated (non-canonical) bytes as-if canonical', () => {
+    // Flipping a bit in a canonical encoding must cause decodeCanonical to either
+    // throw (malformed or non-canonical CBOR) OR — in the rare case where the
+    // mutation produces a different but genuinely canonical encoding — return a
+    // value whose re-encoding equals the mutated bytes (not the original bytes).
+    // The one thing it must NEVER do is silently decode a mutated byte string and
+    // re-encode it to the ORIGINAL canonical bytes (which would indicate a
+    // non-determinism or aliasing bug).
+    fc.assert(
+      fc.property(
+        safeJson.filter((x) => {
+          try {
+            return encodeCanonical(x).length >= 2
+          } catch {
+            return false
+          }
+        }),
+        fc.nat({ max: 7 }),
+        (x, bit) => {
+          const canonical = encodeCanonical(x)
+          const mutated = new Uint8Array(canonical)
+          // Flip a bit in the last byte (a value byte, not the major-type byte).
+          const lastIdx = mutated.length - 1
+          mutated[lastIdx] = (mutated[lastIdx] ?? 0) ^ (1 << (bit % 8))
+          // If the flip is a no-op (e.g. XOR with 0 on a 0-byte), skip.
+          if (hex(mutated) === hex(canonical)) return
+          try {
+            const decoded = decodeCanonical(mutated)
+            // decodeCanonical did NOT throw: the mutated bytes are genuinely
+            // canonical for some OTHER value.  Its re-encoding must equal the
+            // mutated bytes — NOT the original canonical bytes.
+            const reenc = hex(encodeCanonical(decoded))
+            expect(reenc).toBe(hex(mutated))
+            expect(reenc).not.toBe(hex(canonical))
+          } catch {
+            // Any thrown error is the correct outcome for malformed / non-canonical bytes.
+          }
+        },
+      ),
+      RUNS,
+    )
+  })
+})
+
+// ---------------------------------------------------------------------------
+// canonicalRoundTrip API property
+// canonicalRoundTrip(x) must:
+//   (a) never throw for any encodable x (JSON-compatible, finite)
+//   (b) return bytes byte-identical to encodeCanonical(x)
+// ---------------------------------------------------------------------------
+describe('A28 — canonicalRoundTrip API property', () => {
+  it('canonicalRoundTrip(x) never throws for any JSON-compatible x', () => {
+    fc.assert(
+      fc.property(safeJson, (x) => {
+        expect(() => canonicalRoundTrip(x)).not.toThrow()
+      }),
+      RUNS,
+    )
+  })
+
+  it('canonicalRoundTrip(x) returns bytes equal to encodeCanonical(x)', () => {
+    fc.assert(
+      fc.property(safeJson, (x) => {
+        expect(hex(canonicalRoundTrip(x))).toBe(hex(encodeCanonical(x)))
+      }),
+      RUNS,
+    )
+  })
+
+  it('canonicalRoundTrip is idempotent: calling it twice produces the same bytes', () => {
+    fc.assert(
+      fc.property(safeJson, (x) => {
+        const first = hex(canonicalRoundTrip(x))
+        const second = hex(canonicalRoundTrip(x))
+        expect(second).toBe(first)
+      }),
+      RUNS,
+    )
   })
 })

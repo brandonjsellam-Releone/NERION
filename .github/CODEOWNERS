@@ -1,13 +1,13 @@
 # SPDX-FileCopyrightText: 2026 TRELYAN
 # SPDX-License-Identifier: Apache-2.0
 # CODEOWNERS — routes review requests for sensitive paths
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
-# Default owner
+# Default: all files require review from the maintainer
 * @brandonjsellam-Releone
 
 # Cryptographic primitives — require crypto-aware review
 /crypto/ @brandonjsellam-Releone
-/crypto/src/suites.ts @brandonjsellam-Releone
 /conformance/ @brandonjsellam-Releone
 
 # Protocol governance kernel
@@ -16,12 +16,13 @@
 # Ledger / consensus
 /ledger/ @brandonjsellam-Releone
 
-# Architecture decisions — require ADR process
+# Architecture decisions
 /docs/adr/ @brandonjsellam-Releone
 
 # CI/CD — supply chain sensitive
 /.github/workflows/ @brandonjsellam-Releone
 
-# Security and audit docs
+# Security documentation
 /docs/SECURITY.md @brandonjsellam-Releone
 /docs/THREAT_MODEL.md @brandonjsellam-Releone
+/SECURITY.md @brandonjsellam-Releone
