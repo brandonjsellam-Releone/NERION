@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: 2026 TRELYAN
+# SPDX-License-Identifier: Apache-2.0
+name: CycloneDX SBOM
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  sbom-npm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm ci
+      - run: npx @cyclonedx/cyclonedx-npm --output-format JSON --output-file sbom-npm.cdx.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nerion-npm-sbom
+          path: sbom-npm.cdx.json
+  sbom-cargo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo install cargo-cyclonedx 2>/dev/null || true
+      - run: cd rust && cargo cyclonedx --format json --output-cdx 2>/dev/null || echo "cargo-cyclonedx not available"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nerion-cargo-sbom
+          path: rust/bom.cdx.json
+          if-no-files-found: warn

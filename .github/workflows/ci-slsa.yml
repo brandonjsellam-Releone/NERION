@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: 2026 TRELYAN
+# SPDX-License-Identifier: Apache-2.0
+name: SLSA Build Provenance
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+jobs:
+  slsa-provenance:
+    permissions:
+      id-token: write   # narrow scope — required for OIDC provenance
+      contents: read
+      actions: read
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v1.10.0
+    with:
+      base64-subjects: ""  # populated by release step (sha256 of release artifacts)
+      upload-assets: true

@@ -1,10 +1,10 @@
 # ADR-0025: Standards-binding profile -- PermitToken as a PQ, ZK-attenuable capability credential
 
 ## Status
-**Proposed -- DESIGN ONLY, unimplemented.** The highest-leverage *buildable-now* piece of the convergent
-frontier (see [../FRONTIER.md](../FRONTIER.md)). The non-ZK core (Action Manifest + VC/DID binding) needs
-**no new cryptographic assumptions** and is back-compatible; the ZK-attenuation proof is a flagged
-research-bet routed to the external audit. UNAUDITED; pre-FTO. No legal/conformity claim is made.
+**Accepted — Phase-A implemented (2026-06-24).** Layers (1) and (2) are shipped in
+`planes/src/vc-projection.ts`; see ADR-0030 for implementation decisions and completion record.
+The ZK-attenuation proof (layer 3) remains a flagged research-bet behind `allowUnauditedZk`,
+unimplemented and audit-gated. UNAUDITED; pre-FTO. No legal/conformity claim is made.
 
 ## Context
 The 8-model TRELYAN council frontier scan (2026-06-21) converged on binding Nerion's "govern the verb"
