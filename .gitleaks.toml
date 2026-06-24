@@ -1,0 +1,71 @@
+# SPDX-FileCopyrightText: 2026 TRELYAN
+# SPDX-License-Identifier: Apache-2.0
+#
+# Nerion gitleaks configuration — pre-commit secret guard.
+# Extends the default ruleset and adds project-specific rules.
+
+title = "nerion-gitleaks"
+
+[extend]
+# Pull in the full default/baseline ruleset shipped with gitleaks.
+useDefault = true
+
+# ---------------------------------------------------------------------------
+# Project-specific rules
+# ---------------------------------------------------------------------------
+
+[[rules]]
+id          = "nerion-azure-connstr"
+description = "Azure storage/service-bus connection string"
+regex       = '''DefaultEndpointsProtocol=https?;AccountName=[^;]+;AccountKey=[A-Za-z0-9+/=]{40,}'''
+tags        = ["azure", "credentials"]
+
+[[rules]]
+id          = "nerion-azure-sas"
+description = "Azure SAS token (sv= query-string pattern)"
+regex       = '''[?&]sv=\d{4}-\d{2}-\d{2}&s[a-z]='''
+tags        = ["azure", "credentials"]
+
+[[rules]]
+id          = "nerion-anthropic-key"
+description = "Anthropic API key (sk-ant- prefix)"
+regex       = '''sk-ant-[A-Za-z0-9\-_]{20,}'''
+tags        = ["anthropic", "api-key", "credentials"]
+
+[[rules]]
+id          = "nerion-high-entropy-generic"
+description = "Generic high-entropy secret assignment"
+regex       = '''(?i)(secret|token|password|passwd|api.?key|private.?key)\s*[:=]\s*["\']?[A-Za-z0-9+/=_\-]{32,}["\']?'''
+tags        = ["generic", "high-entropy"]
+[rules.allowlist]
+# Suppress false positives from test fixtures and documentation snippets.
+regexes = [
+  # Placeholder / template values
+  '''(?i)(your[-_]?|<|{|example|placeholder|changeme|dummy|fake|test|redacted)''',
+  # Base64-encoded public keys or low-entropy patterns
+  '''[A-Za-z0-9+/=]{32,}={0,2}$''',
+]
+
+# ---------------------------------------------------------------------------
+# Global allowlist
+# ---------------------------------------------------------------------------
+
+[allowlist]
+description = "Paths and strings that are safe to ignore globally"
+
+# KAT / conformance vectors contain random-looking hex strings that are NOT secrets.
+paths = [
+  '''conformance/vectors/''',
+  '''crypto/vectors/''',
+]
+
+# The literal env-var name AZURE_KV_URL is a URL reference, never a credential.
+# Similarly ignore common placeholder patterns used in docs and .env.example.
+regexes = [
+  '''AZURE_KV_URL''',
+  '''https://[a-z0-9\-]+\.vault\.azure\.net/?''',
+  # .env.example lines (value side is always a placeholder comment or empty)
+  '''^\s*#''',
+  # Test/stub identifiers that look key-shaped but aren't
+  '''(?i)(stub|fixture|mock|example|placeholder)''',
+]
