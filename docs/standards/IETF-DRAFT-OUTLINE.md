@@ -213,10 +213,11 @@ Plane-2 receipts as defense against semantic laundering.
 
 ## 6. W3C VC and DID Integration
 
-Permit Tokens MAY be projected into W3C Verifiable Credentials (VC Data Model 1.1) for
+Permit Tokens MAY be projected into W3C Verifiable Credentials (VC Data Model 2.0) for
 external ecosystem interoperability (eIDAS-2.0, EUDI wallets, IETF agent-auth). This
 projection is purely a presentation layer — it MUST NOT alter the Permit Token's MAC or
-body encoding.
+body encoding. The Phase-A implementation targets the VC 2.0 Working Draft
+(`https://www.w3.org/ns/credentials/v2`), not VC 1.1.
 
 Agent identity SHOULD be expressed as a `did:key` DID over ML-DSA-87. Note that ML-DSA-87
 is not yet in the canonical multicodec registry as of June 2026; use of 0xed01 as the

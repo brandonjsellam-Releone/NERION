@@ -154,6 +154,30 @@ Phase-B (gated behind `allowUnauditedZk`) adds:
 Phase-B is NOT enabled by default, NOT in this ADR, and MUST NOT be merged
 without external audit sign-off.
 
+## Known risks and open issues
+
+### DID encoding divergence (RISK — Phase-A, document only)
+
+Two DID-building functions exist in the codebase:
+- `capabilities/src/profile.ts` → `didKeyFromPublicKey(multicodec, publicKey)`: produces
+  `did:key:z<base58btc(varint(multicodec)||pubkey)>` (canonical `did:key` `z` multibase).
+- `planes/src/vc-projection.ts` → `buildDidKey(publicKeyBytes)`: produces
+  `did:key:u<base64url(0xed01||pubkey)>` (non-canonical `u` multibase, motivated by PQ key size).
+
+These produce **different DID strings for the same key**. A system using both will see DID
+mismatches. Callers MUST pick one function and use it consistently within a deployment.
+Recommended: `didKeyFromPublicKey` (canonical `z` multibase, explicit multicodec). The `u`
+multibase variant in `vc-projection.ts` is acceptable only for systems where the DID is used
+solely as a local identifier and never round-tripped against a resolver expecting canonical
+`did:key`. Phase-B MUST consolidate to one function before adding a VC proof.
+
+### Unresolved context URL
+
+The `@context` in `vc-projection.ts` includes `https://nerion.trelyan.com/contexts/permit/v1`.
+This URL does not yet resolve. Relying parties performing strict JSON-LD context resolution will
+fail. Phase-A consumers MUST be configured to accept the unknown context. Publishing the context
+document at that URL is a Phase-B infra task.
+
 ## Consequences
 
 - **+** Nerion PermitTokens are now projectable to W3C-VC / eIDAS-2.0 /
@@ -166,6 +190,8 @@ without external audit sign-off.
   PermitToken MAC; the projection alone provides no additional security.
 - **-** The ML-DSA-87 multicodec prefix for `did:key` is not yet finalized;
   Phase-A uses a draft value that requires a future update.
+- **-** Two DID-building functions produce different output for the same key; see
+  Known Risks above. Must be consolidated in Phase-B.
 
 ## References
 
