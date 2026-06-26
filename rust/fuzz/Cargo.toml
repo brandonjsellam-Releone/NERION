@@ -1,0 +1,47 @@
+# SPDX-FileCopyrightText: 2026 TRELYAN
+# SPDX-License-Identifier: Apache-2.0
+#
+# ISOLATED fuzz crate. This is its OWN package with its OWN Cargo.toml and is NOT
+# a member of any workspace, so `cargo check`/`cargo test` in ../ and `npm run gate`
+# are entirely unaffected. Requires nightly + cargo-fuzz (see ../../docs/FUZZING.md).
+[package]
+name = "polarseek-crypto-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+license = "Apache-2.0"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+polarseek-crypto = { path = ".." }
+
+[dependencies.arbitrary]
+version = "1"
+features = ["derive"]
+
+# Prevent this nested crate from being pulled into a parent workspace by accident.
+[workspace]
+
+[[bin]]
+name = "fuzz_aead_open"
+path = "fuzz_targets/fuzz_aead_open.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_hmac_verify"
+path = "fuzz_targets/fuzz_hmac_verify.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_mlkem_roundtrip"
+path = "fuzz_targets/fuzz_mlkem_roundtrip.rs"
+test = false
+doc = false
+bench = false
