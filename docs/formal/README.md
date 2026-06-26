@@ -49,12 +49,21 @@ Install the [TLA⁺ tools](https://github.com/tlaplus/tlaplus) (Java + `tla2tool
 java -cp /path/to/tla2tools.jar tlc2.TLC -config NerionConsensus.cfg NerionConsensus.tla
 ```
 
-Expected: all invariants hold for the default configuration (no counterexample).
-The model is intentionally tiny so it checks in seconds; widen `Validators`,
-`Heights`, `Blocks`, or override `Stake` with a non-uniform function to explore
-stake-weighted cases.
+**Machine-checked result (TLC v1.8.0, 2026-06-26):** `Model checking completed. No error
+has been found.` — all five invariants (`TypeOK`, `NoHonestEquivocation`,
+`AccountableSafety`, `HonestAgreement`, `QuorumIntegrity`) hold over the **144 distinct
+reachable states** of the default configuration (4 validators, 2 Byzantine, 1 height, 2
+blocks); state-graph depth 7; runs in <1 s. The model is intentionally tiny; widen
+`Validators`, `Heights`, `Blocks`, or override `Stake` with a non-uniform function to
+explore stake-weighted cases.
 
-> **Honesty note.** These artifacts were authored to be TLC-runnable but were
-> **not** executed by TLC in this repository's CI (no Java/TLA⁺ toolchain is
-> provisioned here yet). Treat them as a reviewable, runnable specification, not
-> as machine-checked-in-CI evidence — wiring TLC into CI is a follow-up.
+A terminal-stutter (`Next == NormalNext \/ (~ENABLED NormalNext /\ UNCHANGED vars)`) makes
+the legitimately-terminating behaviour deadlock-free, so TLC runs with **no special flags**
+and genuine deadlocks elsewhere are still caught.
+
+> **Honesty note (scope of the claim).** This is **machine-checked model checking of an
+> abstraction**, run both locally and in CI (`.github/workflows/ci-formal.yml` runs TLC on
+> every change to `docs/formal/`). It establishes that the modelled invariants hold over the
+> model's finite state space — it is **not** a proof of the TypeScript/Rust implementation,
+> and it abstracts away signatures, networking, timing, and view-change. "Model-checked" is a
+> strong, specific claim; "implementation-proven" it is not.

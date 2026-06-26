@@ -75,7 +75,13 @@ Attest(v, h, b) ==
     /\ (v \in Byzantine \/ HonestFreeAt(v, h))
     /\ attested' = [attested EXCEPT ![v] = @ \cup { << h, b >> }]
 
-Next == \E v \in Validators, h \in Heights, b \in Blocks : Attest(v, h, b)
+NormalNext == \E v \in Validators, h \in Heights, b \in Blocks : Attest(v, h, b)
+
+\* This is a monotonic accumulation: once no validator can add a new attestation,
+\* the behaviour legitimately terminates. Add a terminal stutter so that terminal
+\* state is not reported as a (spurious) deadlock — keeping TLC runnable with no
+\* special flags (deadlock-checking stays ON for genuine deadlocks elsewhere).
+Next == NormalNext \/ (~ ENABLED NormalNext /\ UNCHANGED vars)
 
 Spec == Init /\ [][Next]_vars
 
