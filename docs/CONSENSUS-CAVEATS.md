@@ -41,7 +41,10 @@ cost of a round-skip is zero beyond that prerequisite.
 
 **Safety is unaffected**: every block still requires its own independent 2/3-stake attestations
 to finalize, regardless of which round it carries. The skip cannot cause a safety violation
-in the BFT sense.
+in the BFT sense. This safety-under-round-skip property is now **formalized**: the TLA⁺ model
+`docs/formal/NerionConsensus.tla` checks `AccountableSafety` and `HonestAgreement` as invariants
+that hold for a finalized block independently of which round it carries (a model of an
+abstraction, model-checked with TLC — not an implementation proof).
 
 ### Severity
 
