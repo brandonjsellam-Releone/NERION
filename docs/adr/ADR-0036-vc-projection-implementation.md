@@ -3,12 +3,9 @@ SPDX-FileCopyrightText: 2026 TRELYAN
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# ADR-0032: VC-Projection Implementation (Phase-A Standards-Binding)
+# ADR-0036: VC-Projection Implementation (Phase-A Standards-Binding)
 
 **Status:** Accepted — Phase-A implementation of ADR-0025 (Standards-Binding Profile).
-NOTE: Originally duplicated as ADR-0030 by a parallel session; renumbered to ADR-0032 to
-resolve the conflict. Superseded by the more detailed ADR-0030-standards-binding-profile-phase-a.md
-and ADR-0031-b12-standards-binding-phase-a.md for all design decisions.
 
 ## Context
 

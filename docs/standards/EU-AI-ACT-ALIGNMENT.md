@@ -77,7 +77,7 @@ design elements, testing procedures, and list of applied standards.
 | Annex IV element | Nerion mechanism |
 |---|---|
 | General description | docs/EXECUTIVE_SUMMARY.md, docs/DEPLOY.md, three-plane architecture. |
-| Design specifications | ADR-0001 through ADR-0031 - complete architecture decision records. |
+| Design specifications | ADR-0001 through ADR-0040 - complete architecture decision records. |
 | Testing procedures | conformance/vectors/ps-*.json KAT vectors; `npm run conformance` (23-of-23 passing). |
 | Applied standards | FIPS 204 (ML-DSA), FIPS 203 (ML-KEM), NSA CNSA 2.0, RFC 5869 (HKDF), FIPS 202 (SHA3). |
 | Build process integrity | SLSA Level 3 attestation (A35). |

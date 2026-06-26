@@ -3,7 +3,7 @@ SPDX-FileCopyrightText: 2026 TRELYAN
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# ADR-0031: B12 Phase-A Standards-Binding Profile — Completion Record
+# ADR-0037: B12 Phase-A Standards-Binding Profile — Completion Record
 
 **Status:** Accepted — Phase-A shipped. Additive presentation layer only.
 UNAUDITED. Pre-FTO. No legal conformity claim is made. Phase-B (ZK delegation-chain
@@ -13,7 +13,7 @@ Date: 2026-06-24
 
 ## Context
 
-ADR-0025 (Standards-Binding Profile) and ADR-0030 (VC-Projection Implementation)
+ADR-0025 (Standards-Binding Profile) and ADR-0036 (VC-Projection Implementation)
 specified Phase-A as a pure presentation-layer adapter that projects Nerion
 `PermitToken` + `PermitClaims` + `ActionIntent` into three external credential
 formats without touching any wire-frozen protocol element.
@@ -89,7 +89,7 @@ envelope) and the ZK delegation-chain attenuation proof. Both are:
 - [x] `projectPermit` pure function exported
 - [x] No new crypto calls, no wire-tag changes, no KAT changes
 - [x] Gate green (cleanroom lint, format, typecheck, test)
-- [x] ADR-0025 and ADR-0030 referenced; this ADR records completion
+- [x] ADR-0025 and ADR-0036 referenced; this ADR records completion
 
 ## Consequences
 
@@ -106,7 +106,7 @@ envelope) and the ZK delegation-chain attenuation proof. Both are:
 ## References
 
 - ADR-0025 (Standards-Binding Profile — design)
-- ADR-0030 (VC-Projection Implementation — implementation decisions)
+- ADR-0036 (VC-Projection Implementation — implementation decisions)
 - W3C Verifiable Credentials Data Model 2.0 https://www.w3.org/TR/vc-data-model-2.0/
 - W3C DID Core 1.0 https://www.w3.org/TR/did-core/
 - W3C did:key method https://w3c-ccg.github.io/did-method-key/

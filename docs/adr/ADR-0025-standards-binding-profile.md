@@ -2,8 +2,8 @@
 
 ## Status
 **Accepted — Phase-A implemented (2026-06-24).** The Action Manifest + VC/DID binding (layers 1 and 2)
-are shipped in `capabilities/src/profile.ts` and `planes/src/vc-projection.ts`; see ADR-0030 and
-ADR-0031 for implementation decisions and completion record. The ZK-attenuation proof (layer 3) remains
+are shipped in `capabilities/src/profile.ts` and `planes/src/vc-projection.ts`; see ADR-0036 and
+ADR-0037 for implementation decisions and completion record. The ZK-attenuation proof (layer 3) remains
 a flagged research-bet behind `allowUnauditedZk`, unimplemented and audit-gated. UNAUDITED; pre-FTO.
 No legal/conformity claim is made.
 

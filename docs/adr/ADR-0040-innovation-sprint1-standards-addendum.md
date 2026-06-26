@@ -3,10 +3,13 @@ SPDX-FileCopyrightText: 2026 TRELYAN
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# ADR-0031: Innovation Sprint 1 — Standards-Binding Addendum (B12 Phase-A)
+# ADR-0040: Innovation Sprint 1 — Standards-Binding Addendum (B12 Phase-A)
 
-**Status:** Accepted — additive companion to ADR-0025 / ADR-0030. UNAUDITED. Pre-FTO. No
+**Status:** Accepted — additive companion to ADR-0025 / ADR-0036. UNAUDITED. Pre-FTO. No
 legal conformity claim is made.
+NOTE: Duplicate companion of ADR-0038-innovation-sprint1-standards-addendum.md (the two addendum
+copies diverged slightly). Renumbered 0031 -> 0033 -> 0040 across cross-branch ADR reconciliations;
+recommend consolidating with ADR-0038 at merge.
 
 **Date:** 2026-06-24
 
@@ -14,7 +17,7 @@ legal conformity claim is made.
 
 ## Context
 
-ADR-0025 (Standards-Binding Profile) and ADR-0030 (VC-Projection Implementation) specified
+ADR-0025 (Standards-Binding Profile) and ADR-0036 (VC-Projection Implementation) specified
 and implemented the additive Phase-A projection layer mapping Nerion PermitTokens to W3C VC,
 eIDAS-2.0, and IETF agent-auth-token formats. The June 2026 U.S. executive orders and the EU
 AI Act's general-purpose AI provisions create a dual mandate: PQC-secured execution governance
@@ -69,7 +72,7 @@ property. This is correct for Phase-A because:
 ### 3. ML-DSA-87 multicodec provisional status
 
 The multicodec code for ML-DSA-87 keys in `did:key` is not yet finalized in the upstream
-multicodec registry. ADR-0030 records the community-provisional value `0xed01`. Any
+multicodec registry. ADR-0036 records the community-provisional value `0xed01`. Any
 `did:key` identifier produced by `didKeyFromPublicKey` with this code MUST be labeled
 provisional in documentation and tooling until the canonical registry assignment ships.
 This does not affect the Nerion wire protocol.

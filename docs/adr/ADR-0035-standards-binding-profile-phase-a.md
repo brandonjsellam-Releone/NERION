@@ -1,4 +1,4 @@
-# ADR-0030: Standards-Binding Profile Phase-A Implementation
+# ADR-0035: Standards-Binding Profile Phase-A Implementation
 
 <!--
 SPDX-FileCopyrightText: 2026 TRELYAN

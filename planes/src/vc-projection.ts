@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
- * vc-projection.ts — Phase-A Standards-Binding Projection Layer (ADR-0030 / ADR-0025).
+ * vc-projection.ts — Phase-A Standards-Binding Projection Layer (ADR-0036 / ADR-0025).
  *
  * Pure presentation/serialization module. Projects a verified Nerion PermitToken +
  * PermitClaims + ActionIntent into three external credential formats:
@@ -21,7 +21,7 @@
  * Callers MUST have already verified the PermitToken before projecting it. This
  * module does not verify — it only serializes what the caller asserts is valid.
  *
- * Standards targets (see ADR-0030 for alignment notes):
+ * Standards targets (see ADR-0036 for alignment notes):
  *   - W3C VC Data Model 2.0 (https://www.w3.org/TR/vc-data-model-2.0/)
  *   - W3C DID Core 1.0 / did:key method
  *   - EUDI ARF v1.4 SD-JWT VC profile (planning-level, pending ratification)
@@ -47,7 +47,7 @@ import type { PermitClaims } from './permit.js'
  *
  * NOTE: 0xed01 follows the community convention for ML-DSA-87 in the did:key context.
  * ML-DSA-87 is NOT yet in the canonical IANA multicodec registry as of June 2026;
- * this value is provisional and must be treated as such. See ADR-0030.
+ * this value is provisional and must be treated as such. See ADR-0036.
  */
 const MLDSA87_MULTICODEC_PREFIX = new Uint8Array([0xed, 0x01])
 
@@ -163,7 +163,7 @@ export interface VcProjection {
 /**
  * eIDAS-2.0 / EUDI Wallet Architecture and Reference Framework (ARF v1.4) SD-JWT VC
  * style descriptor. Not a legal conformity claim; technically interoperable with
- * ARF v1.4 SD-JWT VC profile. See ADR-0030.
+ * ARF v1.4 SD-JWT VC profile. See ADR-0036.
  */
 export interface EidasDescriptor {
   /**
@@ -267,9 +267,10 @@ export function projectPermit(
   // ISO-8601 helpers (pure arithmetic, no Date manipulation beyond toISOString).
   const expiryDate = new Date(claims.exp * 1000).toISOString()
   // Use caller-supplied issuedAt if available; do not approximate from exp.
-  const validFrom = opts?.issuedAtUnixSec !== undefined
-    ? new Date(opts.issuedAtUnixSec * 1000).toISOString()
-    : 'unknown'
+  const validFrom =
+    opts?.issuedAtUnixSec !== undefined
+      ? new Date(opts.issuedAtUnixSec * 1000).toISOString()
+      : 'unknown'
   const iatApprox = opts?.issuedAtUnixSec ?? 0
 
   const credentialSubject: NerionCredentialSubject = {
