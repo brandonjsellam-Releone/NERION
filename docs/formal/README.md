@@ -78,3 +78,10 @@ and genuine deadlocks elsewhere are still caught.
 > model's finite state space — it is **not** a proof of the TypeScript/Rust implementation,
 > and it abstracts away signatures, networking, timing, and view-change. "Model-checked" is a
 > strong, specific claim; "implementation-proven" it is not.
+>
+> **Model ↔ implementation bridge.** To connect the abstraction to the real code, the same three
+> invariants (`NoHonestEquivocation`, detection-soundness, `AccountableSafety`) are **property-tested
+> against the actual `ledger/src/equivocation.ts`** over a randomized space of validator sets and
+> honest/Byzantine attestation patterns — see `ledger/test/equivocation.property.test.ts`. So the
+> property is both model-checked (abstract) and property-checked (concrete), though still not a formal
+> proof of the implementation.
