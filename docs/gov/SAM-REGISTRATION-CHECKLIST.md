@@ -13,7 +13,7 @@
 - [ ] Ensure the registered address is a physical, non-PO-Box US address (NYC address qualifies)
 - [ ] Prepare DUNS/legal entity documentation for SAM.gov submission
 
-**FOCI Note:** French-national founder + US resident = straightforward disclosure. Draft a one-paragraph FOCI disclosure statement: "TRELYAN is a US-domiciled entity controlled by Brandon Sellam, a French national and permanent US resident in New York, NY. No foreign government has ownership, control, or influence over TRELYAN or its technology. All Nerion code is Apache-2.0 open-source with no foreign-government licensing restrictions."
+**FOCI Note:** French-national founder + full US resident, 100% owner = straightforward disclosure. FOCI statement: "TRELYAN Inc. is a US corporation, **100% owned and controlled by Brandon Sellam, a French national who is a full US resident in New York, NY**. No foreign government has ownership, control, or influence over TRELYAN or its technology. US business banking is with Mercury. All Nerion code is Apache-2.0 open-source with no foreign-government licensing restrictions." *(Note: this FOCI statement is accurate on full residency; it deliberately does NOT assert "permanent resident alien / green card" — that specific immigration status is only needed for the SBIR ownership self-cert, see Step 3.1, and must be confirmed before use there.)*
 
 ### Step 0.2 — Determine if NCAGE Code is Needed
 Brandon is a US resident with a US physical address. NCAGE codes are required for *foreign* companies without a US physical address. Since TRELYAN has a US address:
@@ -87,8 +87,8 @@ Include in your application:
 ## Phase 3: AFWERX SBIR Preparation (Month 2–4)
 
 ### Step 3.1 — SBIR Eligibility Verification
-- [ ] Confirm TRELYAN is >51% US-owned (required for all SBIR/STTR programs)
-- [ ] If Brandon's ownership structure creates SBIR eligibility concerns, consult a GovCon attorney about restructuring (Brandon as sole owner/US resident should qualify if the entity is US-registered)
+- [x] **Ownership concentration: MET** — Brandon owns **100%** of TRELYAN Inc. (sole owner; no co-owner, no VC-ownership path, no control ambiguity).
+- [ ] **Remaining SBIR ownership test = ONE fact:** SBIR/STTR requires >50% ownership by a US **citizen or permanent-resident alien (green-card holder)** (13 CFR 121.702). A "full US resident" is **not automatically** a "permanent resident alien" — green card or citizenship is the specific status. **Confirm Brandon's immigration classification with a GovCon attorney before signing the SBIR self-certification.** (The self-cert is a legal attestation; an inaccurate one carries False-Claims exposure.) This does NOT gate the non-SBIR track (NCCoE, QED-C, DIU, SAM).
 - [ ] Confirm employee count <500 (required for Small Business designation)
 
 ### Step 3.2 — Monitor AFWERX Solicitations
@@ -139,10 +139,13 @@ Key elements to include (based on Nemotron council analysis):
 
 | Requirement | Status | Action |
 |---|---|---|
-| SAM.gov active registration | ⬜ Not done | Complete Phase 1 above |
+| SAM.gov active registration | ⬜ **Pending** | Submitted; awaiting SAM validation (2026-06-26). Daily watcher auto-flags Active + UEI |
 | UEI obtained | ⬜ Pending SAM | Auto-generated at registration |
-| Foreign nationality disclosed | ⬜ Draft ready | Include in all federal materials |
-| FOCI mitigation documented | ⬜ Draft ready | One-paragraph statement in all proposals |
+| US business banking | ✅ Done | Mercury (TRELYAN Inc.), 2026 — provides the SAM financial/EFT details |
+| Ownership | ✅ Confirmed | TRELYAN Inc. **100% owned** by Brandon Sellam (full US resident, NY) |
+| Foreign nationality disclosed | ✅ Drafted | French national, full US resident; in all federal materials |
+| FOCI mitigation documented | ✅ Drafted | 100%-owned US-corporation statement in all proposals |
+| SBIR ownership eligibility | ⬜ Confirm | 100% owned; confirm Brandon is citizen / green-card holder before SBIR self-cert |
 | NLnet grant disclosed | ⬜ Not yet needed | Include in any federal proposal mentioning funding |
 | FIPS 140-3 CMVP status | ⬜ Not initiated | State accurately: "evaluation phase; CMVP initiation planned" |
 | External audit status | ⬜ Inquiries submitted | State accurately: "audit inquiries submitted; contract not yet signed" |
