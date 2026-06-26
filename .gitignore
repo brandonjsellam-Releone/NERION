@@ -9,3 +9,4 @@ coverage/
 polarseek-receipt-bundle.json
 docs/ENV-SOURCING.md
 docs/ENV-SOURCING.md
+bench/report.json

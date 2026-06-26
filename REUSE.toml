@@ -27,6 +27,8 @@ path = [
   "conformance/vectors/ps-negative.json",
   "crypto/vectors/deterministic-kat.json",
   ".claude/settings.json",
+  "bench/baseline.json",
+  "bench/report.json",
   "NOTICE",
 ]
 precedence = "aggregate"
