@@ -3,7 +3,7 @@ SPDX-FileCopyrightText: 2026 TRELYAN
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# ADR-0018 — View-Change Certificate Chain to Close the Round-Skip Gap (LEDGER-007)
+# ADR-0034 — View-Change Certificate Chain to Close the Round-Skip Gap (LEDGER-007)
 
 **Status: PROPOSED — implementation deferred, pending council approval and external audit.**
 This ADR is a *design decision record*, not a security result. The construction below is
@@ -575,7 +575,7 @@ This ADR writes **no code and changes no existing file**. The change set, when a
 | `ledger/src/chain.ts` | In `proposeVrf` and `verifyFinalized`, gate on `requireCertChain`; call chained verifier when flag is on; no change to default path |
 | `ledger/test/vrf-chain.test.ts` | Add positive and negative chain-verifier tests (§4.4) |
 | `conformance/src/suite.ts` | Add C24 (§4.4); increment `runConformance` total |
-| `docs/STATUS.md`, `docs/SECURITY_FINDINGS.md`, `ADR-0004` inline comments | Update LEDGER-007 from "gap / roadmapped" to "closed by ADR-0018 / C24" **in the implementing PR** |
+| `docs/STATUS.md`, `docs/SECURITY_FINDINGS.md`, `ADR-0004` inline comments | Update LEDGER-007 from "gap / roadmapped" to "closed by ADR-0034 / C24" **in the implementing PR** |
 
 **Track-B gate:** adding C24 is a conformance-count change that **requires council approval before
 any KAT or conformance change**. The implementing PR must be reviewed and approved before merging.
@@ -649,11 +649,11 @@ The cert-availability question (§7.1) and `canonicalVoteSet` canonicality (§7.
 unresolved and handed to council and external audit. No implementation proceeds without their sign-off.
 
 **DeepSeek PhD seat council note (Sprint-1 synthesis).** The highest-severity finding from the
-Sprint-1 council sweep is in ADR-0017 (the per-bit Fiat–Shamir challenge binding is mathematically
+Sprint-1 council sweep is in ADR-0033 (the per-bit Fiat–Shamir challenge binding is mathematically
 incompatible with Sigma-protocol special-soundness and must be replaced with a single-scalar
 Fiat–Shamir challenge over the full transcript — statement + all branch commitments + domain
-separator). ADR-0016's generator-pinning invariant is sound subject to the standard NUMS
-assumption. The present ADR-0018 round-skip argument is judged internally consistent under the
+separator). ADR-0032's generator-pinning invariant is sound subject to the standard NUMS
+assumption. The present ADR-0034 round-skip argument is judged internally consistent under the
 ≥2/3 honest-stake and ML-DSA-87 unforgeability assumptions, with the availability question (§7.1)
 as the primary unresolved engineering item.
 

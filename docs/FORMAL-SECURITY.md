@@ -303,7 +303,7 @@ reduces to DDH on Curve25519 / Edwards25519. This is a **classical** assumption 
 the foundational VRF framework; Goldberg et al. 2020 "Verifiable Random Functions (VRFs)
 on Elliptic Curves").
 
-### §3.2 Uniqueness proof: why H ≠ G is necessary (link to ADR-0016)
+### §3.2 Uniqueness proof: why H ≠ G is necessary (link to ADR-0032)
 
 The ECVRF's uniqueness (also called "trusted uniqueness" in RFC 9381 §3.2) relies on
 the **Decisional Diffie-Hellman (DDH)** assumption on the group. Uniqueness is proven
@@ -317,7 +317,7 @@ proof must be:
 - **A point whose discrete log with respect to G is unknown** (the nothing-up-my-sleeve
   / NUMS requirement). If an adversary knew `dlog_G(H)`, they could forge DLEQ proofs.
 
-ADR-0016 addresses this for Nerion's Pedersen commitment generators (which share the
+ADR-0032 addresses this for Nerion's Pedersen commitment generators (which share the
 same structural requirement), prescribing:
 
 ```
@@ -382,7 +382,7 @@ that do not hold in the QROM.
 | ML-DSA-87 (FIPS 204) | ROM (classical) and QROM (NIST security analysis covers quantum adversaries at Level-5 parameters) | **PROVEN** in QROM (FIPS 204 security analysis; Kiltz, Lyubashevsky, Schaffner 2018) |
 | ML-KEM-1024 (FIPS 203) | QROM | **PROVEN** in QROM (Jiang et al. CRYPTO 2018; FIPS 203 security analysis) |
 | HKDF-SHA-384 (permit key derivation, ADR-0015) | ROM (standard PRF argument for HMAC/HKDF) | QROM treatment exists for HKDF generically (Zhandry 2012); not applied specifically to Nerion's `info` structure. **CONJECTURED** |
-| ZK range proof / dual-range OR-proof (`disclosure/zkrange.ts`, ADR-0017) | **Classical ROM only** | **OPEN** — no QROM argument. Fiat-Shamir soundness in the QROM is a separate, stronger claim (Unruh 2015; Don et al. 2019). The soundness/binding is a *classical* property (discrete-log over ristretto255). |
+| ZK range proof / dual-range OR-proof (`disclosure/zkrange.ts`, ADR-0033) | **Classical ROM only** | **OPEN** — no QROM argument. Fiat-Shamir soundness in the QROM is a separate, stronger claim (Unruh 2015; Don et al. 2019). The soundness/binding is a *classical* property (discrete-log over ristretto255). |
 | ZK policy-satisfaction proof (`disclosure/policyproof.ts`, ADR-0006) | Classical ROM only | **OPEN** — same as above; the PSP composes the range proof. |
 | Salted intent commitment (ADR-0014) | Classical ROM | QROM: the hiding property under a 256-bit salt is information-theoretic for the salt-keeper; the binding is SHA3-based and a quantum adversary does not gain a preimage advantage that breaks binding. **CONJECTURED** that hiding is practically sound in QROM given the salt entropy; formal analysis not on record. |
 | ECVRF-EDWARDS25519-SHA512-ELL2 (ADR-0004) | Classical ROM / DDH | **OPEN** — broken by Shor's algorithm; no PQ-VRF is available. Accepted gap. |
@@ -439,7 +439,7 @@ As of the date of this document, no completed external audit exists. Specific ga
 
 - **ZK construction audit (priority).** The bespoke disclosure layer (`disclosure/zkrange.ts`,
   `disclosure/policyproof.ts`, `disclosure/commitbind.ts`) is UNAUDITED. The soundness of
-  the Fiat-Shamir-wrapped Chaum-Pedersen OR-proof (ADR-0017), the dual-range proof
+  the Fiat-Shamir-wrapped Chaum-Pedersen OR-proof (ADR-0033), the dual-range proof
   composition, and the `n ≤ 251` no-wraparound argument (ZKRANGE-002) are priority audit
   items. One off-by-one (ZKRANGE-002) was found by internal review at `n=252` — the
   `n ≤ 251` fix is correct and in production use (n=32 throughout), but the audit should
@@ -681,8 +681,8 @@ scope for this technical memo).
 | O-8 | Threshold/MPC governance key management audit | **OPEN** | External audit |
 | O-9 | Side-channel resistance of ML-DSA-87 hot paths | **OPEN** | Hardware measurement |
 | O-10 | HKDF audience binding QROM analysis | **OPEN** | Academic / formal methods |
-| O-11 | ADR-0016 H-generator pinning implementation | **OPEN** | Implementing PR (design proposed) |
-| O-12 | ADR-0017 transcript-binding tightening audit ratification | **OPEN** | External ZK/crypto audit |
+| O-11 | ADR-0032 H-generator pinning implementation | **OPEN** | Implementing PR (design proposed) |
+| O-12 | ADR-0033 transcript-binding tightening audit ratification | **OPEN** | External ZK/crypto audit |
 | O-13 | Correct key distribution enforcement (deployment obligation) | **OPEN** | Operational / deployment tooling |
 | O-14 | Legal / FTO review | **OPEN** | Counsel engagement (FTO_TODO.md) |
 

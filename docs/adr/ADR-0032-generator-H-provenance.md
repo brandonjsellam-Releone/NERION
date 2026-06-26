@@ -3,7 +3,7 @@ SPDX-FileCopyrightText: 2026 TRELYAN
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# ADR-0016 — Generator-H Provenance and Startup Invariant
+# ADR-0032 — Generator-H Provenance and Startup Invariant
 
 **Status: PROPOSED — design only, UNIMPLEMENTED.**  
 This ADR records a *decision about how* to derive, pin, and runtime-guard the secondary Pedersen
@@ -18,8 +18,8 @@ Date: 2026-06-24.  Track-B item **B1** (Generator-H provenance; PhD-council revi
 > The invariant design is structurally sound: `H ≠ G`, `H ≠ id`, prime-order membership, and the
 > derived-equals-pinned check together close the trivial binding-break classes without overclaiming.
 > The ADR's honest framing of the residual dlog assumption is correct. The per-bit Fiat–Shamir challenge
-> issue (ADR-0017) is **independent** of generator provenance and does not affect the H-invariant
-> analysis. See ADR-0017 for the full single-scalar challenge replacement.
+> issue (ADR-0033) is **independent** of generator provenance and does not affect the H-invariant
+> analysis. See ADR-0033 for the full single-scalar challenge replacement.
 
 ---
 
@@ -339,26 +339,26 @@ After this ADR, each class above either:
   removes the *trivial* break classes; the residual hardness assumption is unchanged.
 - **QROM security.** Binding is a classical assumption (discrete log over ristretto255 is assumed
   hard classically, but a CRQC breaks it). Hiding remains information-theoretic and is unaffected.
-- **Soundness of the range/OR-proof composition.** That is ADR-0017's scope. The `H`-invariant is a
-  *precondition* for ADR-0017's argument, not a substitute for it.
+- **Soundness of the range/OR-proof composition.** That is ADR-0033's scope. The `H`-invariant is a
+  *precondition* for ADR-0033's argument, not a substitute for it.
 - **A malicious issuer.** A kernel that is malicious at admission time can commit any amount it
   chooses, with or without a well-formed `H`. Generator provenance defends the proof's *binding
   assumption*, not the issuer's *honesty*. Issuer honesty is the quorum/attestation model's job
   (unchanged).
 
-### 4.3 Relationship to ADR-0017 (OR-proof Fiat–Shamir)
+### 4.3 Relationship to ADR-0033 (OR-proof Fiat–Shamir)
 
-ADR-0016 and ADR-0017 are **independent**:
+ADR-0032 and ADR-0033 are **independent**:
 
-- ADR-0016 concerns the generator provenance precondition: `H` must be well-formed and distinct from
+- ADR-0032 concerns the generator provenance precondition: `H` must be well-formed and distinct from
   `G` and `id` for the Pedersen commitment to be binding.
-- ADR-0017 concerns the transcript-binding structure of the non-interactive Chaum–Pedersen OR-proof:
+- ADR-0033 concerns the transcript-binding structure of the non-interactive Chaum–Pedersen OR-proof:
   the per-bit challenge must be replaced with a single-scalar Fiat–Shamir challenge over the full
   transcript (all branch commitments + domain separator) to satisfy special-soundness. This is a
   separate mathematical requirement that holds regardless of `H`'s provenance.
 
-The DeepSeek PhD seat (Sprint-1 review) confirmed: the ADR-0016 invariant is structurally sound and
-independent of the ADR-0017 Fiat–Shamir issue. Both must be addressed; neither subsumes the other.
+The DeepSeek PhD seat (Sprint-1 review) confirmed: the ADR-0032 invariant is structurally sound and
+independent of the ADR-0033 Fiat–Shamir issue. Both must be addressed; neither subsumes the other.
 
 ---
 
@@ -423,7 +423,7 @@ remains a classical, ROM-justified, QROM-unanalyzed heuristic.
 - ADR-0004 — VRF-based private leader sortition; `(G, H)` pair used in VRF constructions.
 - ADR-0006 — ZK policy-satisfaction (conservative subset); PQ profile + linkage contract.
 - ADR-0013 — v:2 structural commitment-binding (Pedersen ↔ SHA3).
-- ADR-0017 — OR-proof Fiat–Shamir tightening (single-scalar challenge; independent of this ADR).
+- ADR-0033 — OR-proof Fiat–Shamir tightening (single-scalar challenge; independent of this ADR).
 - `conformance/vectors/ps-kat.json`, `tools/gen-kat.mjs`, `conformance/test/kat.test.ts` — KAT
   discipline this ADR extends to `H`.
 - **RFC 9380** (Hashing to Elliptic Curves) — `hash_to_ristretto255`, `expand_message_xmd` (§5.3),

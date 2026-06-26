@@ -54,11 +54,11 @@ manipulation (denial-of-leadership against an honest validator), not ledger corr
 
 ### Mitigation design (deferred)
 
-**ADR-0018 (cert-chain):** each VCC would reference the previous VCC, forming a chain from
+**ADR-0034 (cert-chain):** each VCC would reference the previous VCC, forming a chain from
 the last finalized block through every skipped round. This makes round-skipping auditable and
 costly (requires producing one cert per skipped round, each signed by ≥2/3 stake).
 
-**Status: not implemented.** ADR-0018 is a forward design item.
+**Status: not implemented.** ADR-0034 is a forward design item.
 
 ### Current operator mitigation
 
@@ -250,7 +250,7 @@ audit are prerequisites for any production ZK claim.
 
 | # | Identifier | Area | Severity | Status |
 |---|---|---|---|---|
-| 1 | LEDGER-007 | Round-skip fairness gap | MEDIUM | Open; ADR-0018 deferred |
+| 1 | LEDGER-007 | Round-skip fairness gap | MEDIUM | Open; ADR-0034 deferred |
 | 2 | B5 | Validator-set / epoch binding absent | MEDIUM-HIGH (under reconfig) | Open; Track-B deferred |
 | 3 | LEDGER-006 | Slashing not wired end-to-end | HIGH (economic accountability) | Open; B8 deferred |
 | 4 | THREAT-§3 | Cross-plane key isolation unverified | OPEN (design vs. proof) | Pending external audit |

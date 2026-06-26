@@ -3,7 +3,7 @@ SPDX-FileCopyrightText: 2026 TRELYAN
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# ADR-0017 — ZK Transcript Soundness: Dual-Range OR-Proof
+# ADR-0033 — ZK Transcript Soundness: Dual-Range OR-Proof
 
 **Status: Proposed**
 
@@ -11,7 +11,7 @@ SPDX-License-Identifier: Apache-2.0
 This document provides the formal security argument for the dual-range
 Chaum–Pedersen OR-proof (CDS composition) used in `disclosure/src/zkrange.ts`,
 as reviewed and synthesised by the DeepSeek PhD council seat (Sprint-1, item
-ADR-0017). All arguments below are **ROM (classical, random-oracle model) only**;
+ADR-0033). All arguments below are **ROM (classical, random-oracle model) only**;
 the QROM residual risk is documented explicitly in the Consequences section. The
 argument is **UNAUDITED** — it is a prerequisite *input* to the external ZK/crypto
 audit that gates ADR-0006 and ADR-0013. No production privacy or soundness claim
@@ -38,7 +38,7 @@ subject of this document.
 ### Construction summary (from `zkrange.ts`)
 
 - **Pedersen commitment.** `commit(v, r) = v·G + r·H` where `G = Point.BASE` and
-  `H` is a nothing-up-my-sleeve (NUMS) hash-to-curve point (ADR-0016); `L` is the
+  `H` is a nothing-up-my-sleeve (NUMS) hash-to-curve point (ADR-0032); `L` is the
   prime ristretto255 group order.
 - **Dual range.** Two sub-proofs run in parallel: (i) `amount ∈ [0, 2^n)` against
   the prover-supplied commitment `C_amt`; (ii) `diff = threshold − 1 − amount ∈ [0, 2^n)`
@@ -144,7 +144,7 @@ operates exactly this way (see §2 below).
 ## Security Argument (ROM, classical — UNAUDITED)
 
 > **Convention.** `L = 2^252 + 27742317777372353535851937790883648493` (ristretto255
-> group order). `G` = `Point.BASE`; `H` = NUMS hash-to-curve (ADR-0016), `dlog_G(H)`
+> group order). `G` = `Point.BASE`; `H` = NUMS hash-to-curve (ADR-0032), `dlog_G(H)`
 > unknown. Scalar arithmetic is mod `L`. "ROM" = SHAKE256 modelled as a random oracle.
 > All arguments are **classical** (not QROM). All claims are **UNAUDITED**.
 
@@ -505,7 +505,7 @@ The following items are explicitly flagged for the external ZK/crypto audit:
    wholesale and discards the reviewed CDS structure. Rejected for this ADR.
 
 4. **Bind only the generators without single-transcript binding.** A partial
-   improvement addressing gap (c)(1) from ADR-0016 / the earlier ADR-0017 draft. The
+   improvement addressing gap (c)(1) from ADR-0032 / the earlier ADR-0017 draft. The
    PhD council finding establishes the joint-challenge issue as the more
    structurally significant problem; a generator-only fix would leave it unresolved.
    Recorded as insufficient.
@@ -586,7 +586,7 @@ All of the following must hold for the ROM soundness argument in this ADR:
 - (ii) OR-simulation-soundness: the CDS composition is simulation-sound (standard
   classical assumption).
 - (iii) SHAKE256 is a random oracle in the classical ROM (not the QROM).
-- (iv) `dlog_G(H)` is unknown for the fixed NUMS generator `H` (ADR-0016); the
+- (iv) `dlog_G(H)` is unknown for the fixed NUMS generator `H` (ADR-0032); the
   commitment is computationally binding under this assumption.
 - (v) The `n ≤ 251` no-wraparound bound is tight (priority audit item §4).
 - (vi) The verifier reconstructs `C_diff = (threshold − 1)·G − C_amt` from public
@@ -611,7 +611,7 @@ All of the following must hold for the ROM soundness argument in this ADR:
   UNAUDITED composition; PQ profile note).
 - ADR-0013 — v:2 commitment-to-intent equality (public-input binding caveat mirrors
   the generator-binding gap §3.2 of this ADR).
-- ADR-0016 — Pin the Pedersen generator `H` provenance + fail-closed startup
+- ADR-0032 — Pin the Pedersen generator `H` provenance + fail-closed startup
   invariants (NUMS construction for `H`; binding assumption root).
 - `docs/STATUS.md` — UNAUDITED-protocol status tracking.
 - Cramer, Damgård, Schoenmakers — "Proofs of Partial Knowledge and Simplified Design
