@@ -13,8 +13,10 @@ set (conformance C14). This change lifts it to two strictly stronger guarantees:
 
 - **(a) Structural** — `kernel/src/blindness.ts` adds `ParamsBlind<I>` / `GovernedIntent =
   Omit<ActionIntent, 'params'>` and `governedView()`, the perception-free projection of an
-  intent. Code that decides over a `GovernedIntent` *literally cannot reference*
-  `intent.params`. Compile-time witnesses in the test assert the governed view excludes
+  intent. The kernel's decision body (`decideWithAuthorizer`) strips `params` at the boundary
+  via `governedView()` and is typed over `GovernedIntent`, so reading `intent.params` inside
+  the decision is a **compile error** — not just a tested convention. Compile-time witnesses
+  in the test assert the governed view excludes
   `params` and matches the exact governed-field allowlist (`type`, `resource`,
   `counterparty`, `amount`) — adding a field to `ActionIntent` becomes a **build error**
   until someone consciously classifies it as governed or perception.
@@ -39,10 +41,11 @@ claim.
 
 - Proves the **stateless per-action decision** ignores `params`; it does **not** prove the
   downstream resource honors the permit (out of scope, R6), nor is it an external audit.
-- The kernel decision signature is unchanged (additive). Routing the kernel to consume a
-  `GovernedIntent` end-to-end (so the projection is enforced at the call site, not only
-  available) is a clean follow-up — it would also need the receipt path, which *does* hash
-  `params`, to keep using the full intent.
+- The public `decide()` / `decideWithAuthorizer()` input signature is unchanged (callers still
+  pass the full intent, whose `params` are hashed into receipts elsewhere); the decision is
+  computed over `governedView(intent)`, so the kernel decision code is params-blind by
+  construction. The receipt path intentionally keeps using the full intent (it *does* hash
+  `params`) — that separation is correct and out of scope here.
 - `governedView` uses an explicit allowlist deliberately: it excludes unknown fields by
   default (fail-closed against a future perception field leaking into the decision).
 

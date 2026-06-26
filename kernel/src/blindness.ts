@@ -12,8 +12,9 @@
  * vector set. This module lifts it to two strictly stronger guarantees:
  *
  *   (a) STRUCTURAL — `ParamsBlind<I>` / `GovernedIntent` is the projection of an
- *       intent with `params` omitted; `governedView()` produces it. Code that
- *       decides over a `GovernedIntent` literally cannot reference `intent.params`.
+ *       intent with `params` omitted; `governedView()` produces it. The kernel's
+ *       decision body (`decideWithAuthorizer`) is typed over this projection, so
+ *       reading `intent.params` inside the decision is a COMPILE error.
  *   (b) EMPIRICAL — an unbounded property test
  *       (kernel/test/params-blindness.property.test.ts) asserts `decide()` is
  *       byte-identical under arbitrary, adversarial `params`.
