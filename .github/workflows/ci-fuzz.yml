@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: 2026 TRELYAN
+# SPDX-License-Identifier: Apache-2.0
+name: Fuzz (smoke)
+
+# Builds the isolated rust/fuzz/ crate and bounded-runs each target on every change
+# to rust/. This is a SMOKE test (seconds per target) that catches panics/aborts on
+# adversarial input — NOT a full fuzzing campaign (those are manual/scheduled, longer).
+# A panic/abort/crash makes the job fail. Runs on Linux where nightly + cargo-fuzz work.
+on:
+  push:
+    paths: ['rust/**', '.github/workflows/ci-fuzz.yml']
+  pull_request:
+    paths: ['rust/**', '.github/workflows/ci-fuzz.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fuzz-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust/fuzz
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz --locked
+      - name: Smoke-fuzz each target (bounded)
+        working-directory: rust
+        run: |
+          set -e
+          for t in fuzz_aead_open fuzz_hmac_verify fuzz_mlkem_roundtrip; do
+            echo "::group::$t"
+            cargo +nightly fuzz run "$t" -- -max_total_time=45 -rss_limit_mb=4096
+            echo "::endgroup::"
+          done

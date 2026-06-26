@@ -59,6 +59,16 @@ Crashing inputs are written to `rust/fuzz/artifacts/<target>/`; reproduce with
 speed coverage. Keep interesting minimized crash-reproducers under version control
 *only* after confirming they contain no secret material.
 
-> **Status.** The harness is provided as a ready-to-run skeleton; it has not yet
-> been executed in CI here (nightly + cargo-fuzz are not provisioned in this
-> environment). Wiring a scheduled fuzz job is a follow-up.
+## CI
+
+A **smoke-fuzz** job (`.github/workflows/ci-fuzz.yml`) builds the isolated `rust/fuzz/`
+crate and bounded-runs each target (~45 s/target) on every change to `rust/`, on a Linux
+runner where nightly + cargo-fuzz are available. A panic, abort, or crash fails the build.
+This catches obvious fail-open/panic regressions on adversarial input; it is **not** a full
+fuzzing campaign — longer, corpus-accumulating runs remain a manual or scheduled activity.
+
+> **Status.** The harness targets call Nerion's real Rust primitives (`aes256gcm_open`,
+> `hmac_sha384_verify`, `mlkem1024_roundtrip_ok`) and the smoke job is wired into CI as
+> above. (The windows-gnu dev toolchain here cannot build the libfuzzer crate locally — see
+> the criterion note in `rust/src/lib.rs` — so the first CI run on Linux is the build's
+> initial validation; the targets are written to standard `libfuzzer-sys` conventions.)
