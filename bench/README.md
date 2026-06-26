@@ -48,11 +48,19 @@ A violation (valid rejected or attack accepted) fails the run immediately.
 ## Run it
 
 ```bash
-npm run bench                      # writes bench/report.json, prints a summary
-npm run bench:gate                 # fails on any size/security regression vs baseline
-npm run bench -- --update-baseline # regenerate bench/baseline.json (deterministic fields only)
+npm run bench                      # primitive harness -> bench/report.json + summary
+npm run bench:gate                 # gate it: fails on any size/security regression vs baseline
+npm run build && npm run bench:permit   # real-path harness: drives the actual permit code in dist/
+npm run bench:permit:gate          # gate the real-path report
+npm run bench -- --update-baseline # regenerate a baseline (deterministic fields only)
 npm run bench -- --permits=2000    # scale the workload
 ```
+
+**Two harnesses.** `run.mjs` (primitive) measures ML-DSA-87 / SHA3 / HKDF directly
+over a modelled verb path. `run-permit.mjs` (**real-path**) drives Nerion's ACTUAL
+`planes/src/permit.ts` — `issueBoundPermit` / `verifyPermitForAction` via `dist/` —
+with a 7-class adversarial corpus over the real defenses (MAC audience-binding,
+action-hash binding, audience / expiry / effect / session checks, token tamper).
 
 `bench/report.json` is generated (git-ignored). `bench/baseline.json` is
 committed and holds only the **deterministic** fields (sizes + verdicts +
@@ -72,9 +80,10 @@ real primitives via the same upstream libs the protocol uses. Select with
 
 ## Roadmap (starter → full BENCH-01)
 
-- [ ] `dist-real` + `rust-ffi` adapters; publish Rust/TS parity deltas.
-- [ ] Replace the modelled verb path with the real `planes`/`receipts`/`kernel`
-      admission + receipt APIs.
+- [x] **Real-path harness** (`npm run bench:permit`) drives the actual
+      `planes/src/permit.ts` (`issueBoundPermit` / `verifyPermitForAction`) via `dist/`.
+- [ ] Extend the real-path harness to the `receipts` / `kernel` admission + receipt APIs.
+- [ ] `rust-ffi` adapter; publish Rust/TS parity deltas.
 - [ ] Optional same-runner timing budget in CI (p95 thresholds).
 - [ ] Sign each report (dCBOR) so published benchmark runs are verifiable.
 - [ ] Expand the adversarial corpus from the conformance negative vectors.

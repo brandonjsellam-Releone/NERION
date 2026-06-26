@@ -62,7 +62,7 @@ time:
 | 0001–0029 | `main` (canonical) |
 | 0030–0031 | `apex/innovation-sprint1` (vc-projection-impl, standards-binding-profile) |
 | 0032–0034 | `apex/rnd-sprint1` (generator-H, zk-transcript, view-change-cert-chain) |
-| 0035–0040 | `apex/sprint-A1-…` reconciliation (renumbered standards/vc ADRs) |
+| 0035–0038 | `apex/sprint-A1-…` reconciliation (renumbered + deduped standards/vc ADRs) |
 | **0041** | `apex/bench-01-harness` (this ADR) |
 
 ## Consequences
@@ -72,9 +72,12 @@ time:
   can baseline against; a concrete, reproducible artifact for grant/audit
   reviewers; forces wire-frozen + cross-impl discipline; honesty-guardrailed by
   design (it publishes what is slow or broken rather than hiding it).
-- **Honest caveats:** v0.1.0 measures the primitives via a modelled verb path, not
-  the production kernel; the ML-DSA-87 numbers are real but the end-to-end path is
-  a faithful model until the `dist-real`/`rust-ffi` adapters land. Timings are
+- **Honest caveats:** two harnesses ship. The primitive harness (`run.mjs`)
+  measures ML-DSA-87 / SHA3 / HKDF over a *modelled* verb path. The real-path
+  harness (`run-permit.mjs`) drives Nerion's *actual* `planes/src/permit.ts`
+  (`issueBoundPermit` / `verifyPermitForAction`) via `dist/` — real code, real
+  HMAC-SHA-384 permits, 7-class adversarial corpus — but does not yet reach the
+  `receipts`/`kernel` admission path or cross-impl (Rust) parity. Timings are
   machine-dependent. UNAUDITED.
 
 ## Kill criterion

@@ -32,3 +32,7 @@ jobs:
       - run: npm run bench
       # Regression gate: sizes + adversarial verdicts must match the baseline.
       - run: npm run bench:gate
+      # Real-path harness drives the actual permit code in dist/ — build first.
+      - run: npm run build
+      - run: npm run bench:permit
+      - run: npm run bench:permit:gate

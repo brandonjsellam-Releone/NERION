@@ -24,6 +24,8 @@
     "demo": "vitest run receipts/test/e2e.test.ts",
     "bench": "node bench/run.mjs",
     "bench:gate": "node tools/bench-gate.mjs",
+    "bench:permit": "node bench/run-permit.mjs",
+    "bench:permit:gate": "node tools/bench-gate.mjs bench/report-permit.json bench/baseline-permit.json",
     "gate": "npm run lint:cleanroom && npm run format:check && npm run typecheck && npm run test"
   },
   "dependencies": {

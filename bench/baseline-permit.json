@@ -1,0 +1,51 @@
+{
+  "_note": "BENCH-01 real-path regression baseline. Deterministic fields only. Regenerate with `npm run bench:permit -- --update-baseline`.",
+  "primitive": "PS-5",
+  "workload": {
+    "permits": 512,
+    "audiences": 64,
+    "revokedFraction": 0.1
+  },
+  "sizes": {
+    "permitBodyBytes": 182,
+    "permitMacBytes": 48,
+    "permitTokenCanonicalBytes": 255
+  },
+  "correctness": {
+    "validIssued": 456,
+    "validOk": 456,
+    "revokedRejected": 56,
+    "adversarial": {
+      "wrongAudienceKey": {
+        "n": 112,
+        "rejected": 112
+      },
+      "tamperedIntent": {
+        "n": 112,
+        "rejected": 112
+      },
+      "audienceMismatch": {
+        "n": 112,
+        "rejected": 112
+      },
+      "expired": {
+        "n": 112,
+        "rejected": 112
+      },
+      "effectMismatch": {
+        "n": 112,
+        "rejected": 112
+      },
+      "sessionMismatch": {
+        "n": 112,
+        "rejected": 112
+      },
+      "tamperedToken": {
+        "n": 112,
+        "rejected": 112
+      }
+    },
+    "allValidOk": true,
+    "allAdversarialRejected": true
+  }
+}

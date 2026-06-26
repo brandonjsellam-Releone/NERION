@@ -29,6 +29,8 @@ path = [
   ".claude/settings.json",
   "bench/baseline.json",
   "bench/report.json",
+  "bench/baseline-permit.json",
+  "bench/report-permit.json",
   "NOTICE",
 ]
 precedence = "aggregate"
