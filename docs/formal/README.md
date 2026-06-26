@@ -53,7 +53,18 @@ java -cp /path/to/tla2tools.jar tlc2.TLC -config NerionConsensus.cfg NerionConse
 has been found.` — all five invariants (`TypeOK`, `NoHonestEquivocation`,
 `AccountableSafety`, `HonestAgreement`, `QuorumIntegrity`) hold over the **144 distinct
 reachable states** of the default configuration (4 validators, 2 Byzantine, 1 height, 2
-blocks); state-graph depth 7; runs in <1 s. The model is intentionally tiny; widen
+blocks); state-graph depth 7; runs in <1 s.
+
+**Verified across multiple configurations** (CI runs all three):
+
+| Config | Validators / Byzantine | Byzantine ratio | Distinct states | Exercises |
+|---|---|---|---|---|
+| `NerionConsensus.cfg` | 4 / 2 | 50% (>⅓) | 144 | `AccountableSafety` non-vacuous |
+| `NerionConsensus_6v1b.cfg` | 6 / 1 | 16.7% (<⅓) | 972 | `HonestAgreement` non-vacuous |
+| `NerionConsensus_7v2b.cfg` | 7 / 2 | 28.6% (<⅓) | 3 888 | `HonestAgreement` near the ⅓ boundary |
+
+All three report *no error*, spanning honest-supermajority (agreement holds) through
+Byzantine-majority (accountable slashing). The model is intentionally small; widen
 `Validators`, `Heights`, `Blocks`, or override `Stake` with a non-uniform function to
 explore stake-weighted cases.
 

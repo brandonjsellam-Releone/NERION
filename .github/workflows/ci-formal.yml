@@ -25,6 +25,12 @@ jobs:
           java-version: '21'
       - name: Fetch TLA+ tools (tla2tools v1.8.0)
         run: curl -sSL -o tla2tools.jar https://github.com/tlaplus/tlaplus/releases/download/v1.8.0/tla2tools.jar
-      - name: Model-check NerionConsensus
+      - name: Model-check NerionConsensus (all configurations)
         working-directory: docs/formal
-        run: java -cp "$GITHUB_WORKSPACE/tla2tools.jar" tlc2.TLC -config NerionConsensus.cfg NerionConsensus.tla
+        run: |
+          set -e
+          for cfg in NerionConsensus.cfg NerionConsensus_6v1b.cfg NerionConsensus_7v2b.cfg; do
+            echo "::group::TLC $cfg"
+            java -cp "$GITHUB_WORKSPACE/tla2tools.jar" tlc2.TLC -config "$cfg" NerionConsensus.tla
+            echo "::endgroup::"
+          done
