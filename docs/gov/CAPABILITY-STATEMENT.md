@@ -1,8 +1,8 @@
 # TRELYAN — Federal Capability Statement
 
-**Company:** TRELYAN  
-**Product:** Nerion — Post-Quantum Execution Governance Protocol for Autonomous AI Systems  
-**Founded:** 2026 · **Location:** New York, NY (US)  
+**Company:** TRELYAN Inc. — US corporation, **100% owned by founder Brandon Sellam** (US citizen, New York)  
+**Product:** Nerion — Post-Quantum Execution Governance Protocol for Autonomous AI Systems (one of TRELYAN's products)  
+**Founded:** 2026 · **Location:** New York, NY (US) · **Business banking:** Mercury (US)  
 **Website:** github.com/brandonjsellam-Releone/NERION  
 **Point of Contact:** Brandon Sellam, Founder · brandon.sellam@gmail.com  
 **License:** Apache-2.0 (open source)  
@@ -57,6 +57,7 @@ Nerion is the first open-source **post-quantum execution governance protocol** f
 | Patent clearance (FTO) | **Pre-FTO.** Legal review not yet completed. |
 | Federal past performance | **None.** First government engagement expected via NIST NCCoE consortium. |
 | NLnet grant funding | **Applying** to NLnet NGI Restack (call opens ~September 2026). Not yet funded. |
+| Entity / SAM.gov registration | **Pending** (entity registration submitted; UEI forthcoming). US corporation; US business banking (Mercury) established 2026. |
 | Test coverage | **469 tests** (72 test files) + **23/23 conformance checks** on published specification. |
 
 ---
@@ -90,4 +91,4 @@ No formal federal past performance. Comparable technical work:
 brandon.sellam@gmail.com  
 New York, NY
 
-*TRELYAN is a US-based entity. All code is Apache-2.0 open source with no foreign-government control. Founder is a US resident. Pending NLnet grant application is for independent European research funding; NLnet does not direct product or security decisions.*
+*TRELYAN Inc. is a US corporation, **100% owned by Brandon Sellam, a US citizen (of French origin) in New York**. No foreign government has ownership, control, or influence over TRELYAN or Nerion (FOCI). US business banking: Mercury. All code is Apache-2.0 open source with no foreign-government control. The pending NLnet grant application is for independent European research funding; NLnet does not direct product or security decisions.*

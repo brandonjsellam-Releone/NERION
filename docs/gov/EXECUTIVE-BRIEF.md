@@ -57,7 +57,7 @@ Nerion aligns to both active federal mandates:
 
 The June 22, 2026 executive orders created a mandate that no existing product fully addresses: **PQC-governed AI agent execution**. Nerion is the first protocol purpose-built for this intersection.
 
-TRELYAN is a US-based company. The founder (Brandon Sellam) is a US resident in New York. All code is Apache-2.0 open source — fully transparent, no vendor lock-in, no supply-chain opacity.
+TRELYAN Inc. is a US corporation, 100% owned by founder Brandon Sellam, a US citizen in New York (US business banking with Mercury). All code is Apache-2.0 open source — fully transparent, no vendor lock-in, no supply-chain opacity.
 
 We are in the research and consortium-engagement phase. We are not seeking a production contract today. We are seeking technical partnership with agencies and research institutions to co-develop the reference architecture for PQC-governed AI systems before the 2027 migration pilot deadline.
 

@@ -13,7 +13,7 @@
 - [ ] Ensure the registered address is a physical, non-PO-Box US address (NYC address qualifies)
 - [ ] Prepare DUNS/legal entity documentation for SAM.gov submission
 
-**FOCI Note:** French-national founder + US resident = straightforward disclosure. Draft a one-paragraph FOCI disclosure statement: "TRELYAN is a US-domiciled entity controlled by Brandon Sellam, a French national and permanent US resident in New York, NY. No foreign government has ownership, control, or influence over TRELYAN or its technology. All Nerion code is Apache-2.0 open-source with no foreign-government licensing restrictions."
+**FOCI Note:** US-citizen founder (French origin) + 100% owner = straightforward disclosure. FOCI statement: "TRELYAN Inc. is a US corporation, **100% owned and controlled by Brandon Sellam, a US citizen (of French origin) resident in New York, NY**. No foreign government has ownership, control, or influence over TRELYAN or its technology. US business banking is with Mercury. All Nerion code is Apache-2.0 open-source with no foreign-government licensing restrictions." *(French origin is disclosed proactively for FOCI transparency; US citizenship is the controlling fact for ownership/eligibility.)*
 
 ### Step 0.2 — Determine if NCAGE Code is Needed
 Brandon is a US resident with a US physical address. NCAGE codes are required for *foreign* companies without a US physical address. Since TRELYAN has a US address:
@@ -87,8 +87,8 @@ Include in your application:
 ## Phase 3: AFWERX SBIR Preparation (Month 2–4)
 
 ### Step 3.1 — SBIR Eligibility Verification
-- [ ] Confirm TRELYAN is >51% US-owned (required for all SBIR/STTR programs)
-- [ ] If Brandon's ownership structure creates SBIR eligibility concerns, consult a GovCon attorney about restructuring (Brandon as sole owner/US resident should qualify if the entity is US-registered)
+- [x] **Ownership concentration: MET** — Brandon owns **100%** of TRELYAN Inc. (sole owner; no co-owner, no VC-ownership path, no control ambiguity).
+- [x] **SBIR ownership test: MET** — Brandon is a **US citizen** and owns **100%** of TRELYAN Inc., so the 13 CFR 121.702 prong (>50% owned by US citizens or permanent-resident aliens) is satisfied. The SBIR ownership/citizenship self-certification is accurate as stated. (Standard remaining SBIR criteria — for-profit, US principal place of business, PI primarily employed by the firm — still apply; all easily met.)
 - [ ] Confirm employee count <500 (required for Small Business designation)
 
 ### Step 3.2 — Monitor AFWERX Solicitations
@@ -139,10 +139,13 @@ Key elements to include (based on Nemotron council analysis):
 
 | Requirement | Status | Action |
 |---|---|---|
-| SAM.gov active registration | ⬜ Not done | Complete Phase 1 above |
+| SAM.gov active registration | ⬜ **Pending** | Submitted; awaiting SAM validation (2026-06-26). Daily watcher auto-flags Active + UEI |
 | UEI obtained | ⬜ Pending SAM | Auto-generated at registration |
-| Foreign nationality disclosed | ⬜ Draft ready | Include in all federal materials |
-| FOCI mitigation documented | ⬜ Draft ready | One-paragraph statement in all proposals |
+| US business banking | ✅ Done | Mercury (TRELYAN Inc.), 2026 — provides the SAM financial/EFT details |
+| Ownership | ✅ Confirmed | TRELYAN Inc. **100% owned** by Brandon Sellam (full US resident, NY) |
+| Foreign nationality disclosed | ✅ Drafted | US citizen (French origin); disclosed for FOCI transparency |
+| FOCI mitigation documented | ✅ Drafted | 100%-owned US-corporation statement in all proposals |
+| SBIR ownership eligibility | ✅ **Met** | 100% owned by a **US citizen** (Brandon Sellam) — 13 CFR 121.702 ownership prong satisfied |
 | NLnet grant disclosed | ⬜ Not yet needed | Include in any federal proposal mentioning funding |
 | FIPS 140-3 CMVP status | ⬜ Not initiated | State accurately: "evaluation phase; CMVP initiation planned" |
 | External audit status | ⬜ Inquiries submitted | State accurately: "audit inquiries submitted; contract not yet signed" |

@@ -9,8 +9,8 @@
 
 ## Company Profile (for application form)
 
-**Legal Name:** TRELYAN  
-**Location:** New York, NY, USA  
+**Legal Name:** TRELYAN Inc. (US corporation, **100% owned by founder Brandon Sellam, a US citizen**)  
+**Location:** New York, NY, USA · **Business banking:** Mercury (US)  
 **Website:** github.com/brandonjsellam-Releone/NERION  
 **Primary Contact:** Brandon Sellam, Founder · brandon.sellam@gmail.com  
 **Employee Count:** [Current headcount]  
