@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: 2026 TRELYAN
+# SPDX-License-Identifier: Apache-2.0
+[advisories]
+# Ignore advisories that are not applicable to Nerion's usage
+# Format: { id = "RUSTSEC-XXXX-XXXX", reason = "..." }
+ignore = []
+
+[licenses]
+allow = ["Apache-2.0", "MIT", "ISC", "BSD-2-Clause", "BSD-3-Clause", "Unicode-DFS-2016", "CC0-1.0", "OpenSSL"]
+deny = []
