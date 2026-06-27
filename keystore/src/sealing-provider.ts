@@ -52,12 +52,47 @@ import {
 import type { Bytes, KeyPair, SignatureScheme } from '../../crypto/src/index.js'
 import type { KeyProvider, KeyRef } from './types.js'
 
-/** The one capability the sealing provider needs from a custody backend. */
+/**
+ * The one capability the sealing provider needs from a custody backend.
+ *
+ * `aad` (Associated Data) binds the wrapped blob to its at-rest metadata
+ * (`id`/`suite`/`sigId`) so a blob cannot be relabeled or swapped across keys
+ * sealed under the same KEK (CUSTODY-SEAL-AAD-001). The provider derives `aad`
+ * from {@link SealedKey} via {@link sealedKeyAad} and passes the SAME value to
+ * `wrap` (at provision) and `unwrap` (at load); a backend with AEAD AAD support
+ * (e.g. AWS KMS EncryptionContext) then enforces the binding cryptographically —
+ * an `unwrap` whose `aad` differs from the `wrap`'s fails to decrypt.
+ *
+ * The parameter is OPTIONAL for backward compatibility: a caller (or a backend
+ * fake) that omits it gets the legacy behavior. IMPORTANT enforcement caveat:
+ * AAD is only cryptographically enforced by backends whose primitive carries
+ * AEAD associated data (AWS KMS / a symmetric-AEAD HSM mechanism). RSA-OAEP
+ * backends (Azure Key Vault wrapkey, RSA-based PKCS#11) CANNOT bind AAD — for
+ * those, the `id`/`suite`/`sigId` relabel surface is reduced (not eliminated) by
+ * the publicKey self-check in `load()` (which binds suite/sigId to the secret)
+ * plus the `trustedPublicKey` authenticity check (CUSTODY-SEAL-001). Do not
+ * assume AAD enforcement on an RSA-OAEP backend.
+ */
 export interface SeedSealer {
   /** Wrap (encrypt) a small secret seed; returns the opaque sealed blob. */
-  wrap(seed: Bytes): Promise<Bytes>
+  wrap(seed: Bytes, aad?: Bytes): Promise<Bytes>
   /** Unwrap (decrypt) a sealed blob back to the original seed. */
-  unwrap(sealed: Bytes): Promise<Bytes>
+  unwrap(sealed: Bytes, aad?: Bytes): Promise<Bytes>
+}
+
+/**
+ * Canonical Associated Data binding a sealed blob to its at-rest metadata.
+ * Versioned (`v1`) so the encoding can evolve without ambiguity, and field
+ * lengths are prefixed so distinct (id, suite, sigId) triples can never collide
+ * onto the same byte string. Exported so a custom backend can fold it into its
+ * own AEAD context identically to {@link AwsKmsSealer}.
+ */
+export function sealedKeyAad(meta: { id: string; suite: string; sigId: string }): Bytes {
+  const enc = new TextEncoder()
+  const field = (s: string): string => `${enc.encode(s).length}:${s}`
+  return enc.encode(
+    `polarseek-seed-seal-aad-v1|${field(meta.id)}|${field(meta.suite)}|${field(meta.sigId)}`,
+  )
 }
 
 /** At-rest custody artifact: safe to persist/replicate — carries NO secret. */
@@ -88,14 +123,19 @@ export class SealingKeyProvider implements KeyProvider {
   ): Promise<{ ref: KeyRef; publicKey: Bytes; sealed: SealedKey }> {
     const scheme = signerFor(suite)
     const seed = randomBytes(seedLengthFor(scheme))
+    // Bind the at-rest metadata (id/suite/sigId) into the wrap as AEAD AAD so the
+    // blob cannot later be relabeled / cross-key swapped under the same KEK
+    // (CUSTODY-SEAL-AAD-001). The SAME aad is passed to load()'s unwrap.
+    const aad = sealedKeyAad({ id, suite, sigId: scheme.id })
     try {
       const kp = scheme.keygen(seed)
       try {
-        const wrappedSeed = await this.sealer.wrap(seed)
+        const wrappedSeed = await this.sealer.wrap(seed, aad)
         // Verify the seal round-trips NOW — catch a wrong-key/garbled blob or a
         // missing decrypt permission at provisioning, not at a later load() after
-        // the only plaintext copy of the seed has been zeroized.
-        const check = await this.sealer.unwrap(wrappedSeed)
+        // the only plaintext copy of the seed has been zeroized. Unwrapping with
+        // the same aad also proves the AAD binding round-trips on AEAD backends.
+        const check = await this.sealer.unwrap(wrappedSeed, aad)
         const roundTrips = constantTimeEqual(check, seed)
         check.fill(0)
         if (!roundTrips) {
@@ -134,7 +174,23 @@ export class SealingKeyProvider implements KeyProvider {
    */
   async load(sealed: SealedKey, opts: { trustedPublicKey?: Bytes } = {}): Promise<KeyRef> {
     const scheme = signerFor(sealed.suite)
-    const seed = await this.sealer.unwrap(sealed.wrappedSeed)
+    // Metadata self-consistency (backend-agnostic; holds even on non-AEAD wraps
+    // that cannot enforce AAD): sigId is plaintext metadata that nothing else
+    // re-derives, so a relabel to an arbitrary sigId would otherwise pass. The
+    // suite already fixes the scheme, so sigId MUST equal the scheme's own id.
+    if (sealed.sigId !== scheme.id) {
+      throw new Error(
+        `sealed key "${sealed.id}" failed metadata check: sigId "${sealed.sigId}" does not match ` +
+          `suite "${sealed.suite}" (scheme "${scheme.id}")`,
+      )
+    }
+    // Verify the at-rest metadata is the SAME that was sealed: pass the blob's
+    // claimed id/suite/sigId as AAD. On an AEAD backend (AWS KMS), a relabeled /
+    // cross-key-swapped blob has mismatched AAD and fails to decrypt here — the
+    // primary CUSTODY-SEAL-AAD-001 defense. (sigId is taken from the blob and is
+    // independently re-checked below against the scheme; see metadata check.)
+    const aad = sealedKeyAad({ id: sealed.id, suite: sealed.suite, sigId: sealed.sigId })
+    const seed = await this.sealer.unwrap(sealed.wrappedSeed, aad)
     try {
       const kp = scheme.keygen(seed)
       // (1) Corruption check: re-derived key must match the blob's own field. Catches a garbled

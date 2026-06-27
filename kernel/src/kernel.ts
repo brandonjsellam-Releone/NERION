@@ -54,6 +54,25 @@ export interface DecisionWithAuthorizer {
 type GovernedInput = Omit<KernelInput, 'intent'> & { readonly intent: GovernedIntent }
 
 /**
+ * The single safe-fallback deny: any unexpected condition denies at the highest tier rather than
+ * throwing (fail-closed). Used both by {@link decideCore}'s body and by the params-blind projection
+ * at the boundary in {@link decideWithAuthorizer}, so a throw in EITHER place produces a
+ * byte-identical deny and never escapes the deny-by-default guarantee (PS-KERNEL-02).
+ */
+function safeFallbackDeny(message: string, evaluatorVersion: string): DecisionWithAuthorizer {
+  return {
+    decision: {
+      effect: 'deny',
+      tier: 3,
+      reasons: [`safe-fallback deny: ${message}`],
+      obligations: [],
+      evaluatorVersion,
+    },
+    authorizingCapability: null,
+  }
+}
+
+/**
  * The decision core: like {@link decide}, but ALSO returns the capability the resolver selected to
  * authorize the intent — the first candidate that verified and authorized, at ANY index. A receipt
  * must commit THIS capability, not the caller-supplied `capabilities[0]`, which the resolver is free
@@ -122,16 +141,7 @@ function decideCore(input: GovernedInput): DecisionWithAuthorizer {
     }
   } catch (e) {
     // Safe fallback: any unexpected condition denies at the highest tier.
-    return {
-      decision: {
-        effect: 'deny',
-        tier: 3,
-        reasons: [`safe-fallback deny: ${(e as Error).message}`],
-        obligations: [],
-        evaluatorVersion: ev,
-      },
-      authorizingCapability: null,
-    }
+    return safeFallbackDeny((e as Error).message, ev)
   }
 }
 
@@ -143,7 +153,18 @@ function decideCore(input: GovernedInput): DecisionWithAuthorizer {
  * into receipts elsewhere, never here.
  */
 export function decideWithAuthorizer(input: KernelInput): DecisionWithAuthorizer {
-  return decideCore({ ...input, intent: governedView(input.intent) })
+  // FIX #5 (PS-KERNEL-02 hardening): the params-blind projection runs in argument-evaluation
+  // position, OUTSIDE decideCore's try/catch. A throw here (e.g. a null/malformed intent whose
+  // destructure in governedView throws) would otherwise bypass the deny-by-default guarantee.
+  // Guard it so any unexpected condition at the boundary denies (fail-closed) rather than throws.
+  // Valid inputs are unaffected: the projection succeeds and decideCore runs exactly as before.
+  let governed: GovernedIntent
+  try {
+    governed = governedView(input.intent)
+  } catch (e) {
+    return safeFallbackDeny((e as Error).message, `${KERNEL_VERSION}+uncomputed`)
+  }
+  return decideCore({ ...input, intent: governed })
 }
 
 /** The decision alone — a pure function of the explicit input (see {@link decideWithAuthorizer}). */

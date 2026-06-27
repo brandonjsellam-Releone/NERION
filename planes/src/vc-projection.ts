@@ -34,6 +34,7 @@
  * No legal conformity claim is made. "Technically interoperable" only.
  */
 
+import { didKeyFromPublicKey } from '../../capabilities/src/index.js'
 import type { ActionIntent } from '../../capabilities/src/index.js'
 import type { PermitToken } from '../../crypto/src/index.js'
 import type { PermitClaims } from './permit.js'
@@ -43,51 +44,34 @@ import type { PermitClaims } from './permit.js'
 // ---------------------------------------------------------------------------
 
 /**
- * Multicodec prefix for ML-DSA-87 (Dilithium5) keys used in did:key construction.
+ * Multicodec code for ML-DSA-87 (Dilithium5) keys used in did:key construction.
  *
- * NOTE: 0xed01 follows the community convention for ML-DSA-87 in the did:key context.
- * ML-DSA-87 is NOT yet in the canonical IANA multicodec registry as of June 2026;
- * this value is provisional and must be treated as such. See ADR-0036.
+ * NOTE: 0xed follows the community convention for ML-DSA-87 in the did:key context.
+ * As an unsigned LEB128 varint it serializes to the bytes 0xed 0x01 — the exact
+ * multicodec prefix this layer used historically — so the prefixed payload is unchanged;
+ * only the (now injective) multibase encoding differs. ML-DSA-87 is NOT yet in the
+ * canonical IANA multicodec registry as of June 2026; this value is provisional and must
+ * be treated as such. See ADR-0036.
  */
-const MLDSA87_MULTICODEC_PREFIX = new Uint8Array([0xed, 0x01])
-
-/**
- * Base64url-encode bytes without padding (RFC 4648 §5).
- * Pure implementation — no Node.js Buffer, no crypto APIs.
- */
-function base64urlEncode(bytes: Uint8Array): string {
-  // Encode to standard base64 then replace chars + fix padding.
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
-  let result = ''
-  let i = 0
-  while (i < bytes.length) {
-    const b0 = bytes[i++] ?? 0
-    const b1 = bytes[i++] ?? 0
-    const b2 = bytes[i++] ?? 0
-    result += chars[b0 >> 2]
-    result += chars[((b0 & 3) << 4) | (b1 >> 4)]
-    result += i - 1 < bytes.length ? chars[((b1 & 15) << 2) | (b2 >> 6)] : '='
-    result += i < bytes.length ? chars[b2 & 63] : '='
-  }
-  // URL-safe: replace + → - and / → _ and strip padding.
-  return result.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
-}
+const MLDSA87_MULTICODEC_CODE = 0xed
 
 /**
  * Construct a did:key DID from raw ML-DSA-87 public key bytes.
  *
- * Format: did:key:z<base64url(multicodec_prefix || publicKeyBytes)>
- * The 'z' prefix signals base58btc encoding in the canonical did:key spec, but
- * current practice for large PQ keys uses base64url with the 'u' prefix per
- * draft-multiformats-multibase. We use 'u' + base64url here for PQ key sizes.
+ * Format: did:key:z<base58btc(varint(multicodec) || publicKeyBytes)> — the canonical
+ * did:key encoding (multibase 'z' = base58btc).
+ *
+ * Regression #1: this delegates to capabilities' didKeyFromPublicKey — the single
+ * already-correct, INJECTIVE DID function — so distinct public keys can never collapse to
+ * the same DID. The previous hand-rolled base64url encoder DROPPED the final base64 char
+ * for inputs where length % 3 != 0, which was non-injective and aliased distinct ML-DSA-87
+ * public keys to the same did:key. That encoder and its divergent did:key:u path have been
+ * removed in favour of the canonical base58btc encoding.
  *
  * Reference: https://w3c-ccg.github.io/did-method-key/ (ML-DSA-87 provisional)
  */
 export function buildDidKey(publicKeyBytes: Uint8Array): string {
-  const prefixed = new Uint8Array(MLDSA87_MULTICODEC_PREFIX.length + publicKeyBytes.length)
-  prefixed.set(MLDSA87_MULTICODEC_PREFIX, 0)
-  prefixed.set(publicKeyBytes, MLDSA87_MULTICODEC_PREFIX.length)
-  return `did:key:u${base64urlEncode(prefixed)}`
+  return didKeyFromPublicKey(MLDSA87_MULTICODEC_CODE, publicKeyBytes)
 }
 
 // ---------------------------------------------------------------------------
@@ -234,6 +218,43 @@ export interface PermitProjection {
   readonly agentAuth: AgentAuthDescriptor
 }
 
+/**
+ * Maximum unix-seconds value whose ×1000 milliseconds is still a representable
+ * ECMAScript time value. The Date time range is ±8.64e15 ms (±100,000,000 days
+ * around the epoch); anything outside makes Date#toISOString throw a RangeError.
+ */
+const MAX_SAFE_UNIX_SECONDS = 8.64e15 / 1000 // = 8.64e12
+
+/** True iff `unixSeconds * 1000` yields a valid (non-NaN, in-range) Date. */
+function isProjectableUnixSeconds(unixSeconds: number): boolean {
+  return (
+    typeof unixSeconds === 'number' &&
+    Number.isFinite(unixSeconds) &&
+    Math.abs(unixSeconds) <= MAX_SAFE_UNIX_SECONDS
+  )
+}
+
+/**
+ * Thrown by {@link projectPermit} when the permit's time fields cannot be safely
+ * serialized to ISO-8601 (non-finite or out-of-Date-range `exp` / `issuedAtUnixSec`).
+ *
+ * This is a controlled, descriptive failure that REPLACES the opaque RangeError that
+ * `new Date(x * 1000).toISOString()` would otherwise throw for such inputs. Callers
+ * that want a non-throwing deny result should use {@link tryProjectPermit}, which
+ * converts this into `{ ok: false, error }` and never throws on bad time inputs.
+ */
+export class PermitProjectionError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'PermitProjectionError'
+  }
+}
+
+/** Deny-shaped (non-throwing) result of a projection attempt. */
+export type PermitProjectionResult =
+  | { readonly ok: true; readonly projection: PermitProjection }
+  | { readonly ok: false; readonly error: string }
+
 // ---------------------------------------------------------------------------
 // Projection function
 // ---------------------------------------------------------------------------
@@ -250,6 +271,11 @@ export interface PermitProjection {
  * @param opts - Optional: issuedAtUnixSec (actual issuance time); nonce for credential ID.
  *   If issuedAtUnixSec is omitted, validFrom / iat are set to 'unknown' / 0 to avoid
  *   semantically misleading approximations from exp.
+ * @throws {PermitProjectionError} if `claims.exp` (or a supplied `issuedAtUnixSec`) is
+ *   not a finite, in-range unix-seconds value. This is a controlled, descriptive error
+ *   that REPLACES the opaque RangeError `new Date(x * 1000).toISOString()` would throw —
+ *   the validation happens BEFORE any Date is constructed. Callers that want a
+ *   non-throwing deny result should use {@link tryProjectPermit} instead.
  */
 export function projectPermit(
   token: PermitToken,
@@ -259,12 +285,27 @@ export function projectPermit(
   agentPublicKeyBytes: Uint8Array,
   opts?: { nonce?: string; issuedAtUnixSec?: number },
 ): PermitProjection {
+  // Validate time inputs BEFORE constructing any Date — new Date(x*1000).toISOString()
+  // throws an opaque RangeError for non-finite / out-of-range values. Surface a clear,
+  // typed error instead (or, via tryProjectPermit, a deny-shaped result).
+  if (!isProjectableUnixSeconds(claims.exp)) {
+    throw new PermitProjectionError(
+      `invalid permit exp: expected a finite unix-seconds value in representable Date range, got ${String(claims.exp)}`,
+    )
+  }
+  if (opts?.issuedAtUnixSec !== undefined && !isProjectableUnixSeconds(opts.issuedAtUnixSec)) {
+    throw new PermitProjectionError(
+      `invalid issuedAtUnixSec: expected a finite unix-seconds value in representable Date range, got ${String(opts.issuedAtUnixSec)}`,
+    )
+  }
+
   const issuerDid = buildDidKey(issuerPublicKeyBytes)
   const agentDid = buildDidKey(agentPublicKeyBytes)
 
   const credentialId = `urn:nerion:permit:${opts?.nonce ?? `${claims.sessionId}:${claims.nonce}`}`
 
   // ISO-8601 helpers (pure arithmetic, no Date manipulation beyond toISOString).
+  // exp / issuedAtUnixSec were validated above, so these Date constructions cannot throw.
   const expiryDate = new Date(claims.exp * 1000).toISOString()
   // Use caller-supplied issuedAt if available; do not approximate from exp.
   const validFrom =
@@ -339,4 +380,41 @@ export function projectPermit(
   }
 
   return { vc, eidas, agentAuth }
+}
+
+/**
+ * Non-throwing variant of {@link projectPermit}. Validates the permit's time fields
+ * and returns a deny-shaped {@link PermitProjectionResult} (`{ ok: false, error }`)
+ * instead of throwing when `claims.exp` / `opts.issuedAtUnixSec` is non-finite or out of
+ * the representable Date range. On success it returns `{ ok: true, projection }`.
+ *
+ * Use this on any path that must FAIL CLOSED on bad inputs rather than surface an
+ * exception (regression guard for #3: out-of-range exp must not throw a RangeError).
+ */
+export function tryProjectPermit(
+  token: PermitToken,
+  claims: PermitClaims,
+  intent: ActionIntent,
+  issuerPublicKeyBytes: Uint8Array,
+  agentPublicKeyBytes: Uint8Array,
+  opts?: { nonce?: string; issuedAtUnixSec?: number },
+): PermitProjectionResult {
+  try {
+    return {
+      ok: true,
+      projection: projectPermit(
+        token,
+        claims,
+        intent,
+        issuerPublicKeyBytes,
+        agentPublicKeyBytes,
+        opts,
+      ),
+    }
+  } catch (err) {
+    if (err instanceof PermitProjectionError) {
+      return { ok: false, error: err.message }
+    }
+    throw err
+  }
 }

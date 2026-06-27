@@ -19,7 +19,7 @@ export {
   KeyProviderRegistry,
   signEnvelopeViaProvider,
 } from './providers.js'
-export { SealingKeyProvider } from './sealing-provider.js'
+export { SealingKeyProvider, sealedKeyAad } from './sealing-provider.js'
 export type { SealedKey, SeedSealer } from './sealing-provider.js'
 export { AzureKeyVaultKeyProvider } from './azure-provider.js'
 export { AzureKeyVaultSealer, azureSealerFromEnv } from './azure-kv.js'

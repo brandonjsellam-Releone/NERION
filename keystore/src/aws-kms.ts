@@ -175,27 +175,35 @@ export class AwsKmsSealer implements SeedSealer {
    * ciphertext cannot be swapped across keys / tenants / purposes — an online
    * cross-id swap the symmetric path was otherwise open to (CUSTODY-AWS-AAD-001,
    * Team Apex 2026-06-21; complements the offline-forgery defense in sealing-provider).
+   *
+   * When the caller supplies per-blob `aad` (the {@link SealingKeyProvider} passes
+   * the canonical id/suite/sigId binding — CUSTODY-SEAL-AAD-001), it is added as an
+   * extra context entry so the same ciphertext additionally cannot be relabeled or
+   * swapped across keys sealed under THIS KEK. Omitting `aad` preserves the exact
+   * legacy context (and therefore the pinned SigV4 request KAT) byte-for-byte.
    */
-  private encryptionContext(): Record<string, string> {
-    return { purpose: 'polarseek-seed-seal-v1', keyId: this.keyId }
+  private encryptionContext(aad?: Bytes): Record<string, string> {
+    const ctx: Record<string, string> = { purpose: 'polarseek-seed-seal-v1', keyId: this.keyId }
+    if (aad !== undefined) ctx['binding'] = b64Encode(aad)
+    return ctx
   }
 
-  async wrap(seed: Bytes): Promise<Bytes> {
+  async wrap(seed: Bytes, aad?: Bytes): Promise<Bytes> {
     const json = await this.call('TrentService.Encrypt', {
       KeyId: this.keyId,
       Plaintext: b64Encode(seed),
-      EncryptionContext: this.encryptionContext(),
+      EncryptionContext: this.encryptionContext(aad),
     })
     const ct = json['CiphertextBlob']
     if (typeof ct !== 'string') throw new Error('AWS KMS Encrypt: no CiphertextBlob in response')
     return b64Decode(ct)
   }
 
-  async unwrap(blob: Bytes): Promise<Bytes> {
+  async unwrap(blob: Bytes, aad?: Bytes): Promise<Bytes> {
     const json = await this.call('TrentService.Decrypt', {
       KeyId: this.keyId,
       CiphertextBlob: b64Encode(blob),
-      EncryptionContext: this.encryptionContext(),
+      EncryptionContext: this.encryptionContext(aad),
     })
     const pt = json['Plaintext']
     if (typeof pt !== 'string') throw new Error('AWS KMS Decrypt: no Plaintext in response')
