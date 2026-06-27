@@ -59,6 +59,11 @@ auditor verifies; `[ITEM]` = a genuine open question or hardening candidate this
 - **[ITEM]** There is **no written soundness theorem / extractor** — the argument lives in
   code comments. The auditor should produce or confirm the formal extractor and the dual-range
   → `0 ≤ amount < threshold` reduction (`zkrange.ts:17-24`).
+  _Operationalized:_ a written **argument sketch** (extractor construction, aggregation/binding
+  step, dual-range disjointness, strong-FS) is now provided for the auditor to verify or refute:
+  [`docs/formal/zk-range-soundness-argument.md`](../formal/zk-range-soundness-argument.md). It is
+  a sketch in the classical ROM — **not** a machine-checked proof and **not** a tight
+  knowledge-error bound; §6 there lists exactly what the audit must still establish.
 
 ### P2 — Honest-verifier zero-knowledge (simulation)
 
@@ -71,7 +76,10 @@ auditor verifies; `[ITEM]` = a genuine open question or hardening candidate this
 - **[ITEM]** **Prover nonce quality is load-bearing.** `kReal = randScalar()` (`:138`) feeds a
   Schnorr response; a repeated or low-entropy nonce leaks the witness (ECDSA-class failure).
   Confirm `randomBytes` is a CSPRNG with **no derandomized / deterministic-nonce path**, and
-  that nonces are never reused across proofs.
+  that nonces are never reused across proofs. _Operationalized (partial):_
+  `disclosure/test/zkrange-nonce-freshness.test.ts` pins that proving is non-deterministic (two
+  proofs of the same statement/witness differ, both verify), ruling out an accidentally
+  derandomized prover. It cannot prove `randomBytes` is a CSPRNG — that remains for the auditor.
 - **[ITEM / KNOWN]** ZK is argued in the **classical ROM only**; **QROM is unanalyzed**
   (`policyproof.ts:37-40`). Auditor to either supply a QROM argument or bound the classical-ROM
   claim and state the residual.
