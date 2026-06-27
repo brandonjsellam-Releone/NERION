@@ -21,8 +21,8 @@ import { NotImplementedError } from './errors.js'
 /** Structural shape of a noble Signer (ml_dsa*, slh_dsa_*). */
 interface NobleSigner {
   keygen(seed?: Bytes): { publicKey: Bytes; secretKey: Bytes }
-  sign(message: Bytes, secretKey: Bytes): Bytes
-  verify(signature: Bytes, message: Bytes, publicKey: Bytes): boolean
+  sign(message: Bytes, secretKey: Bytes, opts?: { context?: Bytes }): Bytes
+  verify(signature: Bytes, message: Bytes, publicKey: Bytes, opts?: { context?: Bytes }): boolean
   lengths: Record<string, number>
 }
 
@@ -34,11 +34,18 @@ function wrap(id: string, impl: NobleSigner): SignatureScheme {
       const { publicKey, secretKey } = seed === undefined ? impl.keygen() : impl.keygen(seed)
       return { publicKey, secretKey }
     },
-    sign(message, secretKey) {
-      return impl.sign(message, secretKey)
+    // FIPS-204/205 context string (≤255 bytes) for domain separation. Omitting it
+    // uses @noble's empty-context default — byte-identical to the prior 2-arg call,
+    // so pinned no-context KATs are unchanged. Only pass opts when a context is given.
+    sign(message, secretKey, context) {
+      return context === undefined
+        ? impl.sign(message, secretKey)
+        : impl.sign(message, secretKey, { context })
     },
-    verify(signature, message, publicKey) {
-      return impl.verify(signature, message, publicKey)
+    verify(signature, message, publicKey, context) {
+      return context === undefined
+        ? impl.verify(signature, message, publicKey)
+        : impl.verify(signature, message, publicKey, { context })
     },
   }
 }
