@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: 2026 TRELYAN
+# SPDX-License-Identifier: Apache-2.0
+name: Formal (TLC)
+
+# Machine-checks the TLA+ accountable-safety model on every change to docs/formal/.
+# TLC exits non-zero on any invariant violation or genuine deadlock, failing the build.
+on:
+  push:
+    paths: ['docs/formal/**', '.github/workflows/ci-formal.yml']
+  pull_request:
+    paths: ['docs/formal/**', '.github/workflows/ci-formal.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tlc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Fetch TLA+ tools (tla2tools v1.8.0)
+        run: curl -sSL -o tla2tools.jar https://github.com/tlaplus/tlaplus/releases/download/v1.8.0/tla2tools.jar
+      - name: Model-check NerionConsensus (all configurations)
+        working-directory: docs/formal
+        run: |
+          set -e
+          for cfg in NerionConsensus.cfg NerionConsensus_6v1b.cfg NerionConsensus_7v2b.cfg; do
+            echo "::group::TLC $cfg"
+            java -cp "$GITHUB_WORKSPACE/tla2tools.jar" tlc2.TLC -config "$cfg" NerionConsensus.tla
+            echo "::endgroup::"
+          done
