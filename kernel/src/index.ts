@@ -15,3 +15,10 @@ export { decide, decideWithAuthorizer } from './kernel.js'
 export type { DecisionWithAuthorizer } from './kernel.js'
 export { buildReplayBundle, replay } from './replay.js'
 export type { ReplayBundle, ReplayResult } from './replay.js'
+export { analyzePolicy, assertWellFormedPolicy } from './policy-algebra.js'
+export type {
+  PolicyAnalysis,
+  PolicyDiagnostic,
+  DiagnosticCode,
+  DiagnosticSeverity,
+} from './policy-algebra.js'
