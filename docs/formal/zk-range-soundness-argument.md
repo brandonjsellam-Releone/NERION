@@ -121,6 +121,21 @@ what keeps the positive window `[0, 2^n)` and the negative-diff residues
 `{L − k : 1 ≤ k ≤ 2^n}` **disjoint** mod `L`; at `n = 252` they can overlap and a large
 `v` would falsely satisfy the diff range (the documented off-by-one ZKRANGE-002).
 
+**Concrete `n = 252` counterexample (why the cap is necessary).** Take `T = 1` (claiming
+`v = 0`) and the malicious `v = 1 + δ` (a valid 252-bit value, `v ≈ 2^{124.6} < 2^{252}`).
+The amount range proof on `C` accepts (`v ∈ [0, 2^{252})`). The verifier reconstructs
+`C_diff = (T−1)G − C = −C`, which commits to `−v ≡ L − v = (2^{252}+δ) − (1+δ) = 2^{252} − 1`,
+and `2^{252} − 1 ∈ [0, 2^{252})`, so the diff range proof **also** accepts — falsely proving
+`0 ≤ v < 1` while `v = 1 + δ ≠ 0`. With `n ≤ 251` this is impossible: `L − 2^n ≥ 2^{251} > 2^n`,
+so the two windows cannot overlap. (Arithmetic re-checked numerically; `δ` is 125-bit.)
+
+> **Independent check (2026-06-27).** The §4 crux was reviewed adversarially by a council
+> seat (DeepSeek), which **confirmed** the argument, verified `L − 2^{251} = 2^{251} + δ > 2^{251}`,
+> agreed `n ≤ 251` is **tight**, and supplied the `n = 252` counterexample above. The Gemini
+> and OpenAI seats were unavailable/partial this run (provider throttling), so this is a
+> two-reviewer check (this author + DeepSeek), not a full council consensus — and still not a
+> substitute for the external audit.
+
 ---
 
 ## 5. Statement binding (strong Fiat–Shamir)
