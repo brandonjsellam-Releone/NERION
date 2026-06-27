@@ -15,12 +15,12 @@ to **find counterexamples** to the safety properties the implementation relies o
 
 ## What is modelled
 
-| Concept | In the model | In the code |
-|---|---|---|
-| Finality threshold | `3·stake(attestors) > 2·total` | `≥2/3` accountable finality (equivocation.ts) |
-| Equivocation | attesting two distinct blocks at one height | `detectEquivocations` / `verifyEquivocationProof` same-height rule |
-| Honest behaviour | ≤ one block per height | honest validators attest once per height |
-| Byzantine behaviour | may attest any blocks (equivocate) | the adversary the slashing guards defend against |
+| Concept             | In the model                                | In the code                                                        |
+| ------------------- | ------------------------------------------- | ------------------------------------------------------------------ |
+| Finality threshold  | `3·stake(attestors) > 2·total`              | `≥2/3` accountable finality (equivocation.ts)                      |
+| Equivocation        | attesting two distinct blocks at one height | `detectEquivocations` / `verifyEquivocationProof` same-height rule |
+| Honest behaviour    | ≤ one block per height                      | honest validators attest once per height                           |
+| Byzantine behaviour | may attest any blocks (equivocate)          | the adversary the slashing guards defend against                   |
 
 ### Invariants checked
 
@@ -37,8 +37,10 @@ to **find counterexamples** to the safety properties the implementation relies o
 Signatures and their forgery resistance; networking, message loss, and ordering;
 wall-clock timing and the validity-window guards; **view-change / round-skip**
 (tracked separately in `docs/adr/ADR-0018`); the governance M-of-N independent-
-signature quorum (modelled here only as the stake-finality analogue). This model
-checks the *agreement/accountability* layer, nothing else.
+signature quorum (modelled here only as the stake-finality analogue — though its
+`QuorumIntegrity` analogue **is** now property-checked against the real `enact()`
+code, see the bridge note below). This model checks the _agreement/accountability_
+layer, nothing else.
 
 ## Running it
 
@@ -57,13 +59,13 @@ blocks); state-graph depth 7; runs in <1 s.
 
 **Verified across multiple configurations** (CI runs all three):
 
-| Config | Validators / Byzantine | Byzantine ratio | Distinct states | Exercises |
-|---|---|---|---|---|
-| `NerionConsensus.cfg` | 4 / 2 | 50% (>⅓) | 144 | `AccountableSafety` non-vacuous |
-| `NerionConsensus_6v1b.cfg` | 6 / 1 | 16.7% (<⅓) | 972 | `HonestAgreement` non-vacuous |
-| `NerionConsensus_7v2b.cfg` | 7 / 2 | 28.6% (<⅓) | 3 888 | `HonestAgreement` near the ⅓ boundary |
+| Config                     | Validators / Byzantine | Byzantine ratio | Distinct states | Exercises                             |
+| -------------------------- | ---------------------- | --------------- | --------------- | ------------------------------------- |
+| `NerionConsensus.cfg`      | 4 / 2                  | 50% (>⅓)        | 144             | `AccountableSafety` non-vacuous       |
+| `NerionConsensus_6v1b.cfg` | 6 / 1                  | 16.7% (<⅓)      | 972             | `HonestAgreement` non-vacuous         |
+| `NerionConsensus_7v2b.cfg` | 7 / 2                  | 28.6% (<⅓)      | 3 888           | `HonestAgreement` near the ⅓ boundary |
 
-All three report *no error*, spanning honest-supermajority (agreement holds) through
+All three report _no error_, spanning honest-supermajority (agreement holds) through
 Byzantine-majority (accountable slashing). The model is intentionally small; widen
 `Validators`, `Heights`, `Blocks`, or override `Stake` with a non-uniform function to
 explore stake-weighted cases.
@@ -85,3 +87,10 @@ and genuine deadlocks elsewhere are still caught.
 > honest/Byzantine attestation patterns — see `ledger/test/equivocation.property.test.ts`. So the
 > property is both model-checked (abstract) and property-checked (concrete), though still not a formal
 > proof of the implementation.
+>
+> Likewise, the model's **`QuorumIntegrity`** invariant ("a finalized decision always carries a
+> ≥threshold quorum") is property-tested against the **real governance `enact()`** in
+> `governance/src/quorum.ts` — over randomized member sets, thresholds, validity windows, and
+> adversarial approvals (tampered, cross-quorum, wrong-proposal) — in
+> `governance/test/quorum.property.test.ts`. The abstract stake-finality quorum and the concrete
+> M-of-N signature quorum thus share one machine-checked integrity property, checked on both sides.
