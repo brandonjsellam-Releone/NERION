@@ -1,0 +1,38 @@
+#!/usr/bin/env sh
+# SPDX-FileCopyrightText: 2026 TRELYAN
+# SPDX-License-Identifier: Apache-2.0
+#
+# Nerion pre-commit secret guard — runs gitleaks on staged files.
+#
+# Activate once per clone:
+#   git config core.hooksPath .git-hooks
+#
+# Requires: gitleaks >= 8  (https://github.com/gitleaks/gitleaks)
+#   Install: brew install gitleaks  |  choco install gitleaks  |  go install github.com/gitleaks/gitleaks/v8@latest
+#
+# Exit 0  → commit proceeds
+# Exit non-zero → commit blocked; gitleaks prints the offending finding.
+
+set -e
+
+# Locate gitleaks; fail gracefully when it is not installed so that
+# contributors without the tool are not silently unguarded.
+if ! command -v gitleaks > /dev/null 2>&1; then
+  printf '[nerion-gitleaks] WARNING: gitleaks not found in PATH.\n'
+  printf '  Install it and re-commit, or set SKIP_GITLEAKS=1 to bypass (CI will still block).\n'
+  if [ "${SKIP_GITLEAKS:-0}" = "1" ]; then
+    exit 0
+  fi
+  exit 1
+fi
+
+# Allow an escape hatch for automated merge commits / release tooling.
+if [ "${SKIP_GITLEAKS:-0}" = "1" ]; then
+  printf '[nerion-gitleaks] SKIP_GITLEAKS=1 set — skipping secret scan.\n'
+  exit 0
+fi
+
+printf '[nerion-gitleaks] Scanning staged changes for secrets...\n'
+gitleaks protect --staged --config .gitleaks.toml --exit-code 1
+
+printf '[nerion-gitleaks] Clean — no secrets detected.\n'

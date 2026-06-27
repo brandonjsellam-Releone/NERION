@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: 2026 TRELYAN
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: secret-scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  gitleaks-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          # Full history required so gitleaks --log-opts=--all can scan every
+          # commit, not just the tip.  A shallow clone would silently miss
+          # secrets introduced in prior commits.
+          fetch-depth: 0
+
+      - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2
+        with:
+          config: .gitleaks.toml
+          fail: true
+          log-opts: "--all"
+        env:
+          # GITHUB_TOKEN is needed by the action to post annotations on PRs.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

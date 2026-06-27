@@ -28,6 +28,10 @@ path = [
   "crypto/vectors/deterministic-kat.json",
   ".claude/settings.json",
   "NOTICE",
+  ".gitleaks.toml",
+  ".git-hooks/pre-commit",
+  ".github/workflows/ci-gitleaks.yml",
+  ".github/workflows/ci-rust.yml",
 ]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 TRELYAN"

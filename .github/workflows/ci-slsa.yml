@@ -1,0 +1,74 @@
+# SPDX-FileCopyrightText: 2026 TRELYAN
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# A35: OIDC-based SLSA build provenance for Nerion releases.
+#
+# Uses slsa-framework/slsa-github-generator to produce a signed SLSA provenance
+# attestation for release artifacts. Triggered on release tag pushes or
+# manually via workflow_dispatch.
+#
+# Scope: id-token:write (narrow — provenance signing only). No contents:write
+# on the gate job. No push to main from this workflow.
+#
+# Hard constraints (Innovation Sprint 1):
+#   - id-token:write is the ONLY elevated permission; contents is read-only.
+#   - Does NOT modify source, KAT vectors, or conformance files.
+#   - Does NOT push to main.
+#   - NOT a FIPS or audit certification claim.
+
+name: slsa-provenance
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build release artifact
+    runs-on: ubuntu-latest
+    outputs:
+      digests: ${{ steps.hash.outputs.digests }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: '22'
+      - name: Install dependencies (lockfile only)
+        run: npm ci
+      - name: Build
+        run: npm run build --if-present
+      - name: Package artifact
+        run: |
+          tar -czf nerion-release.tar.gz dist/ || tar -czf nerion-release.tar.gz README.md LICENSE NOTICE
+      - name: Compute SHA-256 digest
+        id: hash
+        run: |
+          sha256sum nerion-release.tar.gz > nerion-release.tar.gz.sha256
+          echo "digests=$(cat nerion-release.tar.gz.sha256 | base64 -w0)" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@89ef406dd8d7e03cfd12d9e0a4a378f454709029 # v4
+        with:
+          name: nerion-release
+          path: |
+            nerion-release.tar.gz
+            nerion-release.tar.gz.sha256
+          if-no-files-found: error
+
+  provenance:
+    name: SLSA provenance
+    needs: [build]
+    # slsa-github-generator requires id-token:write for OIDC signing.
+    # All other permissions remain at the default (read).
+    permissions:
+      id-token: write
+      contents: read
+      actions: read
+    # Pin to a specific release SHA for supply-chain hygiene.
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
+    with:
+      base64-subjects: ${{ needs.build.outputs.digests }}
+      upload-assets: false

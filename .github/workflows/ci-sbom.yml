@@ -1,0 +1,55 @@
+# SPDX-FileCopyrightText: 2026 TRELYAN
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# A32: CycloneDX SBOM generation as a CI artifact per run.
+#
+# Uses @cyclonedx/cyclonedx-npm to produce a CycloneDX JSON SBOM for each
+# workflow run. Report-only — does NOT fail the build on SBOM issues.
+# The artifact is named 'nerion-sbom' and retained for 30 days.
+#
+# Hard constraints (Innovation Sprint 1):
+#   - Report-only: no --failOnError or fail-on flags.
+#   - Does NOT modify source, KAT vectors, or conformance files.
+#   - Does NOT push to main.
+#   - NOT a FIPS or audit certification claim.
+
+name: sbom
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sbom:
+    name: Generate CycloneDX SBOM
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: '22'
+      - name: Install dependencies (lockfile only)
+        run: npm ci
+      - name: Generate CycloneDX SBOM
+        # Report-only: errors in SBOM generation are surfaced as warnings only.
+        # The || true ensures the gate is never blocked by SBOM tool failures.
+        run: |
+          npx @cyclonedx/cyclonedx-npm \
+            --output-format JSON \
+            --output-file nerion-sbom.json \
+            --package-lock-only \
+            --flatten-components \
+            . || true
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@89ef406dd8d7e03cfd12d9e0a4a378f454709029 # v4
+        with:
+          name: nerion-sbom
+          path: nerion-sbom.json
+          # Do not fail if the SBOM was not produced (report-only).
+          if-no-files-found: warn
+          retention-days: 30
