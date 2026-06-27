@@ -69,9 +69,13 @@ function tsFilesUnder(dir: string): string[] {
 
 const SOURCE_FILES = SRC_ROOTS.flatMap((r) => tsFilesUnder(join(r, 'src')))
 
-// A string LITERAL whose content begins with a domain-separation prefix family. Captures the static
-// stem of parameterized labels (matching stops at `$`, `|`, or the closing quote).
-const LABEL_LITERAL = /['"`]((?:polarseek|PolarSeek)[/-][A-Za-z0-9/_:.-]*)/g
+// Extract every single/double/backtick string literal; the drift check then flags any whose CONTENT
+// carries a domain-separation prefix family anywhere but is not registered/excluded. Catches
+// mid-string embeddings and concatenation fragments (e.g. 'polarseek-' + x), and parameterized
+// templates (their static stem is matched via isRegisteredLabel). NOT sound against a label assembled
+// entirely from non-matching fragments — see the honesty note below.
+const STRING_LITERAL = /'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*`/g
+const CARRIES_LABEL = /(?:polarseek|PolarSeek)[/-]/
 
 describe('PQC-1 — domain-separation registry: uniqueness & prefix-freeness', () => {
   it('all labels are unique', () => {
@@ -108,16 +112,25 @@ describe('PQC-1 — coverage: every registered label exists in its claimed sourc
   )
 })
 
-describe('PQC-1 — no inline-literal escape: every domain-sep literal in source is registered', () => {
-  it('scans the protocol source tree and finds no unregistered label', () => {
+describe('PQC-1 — drift detector (best-effort static scan; NOT sound enforcement — see note)', () => {
+  // HONESTY: this scan reduces, but does not eliminate, the chance of an unregistered label. It
+  // catches inline literals (including mid-string and the 'polarseek-' + x concatenation fragment)
+  // and parameterized templates, but CANNOT catch a label assembled entirely from non-matching
+  // fragments or built at runtime from variables. The only SOUND enforcement is import-only labels
+  // (every module imports its label from domain-labels.ts; the gate then forbids ANY domain-sep
+  // literal outside the registry) — a byte-identical, conformance-gated follow-up, deferred here to
+  // avoid a 15-module refactor while concurrent sessions edit those files. Treat 0 violations as
+  // "no drift detected", NOT proof of coverage.
+  it('every source string literal carrying a domain-sep prefix is registered or explicitly excluded', () => {
     expect(SOURCE_FILES.length).toBeGreaterThan(20) // sanity: the walk actually found the tree
     const violations: Array<{ literal: string; file: string }> = []
     for (const file of SOURCE_FILES) {
       const content = readFileSync(file, 'utf8')
-      for (const m of content.matchAll(LABEL_LITERAL)) {
-        const literal = m[1]!
-        if (!isRegisteredLabel(literal) && !isExcludedLiteral(literal)) {
-          violations.push({ literal, file: file.replace(/\\/g, '/') })
+      for (const m of content.matchAll(STRING_LITERAL)) {
+        const inner = m[0]!.slice(1, -1) // strip the surrounding quotes/backticks
+        if (!CARRIES_LABEL.test(inner)) continue
+        if (!isRegisteredLabel(inner) && !isExcludedLiteral(inner)) {
+          violations.push({ literal: inner, file: file.replace(/\\/g, '/') })
         }
       }
     }

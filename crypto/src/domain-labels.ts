@@ -183,6 +183,17 @@ export const DOMAIN_LABELS: readonly DomainLabel[] = [
     purpose: 'CBOM signing context',
     module: 'conformance/src/cbom.ts',
   },
+  // --- SLSA provenance namespace (URI-form identifiers) ---
+  {
+    label: 'https://polarseek/bt/v1',
+    purpose: 'SLSA provenance buildType URI',
+    module: 'conformance/src/suite.ts',
+  },
+  {
+    label: 'https://polarseek/builder',
+    purpose: 'SLSA provenance builder-id URI',
+    module: 'conformance/src/suite.ts',
+  },
 ]
 
 /** The exact label strings, for O(1) membership and the no-escape reconciliation. */
