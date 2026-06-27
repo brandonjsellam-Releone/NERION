@@ -20,6 +20,12 @@
  * rejection means a tampered ciphertext or wrong key decapsulates to a pseudo-random secret (never the
  * original), which the tag check then rejects.
  *
+ * KEY-COMMITMENT (PQC-4): AES-256-GCM is not key-committing, so a partitioning oracle could craft a
+ * single ciphertext that AEAD-verifies under two different derived keys. Each `SealedMessage` therefore
+ * carries a `keyCommitment` — a domain-separated HKDF tag over the derived AEAD key + bound context —
+ * which `openSealed` constant-time verifies BEFORE the AEAD open, binding the ciphertext to exactly one
+ * (key, context). The AEAD key derivation is unchanged (the commitment is an additive field).
+ *
  * SCOPE / HONESTY: this provides CONFIDENTIALITY + INTEGRITY *to the recipient*, NOT sender
  * authentication — anyone holding the recipient's public key can seal, so `senderId` is a bound
  * CONTEXT claim, not a proof of origin. For authenticated origin, sign the `SealedMessage` separately
@@ -27,7 +33,7 @@
  */
 
 import { getKem } from './kem.js'
-import { AES_256_GCM, HKDF_SHA384, randomBytes } from './symmetric.js'
+import { AES_256_GCM, HKDF_SHA384, constantTimeEqual, randomBytes } from './symmetric.js'
 import { encodeCanonical } from './cbor.js'
 import type { Bytes } from './types.js'
 
@@ -52,6 +58,13 @@ export interface SealedMessage {
   readonly nonce: Bytes
   /** AES-256-GCM ciphertext including the 16-byte authentication tag. */
   readonly ciphertext: Bytes
+  /**
+   * Key-commitment (PQC-4): a 32-byte HKDF tag over the derived AEAD key + domain-separated context.
+   * AES-256-GCM is NOT key-committing, so without this a partitioning oracle could craft one
+   * ciphertext that AEAD-verifies under two different derived keys. `openSealed` re-derives and
+   * constant-time compares it before the AEAD open, binding the ciphertext to exactly one (key,context).
+   */
+  readonly keyCommitment: Bytes
 }
 
 // All binding below uses canonical CBOR — length-prefixed + injective (distinct field tuples never
@@ -91,6 +104,52 @@ function sealAad(p: SealParams, recipientPublicKey: Bytes, kemCiphertext: Bytes)
   ])
 }
 
+const KEY_COMMITMENT_LABEL = 'key-commitment'
+const KEY_COMMITMENT_LENGTH = 32
+
+/**
+ * Key-commitment KDF `info` (PQC-4): the bound context, domain-separated by a distinct discriminator.
+ * The commitment IKM is the derived AEAD key (see {@link deriveKeyCommitment}), so the tag binds the
+ * exact key GCM uses; HKDF-SHA-384 (a PRF) makes it one-way, and its 256-bit output gives ~2^128
+ * collision resistance — no second key/context yields the same tag, closing the AES-256-GCM gap.
+ */
+function commitInfo(p: SealParams, recipientPublicKey: Bytes, kemCiphertext: Bytes): Bytes {
+  return encodeCanonical([
+    SEAL_LABEL,
+    SEAL_VERSION,
+    KEY_COMMITMENT_LABEL,
+    p.suite,
+    p.kemId,
+    recipientPublicKey,
+    kemCiphertext,
+    p.senderId,
+    p.recipientId,
+  ])
+}
+
+// Fixed domain-separation salt for the commitment extract step (RFC 5869 hygiene; council fix).
+const KEY_COMMITMENT_SALT = new TextEncoder().encode('polarseek/kem-seal/key-commitment/v1')
+
+/**
+ * Commit to the DERIVED AEAD KEY (council fix — the canonical key-committing construction binds the
+ * exact key GCM uses, not merely the upstream shared secret) over the bound context, under a fixed
+ * domain-separation salt. The key is itself HKDF(sharedSecret, sealInfo), so this transitively binds
+ * the context too; the commitment is a one-way PRF output that reveals nothing about the key.
+ */
+function deriveKeyCommitment(
+  aeadKey: Bytes,
+  p: SealParams,
+  recipientPublicKey: Bytes,
+  kemCiphertext: Bytes,
+): Bytes {
+  return HKDF_SHA384.derive(
+    aeadKey,
+    KEY_COMMITMENT_SALT,
+    commitInfo(p, recipientPublicKey, kemCiphertext),
+    KEY_COMMITMENT_LENGTH,
+  )
+}
+
 /** Seal `plaintext` to the recipient's hybrid-KEM public key (ADR-0028). */
 export function sealToKem(
   recipientKemPublicKey: Bytes,
@@ -112,6 +171,7 @@ export function sealToKem(
     plaintext,
     sealAad(params, recipientKemPublicKey, kemCiphertext),
   )
+  const keyCommitment = deriveKeyCommitment(key, params, recipientKemPublicKey, kemCiphertext)
   return {
     suite: params.suite,
     kemId: params.kemId,
@@ -120,6 +180,7 @@ export function sealToKem(
     kemCiphertext,
     nonce,
     ciphertext,
+    keyCommitment,
   }
 }
 
@@ -152,6 +213,18 @@ export function openSealed(
     sealInfo(params, recipient.publicKey, sealed.kemCiphertext),
     AES_256_GCM.keyLength,
   )
+  // PQC-4: verify the key-commitment BEFORE the AEAD open, binding this ciphertext to exactly one
+  // (key, context). Constant-time compare; a mismatch (incl. a partitioning-oracle second key, or a
+  // wrong key whose ML-KEM implicit-rejection shared secret re-derives a different tag) fails closed.
+  const expectedCommitment = deriveKeyCommitment(
+    key,
+    params,
+    recipient.publicKey,
+    sealed.kemCiphertext,
+  )
+  if (!constantTimeEqual(expectedCommitment, sealed.keyCommitment)) {
+    throw new Error('sealed message: key-commitment mismatch (partitioning / wrong key)')
+  }
   return AES_256_GCM.open(
     key,
     sealed.nonce,
