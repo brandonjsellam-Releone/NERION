@@ -22,7 +22,7 @@ import {
   type EvalContext,
   type RiskTier,
 } from '../../capabilities/src/index.js'
-import { tierOf, evaluatorVersion, KERNEL_VERSION } from './policy.js'
+import { tierOf, actionInList, evaluatorVersion, KERNEL_VERSION } from './policy.js'
 import { governedView, type GovernedIntent } from './blindness.js'
 import type { Decision, KernelInput } from './types.js'
 
@@ -88,7 +88,7 @@ function decideCore(input: GovernedInput): DecisionWithAuthorizer {
     ev = evaluatorVersion(input.policy)
     const tier = tierOf(input.intent, input.policy)
 
-    if (input.policy.denyActions.includes(input.intent.type)) {
+    if (actionInList(input.intent.type, input.policy.denyActions)) {
       return {
         decision: {
           effect: 'deny',
@@ -128,7 +128,9 @@ function decideCore(input: GovernedInput): DecisionWithAuthorizer {
       }
     }
 
-    const effect = input.policy.transformActions.includes(input.intent.type) ? 'transform' : 'allow'
+    const effect = actionInList(input.intent.type, input.policy.transformActions)
+      ? 'transform'
+      : 'allow'
     return {
       decision: {
         effect,

@@ -19,16 +19,41 @@ import type { Policy } from './types.js'
 export const KERNEL_VERSION = 'polarseek-kernel/0.1.0'
 
 /**
+ * SEGMENT-prefix action match (PS-KERNEL-03): `entry` matches `type` iff they are
+ * equal OR `type` is a dotted-namespace child of `entry` (`export.mass` matches
+ * `export.mass.full`, but `data.read` does not match a crafted `data.readX`).
+ *
+ * This is the SINGLE matcher shared by `tierOf` and the deny/transform RESTRICTION
+ * lists, so a marked verb family covers its dotted children identically (the
+ * exact-vs-prefix asymmetry F1/F2, Team Apex max sweep 2026-06-28: previously
+ * `tierOf` was prefix while `denyActions`/`transformActions` were exact `includes`,
+ * so a dotted child inherited the parent's TIER but escaped its deny/transform
+ * obligation toward the more-permissive effect).
+ *
+ * ROLE NOTE — this is for RESTRICTION lists, where a child must INHERIT the parent's
+ * restriction (deny/transform flows DOWN the namespace). Capability GRANT matching
+ * (`capabilities/src/grant.ts` `authorizesIntent`) deliberately stays EXACT: a grant
+ * for `x` must NEVER auto-authorize `x.child`. The two semantics are opposite by
+ * design — do not unify them.
+ */
+export function actionMatches(type: string, entry: string): boolean {
+  const boundary = entry.endsWith('.') ? entry : entry + '.'
+  return type === entry || type.startsWith(boundary)
+}
+
+/** True iff `type` is matched by any entry of a restriction list (deny/transform). */
+export function actionInList(type: string, list: readonly string[]): boolean {
+  return list.some((entry) => actionMatches(type, entry))
+}
+
+/**
  * Deterministic tier of an intent: first matching prefix wins, else default.
  *
- * Matching is SEGMENT-wise, not substring (PS-KERNEL-03): a rule prefix matches
- * only on an exact type or a dotted-namespace child, so `data.read` does not
- * under-tier a crafted `data.readX`.
+ * Matching is SEGMENT-wise, not substring (PS-KERNEL-03) via {@link actionMatches}.
  */
 export function tierOf(intent: ActionIntent, policy: Policy): RiskTier {
   for (const rule of policy.tierRules) {
-    const boundary = rule.prefix.endsWith('.') ? rule.prefix : rule.prefix + '.'
-    if (intent.type === rule.prefix || intent.type.startsWith(boundary)) return rule.tier
+    if (actionMatches(intent.type, rule.prefix)) return rule.tier
   }
   return policy.defaultTier
 }

@@ -131,6 +131,49 @@ describe('admission decisions', () => {
     expect(decide(input(READ, { policy })).effect).toBe('transform')
   })
 
+  // F1/F2 (Team Apex max sweep 2026-06-28): deny/transform restriction lists are matched
+  // by the SAME segment-prefix rule as tierOf, so a dotted child of a marked verb family
+  // inherits the restriction instead of escaping to the more-permissive effect. The child
+  // must be explicitly authorized (capability matching stays exact, by design).
+  const childRoot = issueRoot(
+    {
+      subject: holderHex,
+      actions: ['data.read.bulk', 'payment.transfer.batch', 'data.readX'],
+      perActionCeiling: null,
+      aggregateCap: null,
+      counterparties: null,
+      maxTier: 3,
+      notBefore: 0,
+      notAfter: 10_000_000_000,
+      delegable: false,
+    },
+    suite,
+    authority,
+  )
+
+  it('F1: a transform-listed family transforms its dotted child (not raw allow)', () => {
+    const policy: Policy = { ...DEFAULT_POLICY, transformActions: ['data.read'] }
+    const child: ActionIntent = { type: 'data.read.bulk', resource: 'doc://x' }
+    expect(decide(input(child, { capabilities: [childRoot], policy })).effect).toBe('transform')
+  })
+
+  it('F2: a denylisted family denies its dotted child (the always-deny gate holds)', () => {
+    const policy: Policy = { ...DEFAULT_POLICY, denyActions: ['payment.transfer'] }
+    const child: ActionIntent = {
+      type: 'payment.transfer.batch',
+      resource: 'acct://t',
+      counterparty: 'a',
+      amount: 10,
+    }
+    expect(decide(input(child, { capabilities: [childRoot], policy })).effect).toBe('deny')
+  })
+
+  it('does NOT over-match a near-prefix sibling (data.readX is not a child of data.read)', () => {
+    const policy: Policy = { ...DEFAULT_POLICY, transformActions: ['data.read'] }
+    const near: ActionIntent = { type: 'data.readX', resource: 'r' }
+    expect(decide(input(near, { capabilities: [childRoot], policy })).effect).toBe('allow')
+  })
+
   it('receipt-implies-authorization: an allow only ever follows authorization', () => {
     // Over-ceiling / wrong-holder inputs must never produce allow.
     expect(decide(input(PAY, { holder: 'deadbeef' })).effect).toBe('deny')
