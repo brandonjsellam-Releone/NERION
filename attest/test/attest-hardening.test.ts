@@ -90,6 +90,29 @@ describe('attestation hardening (ATTEST-TIME-001 / ATTEST-NOFM-001)', () => {
     expect(appraise(ev, basePolicy()).valid).toBe(false)
   })
 
+  it('F9: a FINITE-but-non-safe-integer signed notAfter (1e30 / fractional) is rejected, not immortal', () => {
+    // Team Apex max sweep 2026-06-28: notAfter was guarded by Number.isFinite, so a SIGNED
+    // notAfter of 1e30 (finite, not a safe integer) passed and `now > 1e30` was always false —
+    // an attestation that never expires. It must now fail closed like Infinity does.
+    for (const notAfter of [1e30, Number.MAX_VALUE, NOW + 0.4]) {
+      const claims: AttestationClaims = {
+        format: 'software-dev',
+        sessionId: 's',
+        sessionPublicKey: sessPub,
+        nonce: NONCE,
+        notAfter,
+      }
+      const ev: Evidence = {
+        claims,
+        format: 'software-dev',
+        attesterPublicKey: A.publicKey,
+        sig: signerFor(suite).sign(attMsg(claims), A.secretKey),
+        suite,
+      }
+      expect(appraise(ev, basePolicy()).valid).toBe(false)
+    }
+  })
+
   it('ATTEST-NOFM-001: distinct formats from ONE attester do NOT satisfy 2-of-M', () => {
     const swA = evidenceA // software-dev by A
     const tdxA = tdxEvidence(A) // tdx by A -> 2 formats, 1 attester

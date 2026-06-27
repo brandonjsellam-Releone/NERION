@@ -162,11 +162,15 @@ export class PolarSeekNode {
       // authorized its session. Without the clamp, a permit minted just before the session's
       // attestation `notAfter` stays honored for the full TTL past it, extending the very window
       // ATTEST-EXP-001 enforces at admit time (defeating re-attestation / revocation for up to one
-      // TTL). Clamp to the (finite) attestation notAfter; a non-finite notAfter keeps the plain TTL
-      // (an attested session with a non-finite notAfter is already rejected by checkAttestedSession).
+      // TTL). Clamp to the safe-integer attestation notAfter. F3 (Team Apex max sweep 2026-06-28):
+      // a non-safe-integer notAfter now fails CLOSED (exp = req.now, a born-expired permit) instead
+      // of falling back to the unclamped plain TTL — previously a fractional / >2^53 notAfter
+      // silently took the plain-TTL branch and outlived its attestation by a full TTL. Such a
+      // session is also rejected upstream now (appraise + checkAttestedSession both require a
+      // safe-integer notAfter); this is the defense-in-depth backstop at mint.
       exp: Number.isSafeInteger(req.session.claims.notAfter)
         ? Math.min(req.now + this.cfg.permitTtlSeconds, req.session.claims.notAfter)
-        : req.now + this.cfg.permitTtlSeconds,
+        : req.now,
       evaluator: decision.evaluatorVersion,
       effect: decision.effect,
     }
@@ -249,13 +253,16 @@ export class PolarSeekNode {
     }
     // ATTEST-EXP-001 (Team Apex 2026-06-21): a correctly-BOUND session must also be FRESH.
     // Enforce the attestation's validity window (`claims.notAfter`) at admit time, fail-closed
-    // on a non-finite admit clock / notAfter — otherwise an attested session is usable
+    // on a non-safe-integer admit clock / notAfter — otherwise an attested session is usable
     // indefinitely past its notAfter, defeating re-attestation / revocation. (The key still
-    // matches; it is the EXPIRY, not the binding, that rejects here.)
+    // matches; it is the EXPIRY, not the binding, that rejects here.) F9 (Team Apex max sweep
+    // 2026-06-28): notAfter is now required to be a safe integer (was only Number.isFinite),
+    // matching appraise() and the permit-exp clamp — a signed notAfter of 1e30 is finite but not
+    // a safe integer, so `now > 1e30` was always false and the session never expired.
     if (reason === null) {
-      if (!Number.isSafeInteger(now) || !Number.isFinite(session.claims.notAfter)) {
+      if (!Number.isSafeInteger(now) || !Number.isSafeInteger(session.claims.notAfter)) {
         reason =
-          'attested session freshness uncheckable: non-finite admit clock or notAfter (ATTEST-EXP-001)'
+          'attested session freshness uncheckable: non-safe-integer admit clock or notAfter (ATTEST-EXP-001)'
       } else if (now > session.claims.notAfter) {
         reason =
           'attested session expired: admit time is past the attestation notAfter (ATTEST-EXP-001)'

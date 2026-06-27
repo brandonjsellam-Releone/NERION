@@ -130,12 +130,17 @@ export function appraise(
   if (evidence.claims.nonce !== policy.expectedNonce) {
     reasons.push('nonce mismatch (stale or replayed attestation)')
   }
-  // Fail-closed on a non-finite clock / expiry: a NaN `policy.now` (or a non-finite signed
-  // `notAfter`) makes `now > notAfter` false and would SILENTLY skip the expiry check
-  // (ATTEST-TIME-001, the same class as the fixed KERNEL-TIME-001). Treat either as
-  // uncheckable and reject, rather than fail open on freshness.
-  if (!Number.isSafeInteger(policy.now) || !Number.isFinite(evidence.claims.notAfter)) {
-    reasons.push('attestation expiry uncheckable (non-finite clock or notAfter)')
+  // Fail-closed on a non-safe-integer clock / expiry: a NaN `policy.now` OR a signed
+  // `notAfter` that is non-finite, fractional, or > 2^53 makes `now > notAfter` false and
+  // would SILENTLY skip the expiry check (ATTEST-TIME-001/ATTEST-EXP-001, same class as the
+  // fixed KERNEL-TIME-001). F9 (Team Apex max sweep 2026-06-28): the clock used
+  // Number.isSafeInteger but notAfter only used Number.isFinite — so a *signed* notAfter of
+  // 1e30 (finite, not a safe integer) passed and `now > 1e30` was always false, yielding an
+  // attestation that never expires (defeating re-attestation / revocation). A unix-seconds
+  // timestamp is always a safe integer; require BOTH sides to be safe integers, matching the
+  // sibling guards in grant.ts / quorum.ts and the permit-exp clamp in planes/node.ts.
+  if (!Number.isSafeInteger(policy.now) || !Number.isSafeInteger(evidence.claims.notAfter)) {
+    reasons.push('attestation expiry uncheckable (non-safe-integer clock or notAfter)')
   } else if (policy.now > evidence.claims.notAfter) {
     reasons.push('attestation has expired')
   }
