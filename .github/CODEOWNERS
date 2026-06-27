@@ -1,30 +1,28 @@
 # SPDX-FileCopyrightText: 2026 TRELYAN
 # SPDX-License-Identifier: Apache-2.0
-#
-# Review routing for Nerion. The maintainer owns everything by default; the
-# high-sensitivity cryptography / governance / frozen-tag paths are called out
-# explicitly so a change there always requires maintainer review.
-# See docs/APEX_COUNCIL.md for the Team Apex review process.
+# CODEOWNERS — routes review requests for sensitive paths
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
-*                               @brandonjsellam-Releone
+# Default: all files require review from the maintainer
+* @brandonjsellam-Releone
 
-# Cryptography & zero-knowledge (highest sensitivity)
-/crypto/                        @brandonjsellam-Releone
-/disclosure/                    @brandonjsellam-Releone
-/conformance/                   @brandonjsellam-Releone
+# Cryptographic primitives — require crypto-aware review
+/crypto/ @brandonjsellam-Releone
+/conformance/ @brandonjsellam-Releone
 
-# Governance, ledger, settlement, keystore
-/governance/                    @brandonjsellam-Releone
-/ledger/                        @brandonjsellam-Releone
-/settlement/                    @brandonjsellam-Releone
-/keystore/                      @brandonjsellam-Releone
+# Protocol governance kernel
+/kernel/ @brandonjsellam-Releone
 
-# Frozen wire-tags / KAT vectors — never change without a Track-B ADR + conformance regen
-/crypto/src/suites.ts           @brandonjsellam-Releone
-/conformance/vectors/           @brandonjsellam-Releone
+# Ledger / consensus
+/ledger/ @brandonjsellam-Releone
 
-# Licensing, security, grant materials
-/LICENSE                        @brandonjsellam-Releone
-/NOTICE                         @brandonjsellam-Releone
-/REUSE.toml                     @brandonjsellam-Releone
-/docs/grants/                   @brandonjsellam-Releone
+# Architecture decisions
+/docs/adr/ @brandonjsellam-Releone
+
+# CI/CD — supply chain sensitive
+/.github/workflows/ @brandonjsellam-Releone
+
+# Security documentation
+/docs/SECURITY.md @brandonjsellam-Releone
+/docs/THREAT_MODEL.md @brandonjsellam-Releone
+/SECURITY.md @brandonjsellam-Releone
