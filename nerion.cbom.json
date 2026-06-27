@@ -1,0 +1,427 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:00000000-0000-4000-8000-000000000001",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-06-22T00:00:00Z",
+    "lifecycles": [
+      {
+        "phase": "build"
+      }
+    ],
+    "component": {
+      "type": "application",
+      "name": "nerion",
+      "description": "Post-quantum-native execution-governance protocol for AI/agent actions. Cryptographic Bill of Materials per AIVD/CWI/TNO PQC Migration Handbook (2nd ed., Dec 2024) section 2.3.4.",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "copyright": "2026 TRELYAN"
+    },
+    "properties": [
+      {
+        "name": "nerion:posture",
+        "value": "PQC-native (built post-quantum-first; no quantum-vulnerable primitive is load-bearing)"
+      },
+      {
+        "name": "nerion:cnsa-2.0",
+        "value": "PS-5 uses the CNSA 2.0 algorithm set (ML-KEM-1024, ML-DSA-87, AES-256) at NIST Level 5; primary hash SHA-3/SHAKE256 (SHA-384 inside HMAC/HKDF) \u2014 aligned with CNSA 2.0 direction, not certified."
+      },
+      {
+        "name": "nerion:agility",
+        "value": "SuiteID registry: migration + compliance agility; hybrid-KEM composability; SuiteID bound into every signed message (signed-object suite-substitution rejected)."
+      },
+      {
+        "name": "nerion:assurance",
+        "value": "reference implementation; primitives via audited @noble libraries; protocol composition pending external audit (no FIPS/audit/non-infringement claim)"
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "cryptographic-asset",
+      "name": "ML-KEM-1024",
+      "bom-ref": "alg:ml-kem-1024",
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "kem",
+          "parameterSetIdentifier": "ML-KEM-1024",
+          "nistQuantumSecurityLevel": 5,
+          "cryptoFunctions": [
+            "keygen",
+            "encapsulate",
+            "decapsulate"
+          ]
+        }
+      }
+    },
+    {
+      "type": "cryptographic-asset",
+      "name": "ML-KEM-768",
+      "bom-ref": "alg:ml-kem-768",
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "kem",
+          "parameterSetIdentifier": "ML-KEM-768",
+          "nistQuantumSecurityLevel": 3,
+          "cryptoFunctions": [
+            "keygen",
+            "encapsulate",
+            "decapsulate"
+          ]
+        }
+      }
+    },
+    {
+      "type": "cryptographic-asset",
+      "name": "ECDH-P-384",
+      "bom-ref": "alg:ecdh-p384",
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "key-agree",
+          "parameterSetIdentifier": "secp384r1",
+          "curve": "P-384",
+          "classicalSecurityLevel": 192,
+          "nistQuantumSecurityLevel": 0,
+          "cryptoFunctions": [
+            "keygen",
+            "keyagreement"
+          ]
+        }
+      }
+    },
+    {
+      "type": "cryptographic-asset",
+      "name": "X25519",
+      "bom-ref": "alg:x25519",
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "key-agree",
+          "parameterSetIdentifier": "Curve25519",
+          "curve": "curve25519",
+          "classicalSecurityLevel": 128,
+          "nistQuantumSecurityLevel": 0,
+          "cryptoFunctions": [
+            "keygen",
+            "keyagreement"
+          ]
+        }
+      }
+    },
+    {
+      "type": "cryptographic-asset",
+      "name": "X-Wing",
+      "bom-ref": "alg:xwing",
+      "description": "Hybrid KEM: X25519 + ML-KEM-768 (IETF draft-connolly-cfrg-xwing-kem). Quantum-safe via ML-KEM; classical fallback via X25519.",
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "kem",
+          "parameterSetIdentifier": "X-Wing",
+          "nistQuantumSecurityLevel": 3,
+          "cryptoFunctions": [
+            "keygen",
+            "encapsulate",
+            "decapsulate"
+          ]
+        }
+      }
+    },
+    {
+      "type": "cryptographic-asset",
+      "name": "ML-KEM-1024+ECDH-P-384",
+      "bom-ref": "alg:mlkem1024-p384",
+      "description": "Hybrid KEM for the CNSA Cat-5 tier: ML-KEM-1024 combined with ECDH P-384.",
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "kem",
+          "parameterSetIdentifier": "ML-KEM-1024+ECDH-P-384",
+          "nistQuantumSecurityLevel": 5,
+          "cryptoFunctions": [
+            "keygen",
+            "encapsulate",
+            "decapsulate"
+          ]
+        }
+      }
+    },
+    {
+      "type": "cryptographic-asset",
+      "name": "HQC-256",
+      "bom-ref": "alg:hqc-256",
+      "description": "Code-based KEM (non-lattice diversity). PENDING NIST standardization (selected 2025-03-11; FIPS TBD). Registered non-active for agility only.",
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "kem",
+          "parameterSetIdentifier": "HQC-256",
+          "nistQuantumSecurityLevel": 5,
+          "cryptoFunctions": [
+            "keygen",
+            "encapsulate",
+            "decapsulate"
+          ]
+        }
+      }
+    },
+    {
+      "type": "cryptographic-asset",
+      "name": "ML-DSA-87",
+      "bom-ref": "alg:ml-dsa-87",
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "signature",
+          "parameterSetIdentifier": "ML-DSA-87",
+          "nistQuantumSecurityLevel": 5,
+          "cryptoFunctions": [
+            "keygen",
+            "sign",
+            "verify"
+          ]
+        }
+      }
+    },
+    {
+      "type": "cryptographic-asset",
+      "name": "SLH-DSA-SHAKE-256f",
+      "bom-ref": "alg:slh-dsa-shake-256f",
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "signature",
+          "parameterSetIdentifier": "SLH-DSA-SHAKE-256f",
+          "nistQuantumSecurityLevel": 5,
+          "cryptoFunctions": [
+            "keygen",
+            "sign",
+            "verify"
+          ]
+        }
+      }
+    },
+    {
+      "type": "cryptographic-asset",
+      "name": "FN-DSA-1024",
+      "bom-ref": "alg:fn-dsa-1024",
+      "description": "Falcon/FN-DSA compact signatures. PENDING FIPS 206. Registered non-load-bearing for agility only.",
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "signature",
+          "parameterSetIdentifier": "FN-DSA-1024",
+          "nistQuantumSecurityLevel": 5,
+          "cryptoFunctions": [
+            "keygen",
+            "sign",
+            "verify"
+          ]
+        }
+      }
+    },
+    {
+      "type": "cryptographic-asset",
+      "name": "AES-256-GCM",
+      "bom-ref": "alg:aes-256-gcm",
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "ae",
+          "parameterSetIdentifier": "256",
+          "mode": "gcm",
+          "classicalSecurityLevel": 256,
+          "nistQuantumSecurityLevel": 5,
+          "cryptoFunctions": [
+            "encrypt",
+            "decrypt",
+            "tag"
+          ]
+        }
+      }
+    },
+    {
+      "type": "cryptographic-asset",
+      "name": "HMAC-SHA-384",
+      "bom-ref": "alg:hmac-sha-384",
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "mac",
+          "parameterSetIdentifier": "SHA-384",
+          "nistQuantumSecurityLevel": 5,
+          "cryptoFunctions": [
+            "tag",
+            "verify"
+          ]
+        }
+      }
+    },
+    {
+      "type": "cryptographic-asset",
+      "name": "HKDF-SHA-384",
+      "bom-ref": "alg:hkdf-sha-384",
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "kdf",
+          "parameterSetIdentifier": "SHA-384",
+          "nistQuantumSecurityLevel": 5,
+          "cryptoFunctions": [
+            "keyderive"
+          ]
+        }
+      }
+    },
+    {
+      "type": "cryptographic-asset",
+      "name": "SHA3-256",
+      "bom-ref": "alg:sha3-256",
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "hash",
+          "parameterSetIdentifier": "256",
+          "nistQuantumSecurityLevel": 5,
+          "cryptoFunctions": [
+            "digest"
+          ]
+        }
+      }
+    },
+    {
+      "type": "cryptographic-asset",
+      "name": "SHAKE256",
+      "bom-ref": "alg:shake256",
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "xof",
+          "parameterSetIdentifier": "256",
+          "nistQuantumSecurityLevel": 5,
+          "cryptoFunctions": [
+            "digest"
+          ]
+        }
+      }
+    },
+    {
+      "type": "cryptographic-asset",
+      "name": "ristretto255",
+      "bom-ref": "alg:ristretto255",
+      "description": "Prime-order group over Curve25519 for Pedersen commitments + Chaum-Pedersen ZK range proofs. Hiding is information-theoretic (PQ); binding rests on classical discrete-log (NOT quantum-safe). Used only for zero-knowledge disclosure, never for authentication/confidentiality of governed actions.",
+      "cryptoProperties": {
+        "assetType": "algorithm",
+        "algorithmProperties": {
+          "primitive": "other",
+          "parameterSetIdentifier": "ristretto255",
+          "curve": "curve25519",
+          "classicalSecurityLevel": 128,
+          "nistQuantumSecurityLevel": 0,
+          "cryptoFunctions": [
+            "other"
+          ]
+        }
+      }
+    },
+    {
+      "type": "cryptographic-asset",
+      "name": "PS-1",
+      "bom-ref": "suite:ps-1",
+      "description": "General / CNSA-transition tier (Category 3). Active.",
+      "cryptoProperties": {
+        "assetType": "protocol",
+        "protocolProperties": {
+          "type": "other",
+          "version": "PS-1",
+          "cipherSuites": [
+            {
+              "name": "PS-1",
+              "algorithms": [
+                "alg:xwing",
+                "alg:ml-dsa-87",
+                "alg:aes-256-gcm",
+                "alg:hmac-sha-384",
+                "alg:sha3-256",
+                "alg:shake256"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "cryptographic-asset",
+      "name": "PS-5",
+      "bom-ref": "suite:ps-5",
+      "description": "Regulated CNSA 2.0 Category 5 tier. Active. Default negotiated suite.",
+      "cryptoProperties": {
+        "assetType": "protocol",
+        "protocolProperties": {
+          "type": "other",
+          "version": "PS-5",
+          "cipherSuites": [
+            {
+              "name": "PS-5",
+              "algorithms": [
+                "alg:mlkem1024-p384",
+                "alg:ml-dsa-87",
+                "alg:aes-256-gcm",
+                "alg:hmac-sha-384",
+                "alg:sha3-256",
+                "alg:shake256"
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "suite:ps-1",
+      "dependsOn": [
+        "alg:xwing",
+        "alg:ml-dsa-87",
+        "alg:aes-256-gcm",
+        "alg:hmac-sha-384",
+        "alg:sha3-256",
+        "alg:shake256"
+      ]
+    },
+    {
+      "ref": "suite:ps-5",
+      "dependsOn": [
+        "alg:mlkem1024-p384",
+        "alg:ml-dsa-87",
+        "alg:aes-256-gcm",
+        "alg:hmac-sha-384",
+        "alg:sha3-256",
+        "alg:shake256"
+      ]
+    },
+    {
+      "ref": "alg:xwing",
+      "dependsOn": [
+        "alg:x25519",
+        "alg:ml-kem-768"
+      ]
+    },
+    {
+      "ref": "alg:mlkem1024-p384",
+      "dependsOn": [
+        "alg:ml-kem-1024",
+        "alg:ecdh-p384"
+      ]
+    }
+  ]
+}

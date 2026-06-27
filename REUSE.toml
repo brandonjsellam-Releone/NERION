@@ -23,6 +23,7 @@ path = [
   "tsconfig.json",
   ".prettierrc.json",
   "polarseek-receipt-bundle.json",
+  "nerion.cbom.json",
   "conformance/vectors/ps-kat.json",
   "conformance/vectors/ps-negative.json",
   "crypto/vectors/deterministic-kat.json",

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<!--
+  SPDX-FileCopyrightText: 2026 TRELYAN
+  SPDX-License-Identifier: Apache-2.0
+  Nerion — landing page (self-contained, deployable static HTML; GitHub Pages / Netlify / any host).
+  Interactive sections are an illustrative concept demo of the protocol logic, NOT the production
+  ML-DSA / zero-knowledge crypto. PQC posture per AIVD/CWI/TNO PQC Migration Handbook (2nd ed., 2024).
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nerion — govern the verb, never the eye</title>
+<style>
+  :root{
+    --bg:#0a0c10;--surface:#13161b;--surface2:#0f1217;--border:#242a33;
+    --text:#e8ebf0;--muted:#98a2b3;--faint:#5b6573;--brand:#5eead4;--brand-dim:#0f3b35;
+    --ok:#34d399;--ok-dim:#0f3325;--bad:#fb7185;--bad-dim:#341019;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased;font-size:16px}
+  a{color:inherit;text-decoration:none}code{font-family:var(--mono);font-size:.9em}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 24px}
+  .pill{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--brand);border:1px solid var(--brand-dim);background:rgba(94,234,212,.05);border-radius:999px;padding:5px 12px}
+  nav{display:flex;align-items:center;justify-content:space-between;padding:20px 0}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:.2px}
+  .brand .dot{width:11px;height:11px;border-radius:50%;background:var(--brand);box-shadow:0 0 0 4px rgba(94,234,212,.12)}
+  nav .links{display:flex;gap:22px;font-size:14px;color:var(--muted)}
+  nav .links a:hover{color:var(--text)}
+  .btn{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:500;border:1px solid var(--border);border-radius:10px;padding:11px 18px;cursor:pointer;background:var(--surface);color:var(--text);transition:.15s}
+  .btn:hover{border-color:#39424f}
+  .btn.primary{background:var(--brand);color:#062019;border-color:var(--brand)}
+  .btn.primary:hover{background:#7af0dd}
+  header.hero{padding:64px 0 36px;text-align:center}
+  h1{font-size:clamp(34px,6vw,60px);line-height:1.05;margin:18px 0 0;font-weight:600;letter-spacing:-1px}
+  h1 .g{color:var(--brand)}
+  h2{font-size:clamp(22px,3.5vw,30px);font-weight:600;letter-spacing:-.5px;margin:0 0 6px}
+  .sub{font-size:clamp(16px,2.4vw,21px);color:var(--muted);max-width:640px;margin:18px auto 0}
+  .cta{display:flex;gap:12px;justify-content:center;margin-top:28px;flex-wrap:wrap}
+  section{padding:34px 0}
+  .demo{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:26px;margin-top:8px}
+  .demo h3{margin:0 0 4px;font-size:18px;font-weight:600}.demo .lead{color:var(--muted);font-size:14px;margin:0 0 22px}
+  .row{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+  .row label{font-size:14px;color:var(--muted);min-width:104px}
+  input[type=range]{flex:1;accent-color:var(--brand);height:4px}
+  select{flex:1;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:9px;padding:9px 11px;font-size:13.5px;font-family:var(--sans)}
+  .amt{font-variant-numeric:tabular-nums;font-weight:600;min-width:74px;text-align:right;font-size:15px}
+  .panels{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:8px}
+  .panel{border:1px solid var(--border);border-radius:14px;padding:18px 20px;min-height:170px;background:var(--surface2)}
+  .panel .hd{display:flex;align-items:center;gap:8px;font-weight:600;margin-bottom:12px;font-size:15px}
+  .panel .hd .tag{font-size:12px;color:var(--faint);font-weight:400}
+  .kv{width:100%;font-size:12.5px;border-collapse:collapse}
+  .kv td{padding:3px 0}.kv td:first-child{color:var(--muted)}.kv td:last-child{text-align:right;font-family:var(--mono)}
+  .note{font-size:11.5px;color:var(--faint);margin-top:8px;line-height:1.5}
+  .dots{font-size:20px;letter-spacing:3px;color:var(--faint);margin:4px 0}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px}
+  .card .ic{font-size:20px;color:var(--brand);margin-bottom:10px}
+  .card h4{margin:0 0 6px;font-size:16px;font-weight:600}.card p{margin:0;color:var(--muted);font-size:13.5px}
+  .pqc{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:28px}
+  .pqc table{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:6px}
+  .pqc th,.pqc td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--border)}
+  .pqc th{color:var(--muted);font-weight:500;font-size:12.5px}
+  .pqc td.ok{color:var(--brand);font-family:var(--mono);font-size:12.5px}
+  .trust{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+  .chip{font-size:12.5px;color:var(--muted);border:1px solid var(--border);border-radius:999px;padding:7px 14px;font-family:var(--mono)}
+  .chip b{color:var(--brand);font-weight:600}
+  footer{border-top:1px solid var(--border);margin-top:40px;padding:28px 0 50px;color:var(--faint);font-size:12.5px}
+  footer .disc{max-width:780px;line-height:1.7}footer a{color:var(--muted)}footer a:hover{color:var(--text)}
+  @media(max-width:680px){.panels{grid-template-columns:1fr}.grid3{grid-template-columns:1fr}nav .links{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <nav>
+    <div class="brand"><span class="dot"></span>Nerion</div>
+    <div class="links">
+      <a href="#demo">Demo</a><a href="#how">How it works</a><a href="#pqc">Post-quantum</a>
+      <a href="https://github.com/brandonjsellam-Releone/NERION">GitHub</a>
+    </div>
+    <a class="btn" href="https://github.com/brandonjsellam-Releone/NERION">View source</a>
+  </nav>
+
+  <header class="hero">
+    <span class="pill">● post-quantum execution governance · NIST Level 5 · CNSA 2.0 aligned</span>
+    <h1>Govern the <span class="g">verb</span>,<br>never the eye.</h1>
+    <p class="sub">Nerion authorizes what AI agents and automated systems <em>do</em> — the action, not the data they see — with post-quantum signatures and proofs that verify compliance without revealing the payload.</p>
+    <div class="cta">
+      <a class="btn primary" href="#demo">Try the demo</a>
+      <a class="btn" href="https://github.com/brandonjsellam-Releone/NERION">Read the protocol</a>
+    </div>
+  </header>
+
+  <section id="demo">
+    <div class="demo">
+      <h3>An action meets a signed capability</h3>
+      <p class="lead">Drag the amount past the ceiling, or change the counterparty. The kernel admits or denies the verb; the auditor proves the amount is within policy without ever seeing it.</p>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:11px;padding:11px 15px;margin-bottom:20px;display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);align-items:center">
+        <span style="color:var(--brand)">signed capability</span>
+        <span>action <code>payment.transfer</code></span><span>ceiling <b style="color:var(--text)">$1,000</b></span>
+        <span>counterparty <code>vendor-acme</code></span><span>tier ≤ 2</span>
+      </div>
+      <div class="row"><label for="amt">amount</label><input id="amt" type="range" min="0" max="2000" step="50" value="500"><span class="amt" id="amtOut">$500</span></div>
+      <div class="row"><label for="cp">counterparty</label>
+        <select id="cp"><option value="vendor-acme">vendor-acme — in the capability</option><option value="unknown-vendor">unknown-vendor — not listed</option></select>
+      </div>
+      <div class="panels"><div class="panel" id="admit"></div><div class="panel" id="audit"></div></div>
+      <p class="note">Concept demo of the protocol logic. Illustrative — not the production ML-DSA-87 / zero-knowledge crypto, which is an unaudited reference pending external review.</p>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="grid3">
+      <div class="card"><div class="ic">◆</div><h4>Govern the verb</h4><p>Stateless admission binds each action to a signed, attenuating capability — per-action ceilings, counterparties, risk tiers, delegation. It controls what gets done, not what gets seen.</p></div>
+      <div class="card"><div class="ic">◇</div><h4>Prove without revealing</h4><p>A policy-satisfaction proof shows an amount stayed within bounds while the amount stays hidden — and non-compliance can't be proven at all. The verdict is checkable; the payload is not.</p></div>
+      <div class="card"><div class="ic">▣</div><h4>Post-quantum &amp; accountable</h4><p>CNSA 2.0 Category-5 signatures, an append-only transparency log, and quorum receipts — so a compromised operator is caught without being trusted.</p></div>
+    </div>
+  </section>
+
+  <section id="pqc">
+    <div class="pqc">
+      <h2>Post-quantum posture</h2>
+      <p style="color:var(--muted);font-size:14px;margin:0 0 4px;max-width:760px">Mapped to the AIVD/CWI/TNO <em>PQC Migration Handbook</em> (2nd ed., 2024). Nerion is PQC-native — built post-quantum-first, so it ships the migrated end-state. Its PS-5 tier uses the handbook's Recommended algorithms at Level 5 (CNSA 2.0); the general PS-1 tier is Category 3. Signatures use pure ML-DSA-87 (CNSA-aligned), not the handbook's more conservative hybrid-signature deployment.</p>
+      <table>
+        <tr><th>Functionality</th><th>Handbook "Recommended"</th><th>Nerion (PS-5 / Cat-5)</th></tr>
+        <tr><td>Key encapsulation</td><td style="color:var(--muted)">ML-KEM (hybrid)</td><td class="ok">ML-KEM-1024 + ECDH P-384</td></tr>
+        <tr><td>Signature</td><td style="color:var(--muted)">ML-DSA / SLH-DSA</td><td class="ok">ML-DSA-87 (L5)</td></tr>
+        <tr><td>Hash</td><td style="color:var(--muted)">SHA-2 / SHA-3</td><td class="ok">SHA3-256 / SHAKE256</td></tr>
+        <tr><td>AEAD</td><td style="color:var(--muted)">AES-GCM</td><td class="ok">AES-256-GCM</td></tr>
+      </table>
+      <p style="color:var(--muted);font-size:13px;margin:16px 0 0;max-width:760px"><b style="color:var(--text);font-weight:500">Crypto-agility, no downgrade.</b> The SuiteID registry gives migration and compliance agility, with hybrid-KEM composability — and every suite id is bound into the signed message, so a relayed object can't be relabeled to a weaker shared-signature suite and still verify. Full inventory: <a href="https://github.com/brandonjsellam-Releone/NERION/blob/main/nerion.cbom.json" style="color:var(--brand)">CBOM (CycloneDX 1.6)</a> · <a href="https://github.com/brandonjsellam-Releone/NERION/blob/main/docs/PQC_MIGRATION_POSTURE.md" style="color:var(--brand)">migration posture</a>.</p>
+    </div>
+  </section>
+
+  <section style="text-align:center">
+    <div class="trust">
+      <span class="chip"><b>NIST L5</b> · CNSA 2.0 aligned</span>
+      <span class="chip"><b>23/23</b> conformance</span>
+      <span class="chip">ML-DSA-87 · ML-KEM-1024</span>
+      <span class="chip">CBOM · CycloneDX 1.6</span>
+      <span class="chip">Apache-2.0 · open source</span>
+    </div>
+  </section>
+
+  <footer>
+    <div class="disc">
+      Nerion is an open execution-governance protocol. The cryptographic group (ristretto255) and hash (SHAKE256) are audited primitives; the zero-knowledge <em>protocol composition</em> is an unaudited reference and carries no privacy guarantee until external cryptographic audit. PQC parameter levels are the design targets of the named NIST/CNSA standards, not certified results. "Govern the verb" describes an engineering design intent, not a legal opinion. No certification, audit, or non-infringement is claimed.
+      <br><br>© 2026 TRELYAN · <a href="https://github.com/brandonjsellam-Releone/NERION">github.com/NERION</a>
+    </div>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var CEIL=1000,CP_OK='vendor-acme';
+  var amt=document.getElementById('amt'),amtOut=document.getElementById('amtOut'),cp=document.getElementById('cp'),admit=document.getElementById('admit'),audit=document.getElementById('audit');
+  function commit(n){var h=2166136261,s='nerion:'+n;for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}var x=(h>>>0).toString(16);while(x.length<8)x='0'+x;return (x+x.split('').reverse().join('')+x).slice(0,24);}
+  function render(){
+    var a=+amt.value,c=cp.value;amtOut.textContent='$'+a.toLocaleString();
+    var cpOk=(c===CP_OK),ceilOk=(a<=CEIL),allow=cpOk&&ceilOk;
+    if(allow){
+      admit.style.borderColor='var(--ok)';admit.style.background='var(--ok-dim)';
+      admit.innerHTML='<div class="hd"><span style="color:var(--ok)">● allow</span><span class="tag">govern the verb</span></div><div style="font-size:12.5px;color:var(--muted);margin-bottom:9px">bound permit minted</div><table class="kv"><tr><td>audience</td><td>acct://treasury</td></tr><tr><td>action</td><td>payment.transfer</td></tr><tr><td>tier</td><td>2</td></tr><tr><td>amount</td><td>'+commit(a)+'</td></tr></table><div class="note">carried as a commitment, never in clear</div>';
+    }else{
+      admit.style.borderColor='var(--bad)';admit.style.background='var(--bad-dim)';
+      var r=!cpOk?'counterparty is not in the capability':'amount exceeds the $1,000 per-action ceiling';
+      admit.innerHTML='<div class="hd"><span style="color:var(--bad)">● deny</span><span class="tag">govern the verb</span></div><div style="font-size:12.5px;color:var(--muted)">no permit issued</div><div style="font-size:13.5px;margin-top:11px">reason — '+r+'</div>';
+    }
+    audit.style.borderColor='var(--border)';audit.style.background='var(--surface2)';
+    if(ceilOk){
+      audit.innerHTML='<div class="hd">auditor<span class="tag">prove, don’t reveal</span></div><div style="display:flex;align-items:center;gap:8px;color:var(--ok);font-size:13.5px;margin-bottom:9px">✓ verified within per-action ceiling</div><div style="font-size:12.5px;color:var(--muted)">amount visible to the auditor</div><div class="dots">●●●●●●</div><div class="note">never revealed — compliance proven, not the payload.</div>';
+    }else{
+      audit.innerHTML='<div class="hd">auditor<span class="tag">prove, don’t reveal</span></div><div style="display:flex;align-items:center;gap:8px;color:var(--bad);font-size:13.5px;margin-bottom:9px">⊘ proof cannot be built</div><div style="font-size:12.5px;color:var(--muted);line-height:1.6">the prover cannot prove a false statement — an over-ceiling amount has no valid range proof, so non-compliance is unprovable rather than hidden.</div>';
+    }
+  }
+  amt.addEventListener('input',render);cp.addEventListener('change',render);render();
+})();
+</script>
+</body>
+</html>
