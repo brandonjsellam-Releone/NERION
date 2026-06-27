@@ -164,12 +164,17 @@ salted-commit/v1"` (`:28`) while `zkrange.ts` (`:37,105`), `commitbind.ts` (`:51
   find-and-replace. Reconcile before the rename lands.
 - **[ITEM] Decode boundary is the malleability/DoS surface.** The `verify*` functions here take
   already-parsed `Pt`/`bigint`. Confirm the wire→object decode path (outside these files)
-  strictly validates point encodings and rejects non-canonical scalars (`c0,c1,s0,s1,*opening* < L`)
-  before these functions run.
+  strictly validates point encodings and rejects non-canonical scalars (`c0,c1,s0,s1,opening < L`)
+  before these functions run. _Operationalized:_ `disclosure/test/decode-boundary.test.ts` pins
+  that the verifier is **mod-invariant** — a proof carrying a non-canonical scalar (`s + L`)
+  verifies identically — so canonicality rejection is genuinely the decode boundary's job, and
+  also exercises the fail-closed paths (over-cap `n`, malformed sub-proof: reject, never throw).
 - **[ITEM] Proofs are not unique (re-randomizable).** Schnorr/CDS proofs are malleable; this is
   contained because `policyProofDigest` binds the serialized proof into the ML-DSA-87-signed
   receipt body (`policyproof.ts:169-191`). Confirm a malleated proof cannot be substituted under
-  the same signature.
+  the same signature. _Operationalized:_ the same test demonstrates the containment directly — a
+  scalar-malleated proof still `verify`s `true` **but** yields a **different** `policyProofDigest`,
+  so a signed receipt rejects the byte-level malleation.
 - **[ITEM] Prover-side timing.** JS `bigint` arithmetic and the bit extraction
   `(value >> i) & 1n` (`zkrange.ts:183`) are not constant-time; scalar-mult is constant-time via
   `@noble`. Verify-side has no secret. Auditor to assess prover-side side-channel exposure
