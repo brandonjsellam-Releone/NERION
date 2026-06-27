@@ -45,8 +45,16 @@ export interface SignatureScheme {
   readonly id: string
   readonly lengths: Readonly<Record<string, number>>
   keygen(seed?: Bytes): KeyPair
-  sign(message: Bytes, secretKey: Bytes): Bytes
-  verify(signature: Bytes, message: Bytes, publicKey: Bytes): boolean
+  /**
+   * Sign `message`. The optional `context` is the FIPS-204/205 context string
+   * (≤255 bytes) for domain separation — e.g. distinguishing a permit signature
+   * from a receipt or root signature. Omitting it uses the empty context (the
+   * FIPS default), which is byte-identical to the prior 2-arg behavior, so pinned
+   * KAT vectors (no-context) are unaffected.
+   */
+  sign(message: Bytes, secretKey: Bytes, context?: Bytes): Bytes
+  /** Verify; `context` MUST match the one used at signing (empty if omitted). */
+  verify(signature: Bytes, message: Bytes, publicKey: Bytes, context?: Bytes): boolean
 }
 
 /** Authenticated encryption with associated data (AES-256-GCM on the hot path). */
