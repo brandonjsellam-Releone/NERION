@@ -15,3 +15,10 @@ export { decide, decideWithAuthorizer } from './kernel.js'
 export type { DecisionWithAuthorizer } from './kernel.js'
 export { buildReplayBundle, replay } from './replay.js'
 export type { ReplayBundle, ReplayResult } from './replay.js'
+export {
+  expectedRiskClass,
+  expectedPolicyBinding,
+  checkManifestConsistency,
+  assertManifestConsistent,
+} from './manifest-bind.js'
+export type { ManifestConsistency } from './manifest-bind.js'
