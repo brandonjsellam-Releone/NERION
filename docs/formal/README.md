@@ -11,7 +11,15 @@ to **find counterexamples** to the safety properties the implementation relies o
 
 - **`NerionConsensus.tla`** — models stake-weighted finality + accountable safety,
   faithful to `ledger/src/equivocation.ts` and `governance/src/quorum.ts`.
-- **`NerionConsensus.cfg`** — a small finite configuration (4 validators).
+  Configs: `NerionConsensus.cfg` (4 val / 2 Byz), `_6v1b.cfg`, `_7v2b.cfg`.
+- **`NerionViewChange.tla`** — models the round / view-change layer and
+  machine-checks `docs/CONSENSUS-CAVEATS.md` §1: a ≥2/3 coalition can **skip rounds
+  cheaply** (LEDGER-007) and control which block is *proposed*, but that is a
+  **fairness-only** weakness — `SafetyUnderRoundSkip` and `HonestAgreementUnderSkip`
+  show round manipulation cannot manufacture a fork (finalization still needs a >2/3
+  quorum). Machine-checked: **no error** over 708 states (4 val / 2 Byz) and 564
+  states (4 val / 1 Byz). Configs: `NerionViewChange.cfg`, `NerionViewChange_1byz.cfg`.
+  Both models run in CI (`.github/workflows/ci-formal.yml`).
 
 ## What is modelled
 
