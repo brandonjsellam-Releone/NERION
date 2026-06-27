@@ -5,12 +5,12 @@
 
 **Date:** 2026-06-27 · **Status:** internal review artifact · **Branch:** `apex/team-review-integration`
 
-> **What this is.** An *audit-preparation* document for the bespoke zero-knowledge
+> **What this is.** An _audit-preparation_ document for the bespoke zero-knowledge
 > disclosure layer (`disclosure/src/`). It is the product of an **internal**
 > close-reading (main-loop review; the multi-model council seats were server-rate-limited
 > during this run and did not contribute — this is therefore a single-reviewer pass, not a
 > council consensus). Its sole purpose is to make the **funded external ZK audit**
-> (NLnet-scoped, OSTIF / OTF threads) *efficient*: it scopes the questions the auditor
+> (NLnet-scoped, OSTIF / OTF threads) _efficient_: it scopes the questions the auditor
 > must answer and records a few concrete hardening candidates. **It is NOT an audit, NOT a
 > proof, and NOT a security claim.**
 >
@@ -24,12 +24,12 @@
 
 ## 1. Scope
 
-| File | Construction | Lines of interest |
-|---|---|---|
-| `disclosure/src/zkrange.ts` | Pedersen commit `C = G^v·H^r` over ristretto255; bit-decomposition range proof; Chaum–Pedersen/CDS OR-proof per bit; dual-range (`amount` **and** `diff = thr−1−amount`); strong Fiat–Shamir (SHAKE256). | `commit` 70, `proveBit` 135, `verifyBit` 154, `verifySub` 201, `proveBelow` 220, `verifyBelow` 258, `statementHash` 104 |
-| `disclosure/src/policyproof.ts` | Policy-satisfaction proof: composes two range proofs — `amount ≤ ceiling` and `amount + aggregate ≤ cap` over the homomorphic sum commitment. Binding digest `policyProofDigest`. | `provePolicySatisfaction` 101, `verifyPolicySatisfaction` 123, `policyProofDigest` 169 |
-| `disclosure/src/commitbind.ts` | v:2 structural commitment-binding (ADR-0013): digest over `{domain, intent-skeleton (amount omitted), commitment}`; point-binding vs full (opening) check. | `intentAmount` 66, `boundIntentDigest` 91, `verifyBoundAmount` 125, `bindAmountCommitment` 150 |
-| `disclosure/src/selective.ts` | Salted hash commitment (RCPT-001/ADR-0014) for hiding low-entropy receipt fields. | `commitField` 40, `verifyDisclosure` 51 |
+| File                            | Construction                                                                                                                                                                                             | Lines of interest                                                                                                       |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `disclosure/src/zkrange.ts`     | Pedersen commit `C = G^v·H^r` over ristretto255; bit-decomposition range proof; Chaum–Pedersen/CDS OR-proof per bit; dual-range (`amount` **and** `diff = thr−1−amount`); strong Fiat–Shamir (SHAKE256). | `commit` 70, `proveBit` 135, `verifyBit` 154, `verifySub` 201, `proveBelow` 220, `verifyBelow` 258, `statementHash` 104 |
+| `disclosure/src/policyproof.ts` | Policy-satisfaction proof: composes two range proofs — `amount ≤ ceiling` and `amount + aggregate ≤ cap` over the homomorphic sum commitment. Binding digest `policyProofDigest`.                        | `provePolicySatisfaction` 101, `verifyPolicySatisfaction` 123, `policyProofDigest` 169                                  |
+| `disclosure/src/commitbind.ts`  | v:2 structural commitment-binding (ADR-0013): digest over `{domain, intent-skeleton (amount omitted), commitment}`; point-binding vs full (opening) check.                                               | `intentAmount` 66, `boundIntentDigest` 91, `verifyBoundAmount` 125, `bindAmountCommitment` 150                          |
+| `disclosure/src/selective.ts`   | Salted hash commitment (RCPT-001/ADR-0014) for hiding low-entropy receipt fields.                                                                                                                        | `commitField` 40, `verifyDisclosure` 51                                                                                 |
 
 **Group facts the audit must take as given.** ristretto255 prime-order group, order
 `L = 2^252 + δ`, `δ ≈ 2^124.6`; no cofactor / no small-subgroup points (ristretto encoding).
@@ -43,6 +43,7 @@ Each item is a **question**, not an assertion of a defect. `[CONFIRM]` = expecte
 auditor verifies; `[ITEM]` = a genuine open question or hardening candidate this review raised.
 
 ### P1 — Special-soundness / knowledge extraction
+
 - **[CONFIRM]** The per-bit CDS OR-proof (`proveBit`/`verifyBit`, `zkrange.ts:135/154`) is
   2-special-sound: two accepting transcripts sharing `(t0,t1)` with distinct global challenge
   `c` extract `r_i` and the bit. Verifier enforces `mod(c0+c1) === c` (`:158`) and both
@@ -54,12 +55,13 @@ auditor verifies; `[ITEM]` = a genuine open question or hardening candidate this
   in the group; with the `n ≤ 251` cap (`2^{n+1} ≤ L`) the sum cannot wrap mod `L`, so the
   group equality implies the integer equality `value = Σ b_i 2^i ∈ [0,2^n)`. **This is the
   ZKRANGE-002 fix** (`verifyBelow:258-259`, prove side `:223`) — confirm the cap is the
-  tight bound and that *both* sub-proofs (amount, diff) enforce it.
+  tight bound and that _both_ sub-proofs (amount, diff) enforce it.
 - **[ITEM]** There is **no written soundness theorem / extractor** — the argument lives in
   code comments. The auditor should produce or confirm the formal extractor and the dual-range
   → `0 ≤ amount < threshold` reduction (`zkrange.ts:17-24`).
 
 ### P2 — Honest-verifier zero-knowledge (simulation)
+
 - **[CONFIRM]** CDS simulator: real branch is a true Schnorr (`t=H^k`, `s=k+c·r`); fake branch
   samples `(s,c)` and back-computes `t=H^s·P^{-c}` (`proveBit:138-148`). In the ROM the
   simulator programs the SHAKE256 oracle. Confirm transcripts are perfectly/statistically
@@ -75,6 +77,7 @@ auditor verifies; `[ITEM]` = a genuine open question or hardening candidate this
   claim and state the residual.
 
 ### P3 — Fiat–Shamir transcript binding (Frozen-Heart class)
+
 - **[CONFIRM]** `statementHash` (`:104-113`) absorbs the domain tag **with `n` and `threshold`**,
   the amount commitment `cAmt`, **all** amount bit-commitments, and **all** diff bit-commitments
   — before any per-bit challenge is drawn (`proveBelow:235` precedes `proveSub`). Each per-bit
@@ -86,13 +89,15 @@ auditor verifies; `[ITEM]` = a genuine open question or hardening candidate this
   attack and consider absorbing them for domain rigor.
 
 ### P4 — Generator / parameter provenance
+
 - **[CONFIRM]** `H` is derived by `hashToCurve` of a fixed domain string (`zkrange.ts:37`), so
   `dlog_G(H)` is unknown (binding ⇄ hiding separation holds). Confirm reproducibility.
 - **[ITEM]** Confirm `ristretto255_hasher.hashToCurve` is the **uniform/indifferentiable hash**
-  variant (RFC 9380 *hash*-to-curve), **not** a non-uniform *encode*-to-curve, so `H` is a
+  variant (RFC 9380 _hash_-to-curve), **not** a non-uniform _encode_-to-curve, so `H` is a
   genuine random group element.
 
 ### P5 — Policy-satisfaction composition
+
 - **[CONFIRM]** Both sub-proofs are over the **same** committed amount: `ceiling` over `C`, and
   `aggregate` over `C_sum = C + G^{aggregate}` reconstructed by the verifier via
   `shiftCommitment` (`policyproof.ts:139`). The prover cannot use two different amounts.
@@ -110,6 +115,7 @@ auditor verifies; `[ITEM]` = a genuine open question or hardening candidate this
   provers fail. Confirm the deployed `n`.
 
 ### P6 — Commitment binding & hiding
+
 - **[CONFIRM]** Pedersen binding is computational (DL); hiding is **perfect** — the hidden
   amount has no harvest-now-decrypt-later exposure (`policyproof.ts:28-35`). Salted commitments
   (`selective.ts:40-44`) are binding+hiding when the salt is high-entropy and off-leaf.
@@ -117,12 +123,22 @@ auditor verifies; `[ITEM]` = a genuine open question or hardening candidate this
   (`commitbind.ts:91-101`); `verifyBoundAmount` re-checks `commit(intentAmount, opening)==C`
   when the opening is available (`:125-134`). The public digest does not make the amount
   brute-forceable.
-- **[ITEM — raised here]** **Denylist, not allowlist.** The skeleton is built by *excluding*
-  the field named `amount` (`commitbind.ts:94`, `filter(([k]) => k !== 'amount')`). **Any future
-  low-entropy secret `ActionIntent` field is hashed into the public digest by default**, silently
-  reintroducing the CB-001 brute-force class. Recommend inverting to an **allowlist** of known-
-  public fields (the comment at `:86` already warns of this; a denylist makes the warning
-  load-bearing on every future schema change).
+- **[ITEM — raised here, PRESENT not hypothetical]** **Denylist, not allowlist.** The skeleton
+  is built by _excluding only_ the field named `amount` (`commitbind.ts:94`,
+  `filter(([k]) => k !== 'amount')`). Every **other** `ActionIntent` field is therefore hashed
+  into the public, externally-recomputable digest — **including `counterparty`** (typed in
+  `capabilities/src/types.ts:26-27` as an opaque reference _"never re-identified across calls"_,
+  i.e. privacy-sensitive) **and arbitrary `params`** (`:30-31`). If `counterparty` or any
+  `params` value is **low-entropy / enumerable**, it is brute-forceable from a _single_ public
+  digest exactly as the amount was pre-CB-001: the commitment is public, the rest of the skeleton
+  is public, so a holder enumerates the candidate and matches the hash. (The random Pedersen
+  commitment blinds _cross-call linkage_ of a repeated counterparty, but **not** single-receipt
+  _recovery_ of an enumerable value.) This is a **present** exposure, not only a future-schema
+  hazard. Recommended: invert to an **allowlist** of known-public fields — but note the inverse
+  risk (an allowlist that drops a legitimately-public field weakens binding-completeness), so this
+  is a design decision for an ADR + council, not a unilateral flip. A regression test now **locks
+  the excluded-field set** (`disclosure/test/commitbind-cb001-surface.test.ts`) so any change is
+  conscious.
 - **[ITEM — raised here]** **Salt is a caller responsibility not enforced here.** `selective.ts`
   neither generates the salt nor guarantees it is excluded from the signed body/log leaf — both
   are asserted in prose (`:18-22`) but enforced at call sites. Auditor must confirm at every
@@ -133,10 +149,11 @@ auditor verifies; `[ITEM]` = a genuine open question or hardening candidate this
   threat model treats the admission binder as trusted.
 
 ### Cross-cutting
+
 - **[ITEM — raised here] Domain-prefix inconsistency.** `selective.ts` uses `"Nerion/disclosure/
-  salted-commit/v1"` (`:28`) while `zkrange.ts` (`:37,105`), `commitbind.ts` (`:51`) and
+salted-commit/v1"` (`:28`) while `zkrange.ts` (`:37,105`), `commitbind.ts` (`:51`) and
   `policyproof.ts` (`:175`) still use the legacy `"PolarSeek/..."` prefix. Cosmetic for
-  *soundness*, but it is a **domain-separation / migration hazard**: these strings are
+  _soundness_, but it is a **domain-separation / migration hazard**: these strings are
   protocol-frozen (they feed `H`, the FS transcript, and every digest), so the PolarSeek→Nerion
   rename is a **breaking change requiring a protocol-version bump + fresh KATs**, not a
   find-and-replace. Reconcile before the rename lands.
@@ -172,7 +189,7 @@ auditor verifies; `[ITEM]` = a genuine open question or hardening candidate this
   a satisfaction proof (it cannot recover the hidden amount).
 - ZK argued in classical ROM; **QROM unanalyzed**.
 - The protocol composition is **UNAUDITED**; group + hash are audited (`@noble`).
-- Linkage contract: a proof attests *the committed* amount; callers must bind the *decided*
+- Linkage contract: a proof attests _the committed_ amount; callers must bind the _decided_
   amount (ADR-0013 wiring is a scoped follow-up).
 - Set-membership clauses (action-type / counterparty) are **deferred** (`policyproof.ts:18-20`).
 
