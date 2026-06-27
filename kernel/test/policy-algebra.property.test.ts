@@ -27,6 +27,17 @@ const makePolicy = (tierRules: readonly TierRule[], over: Partial<Policy> = {}):
 
 const intentOf = (type: string): ActionIntent => ({ type, resource: 'r' })
 
+/** All permutations of an array (n! — used only for tiny n in the exhaustive test). */
+function permutations<T>(arr: readonly T[]): T[][] {
+  if (arr.length <= 1) return [[...arr]]
+  const out: T[][] = []
+  arr.forEach((x, i) => {
+    const rest = [...arr.slice(0, i), ...arr.slice(i + 1)]
+    for (const p of permutations(rest)) out.push([x, ...p])
+  })
+  return out
+}
+
 // Action types that exercise real prefixes, namespace children, near-prefixes, and junk.
 const arbType = fc.oneof(
   fc.constantFrom(
@@ -189,5 +200,49 @@ describe('GOV-POLICY-ALGEBRA — fault-injection: the checker catches injected s
       if (!a.conflictFree && a.diagnostics.some((d) => d.code === 'shadowed-rule')) caught++
     }
     expect(caught).toBe(specifics.length) // MEASURED: 5/5 injected faults caught
+  })
+})
+
+describe('GOV-POLICY-ALGEBRA — council-fix hardening', () => {
+  it('flags prefixes with an empty namespace segment, but allows a trailing-dot namespace marker', () => {
+    const hasMalformed = (rules: readonly TierRule[]): boolean =>
+      analyzePolicy(makePolicy(rules)).diagnostics.some((d) => d.code === 'malformed-prefix')
+    expect(hasMalformed([{ prefix: 'data..x', tier: 0 }])).toBe(true) // consecutive dots
+    expect(hasMalformed([{ prefix: '.data', tier: 0 }])).toBe(true) // leading dot
+    expect(hasMalformed([{ prefix: '', tier: 0 }])).toBe(true) // empty
+    // trailing dot is a VALID namespace marker (DEFAULT_POLICY uses 'payment.' / 'draft.') — not flagged
+    expect(hasMalformed([{ prefix: 'payment.', tier: 2 }])).toBe(false)
+    expect(
+      analyzePolicy(DEFAULT_POLICY).diagnostics.some((d) => d.code === 'malformed-prefix'),
+    ).toBe(false)
+  })
+
+  it('a missing / undefined default tier is reported as not total', () => {
+    const noDefault = makePolicy(DEFAULT_POLICY.tierRules, {
+      defaultTier: undefined as unknown as RiskTier,
+    })
+    const a = analyzePolicy(noDefault)
+    expect(a.total).toBe(false)
+    expect(a.diagnostics.some((d) => d.code === 'invalid-tier')).toBe(true)
+  })
+
+  it('EXHAUSTIVE: every permutation of a certified order-independent 4-rule policy gives identical tiers', () => {
+    const rules: TierRule[] = [
+      { prefix: 'data.read', tier: 0 },
+      { prefix: 'payment.', tier: 2 },
+      { prefix: 'infra.deploy', tier: 2 },
+      { prefix: 'model.weights', tier: 3 },
+    ]
+    const base = makePolicy(rules)
+    expect(analyzePolicy(base).orderIndependent).toBe(true)
+    const types = ['data.read', 'payment.transfer', 'infra.deploy', 'model.weights.x', 'unknown']
+    const expected = types.map((t) => tierOf(intentOf(t), base))
+    let count = 0
+    for (const perm of permutations(rules)) {
+      const p = makePolicy(perm)
+      types.forEach((t, k) => expect(tierOf(intentOf(t), p)).toBe(expected[k]))
+      count++
+    }
+    expect(count).toBe(24) // 4! — ALL permutations checked, not sampled
   })
 })

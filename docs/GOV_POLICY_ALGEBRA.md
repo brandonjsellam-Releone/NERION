@@ -15,12 +15,15 @@ verb-governance fragment:
 - **Totality** — `tierOf` is a total function: no gaps (`defaultTier` covers the complement) and every
   outcome is a valid `RiskTier`. Property-tested over arbitrary action types.
 - **Order-independence** — no two tier rules have overlapping namespaces with **differing** tiers. When
-  this holds, `tierOf` is **invariant under any permutation** of the rule list — proven empirically by a
-  fast-check property that shuffles `DEFAULT_POLICY`'s rules and asserts identical tiers; and the
-  contrapositive is shown too (a flagged policy has a permutation that changes a decision).
+  this holds, `tierOf` is **invariant under any permutation** of the rule list — checked two ways: a
+  sampled fast-check shuffle of `DEFAULT_POLICY`'s 11 rules, AND an **exhaustive all-24-permutations**
+  check on a 4-rule policy. The contrapositive is shown too (a flagged policy has a permutation that
+  changes a decision).
 - **Conflict-freedom** — no rule is **shadowed** (made unreachable) by an earlier, more-general rule with
   a different tier; no duplicate prefixes; no action both denied and transformed (deny is checked first,
-  so a clashing transform is dead code).
+  so a clashing transform is dead code); and no **malformed prefix** with an empty namespace segment
+  (empty / leading-dot / `..`) — a trailing-dot namespace marker like `payment.` is valid (`DEFAULT_POLICY`
+  uses it).
 
 `assertWellFormedPolicy(policy)` is an optional load-time / CI gate that throws on any blocking
 diagnostic. Segment-wise coverage mirrors `tierOf` exactly, so siblings like `data.read` /

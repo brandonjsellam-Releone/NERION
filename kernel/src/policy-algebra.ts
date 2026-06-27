@@ -34,6 +34,7 @@ export type DiagnosticCode =
   | 'redundant-rule'
   | 'deny-transform-conflict'
   | 'invalid-tier'
+  | 'malformed-prefix'
 
 export interface PolicyDiagnostic {
   readonly code: DiagnosticCode
@@ -65,6 +66,17 @@ function covers(a: string, b: string): boolean {
 }
 
 /**
+ * Is a rule prefix malformed — i.e. does it contain an EMPTY namespace segment? A single trailing
+ * dot is a VALID namespace marker (`payment.` matches `payment.transfer`, exactly as `tierOf`
+ * treats it, and the shipped DEFAULT_POLICY uses this form). Only empty, leading-dot, or
+ * consecutive-dot ("..") prefixes are malformed: they denote an empty segment the author almost
+ * certainly did not intend, and would make the coverage analysis below misleading.
+ */
+function malformedPrefix(p: string): boolean {
+  return p.length === 0 || p.startsWith('.') || p.includes('..')
+}
+
+/**
  * Analyze a policy for totality, order-independence, and conflict-freedom. Pure and total;
  * never throws. Rule indices in messages are positions in `policy.tierRules`.
  */
@@ -86,6 +98,12 @@ export function analyzePolicy(policy: Policy): PolicyAnalysis {
       err(
         'invalid-tier',
         `tier rule ${i} ("${a.prefix}") has a non-RiskTier tier ${String(a.tier)}`,
+      )
+    }
+    if (malformedPrefix(a.prefix)) {
+      err(
+        'malformed-prefix',
+        `tier rule ${i} prefix "${a.prefix}" has an empty namespace segment (empty, leading dot, or "..")`,
       )
     }
     for (let j = i + 1; j < rules.length; j++) {
