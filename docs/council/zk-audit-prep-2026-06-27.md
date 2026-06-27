@@ -92,6 +92,11 @@ auditor verifies; `[ITEM]` = a genuine open question or hardening candidate this
 
 - **[CONFIRM]** `H` is derived by `hashToCurve` of a fixed domain string (`zkrange.ts:37`), so
   `dlog_G(H)` is unknown (binding ⇄ hiding separation holds). Confirm reproducibility.
+  _Operationalized:_ both generators are now pinned by a regression test
+  (`disclosure/test/zkrange-generators.test.ts`) via the public `commit` API
+  (`commit(1,0)=G`, `commit(0,1)=H`), so any silent move of `H` — from an `@noble` change
+  or a domain-string edit (e.g. the PolarSeek→Nerion rename) — fails CI as a conscious change.
+  Pinned `H = c0ec2340…b759a546`, `G = e2f2ae0a…08d2d76`.
 - **[ITEM]** Confirm `ristretto255_hasher.hashToCurve` is the **uniform/indifferentiable hash**
   variant (RFC 9380 _hash_-to-curve), **not** a non-uniform _encode_-to-curve, so `H` is a
   genuine random group element.
