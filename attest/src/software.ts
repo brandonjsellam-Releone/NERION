@@ -14,6 +14,7 @@
 import {
   encodeCanonical,
   signerFor,
+  getSuite,
   constantTimeEqual,
   type Bytes,
   type KeyPair,
@@ -107,6 +108,27 @@ export function appraise(
   }
   if (!policy.trustedAttesters.some((k) => constantTimeEqual(k, evidence.attesterPublicKey))) {
     reasons.push('attester key is not in the trusted set')
+  }
+  // F10 (Team Apex max sweep 2026-06-28): silent suite/category DOWNGRADE. evidence.suite is
+  // signed-bound (ATTEST-SUITE-001, no relabeling) but was otherwise unconstrained, and
+  // signerFor() verifies every suite with the same ML-DSA-87 key — so a genuinely-keyed weaker
+  // suite (PS-1, Cat-3) was accepted where Cat-5 was required. Let the appraiser pin an explicit
+  // suite allowlist and/or a minimum CNSA category; both fail closed (unknown suite ⇒ category -1).
+  if (policy.acceptedSuites !== undefined && !policy.acceptedSuites.includes(evidence.suite)) {
+    reasons.push(`suite "${evidence.suite}" is not in the policy's accepted suites`)
+  }
+  if (policy.minCategory !== undefined) {
+    let category = -1
+    try {
+      category = getSuite(evidence.suite).category
+    } catch {
+      category = -1 // unknown / unresolvable suite — fail closed
+    }
+    if (category < policy.minCategory) {
+      reasons.push(
+        `suite "${evidence.suite}" category ${category} is below the required minimum ${policy.minCategory}`,
+      )
+    }
   }
   // ATTEST-SUITE-THROW (Team Apex sweep): `evidence.suite` is an attacker-controlled wire field, and
   // signerFor() THROWS UnknownSuiteError on a bogus suite — which would crash appraise()/appraiseNofM()

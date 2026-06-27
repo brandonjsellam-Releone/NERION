@@ -48,6 +48,21 @@ export interface AppraisalPolicy {
   readonly acceptedFormats: readonly AttestationFormat[]
   /** Allowed enclave measurements (hex) for TEE formats; checked by the adapter. */
   readonly expectedMeasurements?: readonly string[]
+  /**
+   * Allowed signature/KEM suite ids. When set, `evidence.suite` MUST be in this allowlist.
+   * Closes the silent suite DOWNGRADE (F10, Team Apex max sweep 2026-06-28): the suite is
+   * signed-bound (ATTEST-SUITE-001, so it cannot be relabeled), but was otherwise
+   * unconstrained — and `signerFor()` collapses every suite onto the same ML-DSA-87 verifier,
+   * so a genuinely-keyed weaker-suite (e.g. PS-1, Cat-3) attestation was accepted where Cat-5
+   * was the security target. Unset = no suite constraint (back-compatible).
+   */
+  readonly acceptedSuites?: readonly string[]
+  /**
+   * Minimum CNSA security category the evidence suite must meet (e.g. `5` for Cat-5). When set,
+   * `getSuite(evidence.suite).category` must be ≥ this; an unknown suite fails closed. Unset =
+   * no category floor (back-compatible).
+   */
+  readonly minCategory?: number
 }
 
 /** Verdict from a per-format TEE quote verifier adapter. */

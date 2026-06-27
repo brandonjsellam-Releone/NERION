@@ -113,6 +113,36 @@ describe('attestation hardening (ATTEST-TIME-001 / ATTEST-NOFM-001)', () => {
     }
   })
 
+  it('F10: appraise can pin acceptedSuites / minCategory and rejects a weaker-suite (Cat-3) downgrade', () => {
+    // A PS-1 (Cat-3) evidence signed by the SAME trusted ML-DSA-87 key A — signerFor collapses
+    // every suite onto ML-DSA-87, so without a suite/category pin it is accepted where Cat-5 was
+    // the security target (the silent downgrade F10 closes).
+    const ps1 = SUITE_IDS.PS_1
+    const claims: AttestationClaims = {
+      format: 'software-dev',
+      sessionId: 's',
+      sessionPublicKey: sessPub,
+      nonce: NONCE,
+      notAfter: NOW + 300,
+    }
+    const ev: Evidence = {
+      claims,
+      format: 'software-dev',
+      attesterPublicKey: A.publicKey,
+      sig: signerFor(ps1).sign(encodeCanonical([ATTEST_CONTEXT, ps1, claims]), A.secretKey),
+      suite: ps1,
+    }
+    // Otherwise accepted (no suite/category constraint) — this IS the downgrade.
+    expect(appraise(ev, basePolicy()).valid).toBe(true)
+    // A category floor pins it out (Cat-3 < 5):
+    expect(appraise(ev, basePolicy({ minCategory: 5 })).valid).toBe(false)
+    // A suite allowlist pins it out:
+    expect(appraise(ev, basePolicy({ acceptedSuites: [SUITE_IDS.PS_5] })).valid).toBe(false)
+    // Explicitly allowed / category met -> accepted (sanity, back-compatible):
+    expect(appraise(ev, basePolicy({ acceptedSuites: [ps1] })).valid).toBe(true)
+    expect(appraise(ev, basePolicy({ minCategory: 3 })).valid).toBe(true)
+  })
+
   it('ATTEST-NOFM-001: distinct formats from ONE attester do NOT satisfy 2-of-M', () => {
     const swA = evidenceA // software-dev by A
     const tdxA = tdxEvidence(A) // tdx by A -> 2 formats, 1 attester
