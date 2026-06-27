@@ -75,7 +75,7 @@ const SOURCE_FILES = SRC_ROOTS.flatMap((r) => tsFilesUnder(join(r, 'src')))
 // templates (their static stem is matched via isRegisteredLabel). NOT sound against a label assembled
 // entirely from non-matching fragments — see the honesty note below.
 const STRING_LITERAL = /'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*`/g
-const CARRIES_LABEL = /(?:polarseek|PolarSeek)[/-]/
+const CARRIES_LABEL = /(?:polarseek|PolarSeek|nerion|Nerion)[/-]/
 
 describe('PQC-1 — domain-separation registry: uniqueness & prefix-freeness', () => {
   it('all labels are unique', () => {

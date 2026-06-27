@@ -6,11 +6,12 @@
 ## What
 
 Domain separation is what stops a signature, MAC, KDF output, or commitment minted for one purpose
-from validating in another. Nerion has **31 domain-separation labels** scattered across ~15 modules
+from validating in another. Nerion has **33 domain-separation labels** scattered across ~15 modules
 in **several naming conventions** (`polarseek/x/v1`, `PolarSeek/x/v1`, `PolarSeek-X-v1`,
-`polarseek-x-v1`, plus URI-form SLSA identifiers), some versioned and some not — ADR-0026 fixed one
+`polarseek-x-v1`, URI-form SLSA identifiers, and — since the PolarSeek→Nerion rename — the
+`nerion/x/v1` / `Nerion/x/v1` family), some versioned and some not — ADR-0026 fixed one
 cross-profile substitution reactively, which is the symptom of an un-audited namespace. (Two of the
-31 — the SLSA `buildType`/`builderId` URIs — were found only by the strengthened drift scan below,
+33 — the SLSA `buildType`/`builderId` URIs — were found only by the strengthened drift scan below,
 which is exactly the kind of escape the registry exists to surface.)
 
 `crypto/src/domain-labels.ts` makes the namespace a **single source of truth** (`DOMAIN_LABELS`),
@@ -35,7 +36,7 @@ stays sound with no silent allowlisting.
 There was no central registry and no coverage/prefix-free gate; ADR-0026 showed the namespace was
 incompletely covered. A machine-checked global registry with a no-escape scan is ahead of the
 review-only baseline: it converts "we tried to keep labels distinct" into a re-runnable proof, and it
-makes the four-convention inconsistency visible for a future unification. The benchmark framing is an
+makes the multi-convention inconsistency visible for a future unification. The benchmark framing is an
 **engineering-completeness count**, not security: *N labels registered, prefix-free, 0 inline escapes,
 0 injectivity collisions* — never an "audited" or "secure" claim.
 
@@ -50,7 +51,7 @@ makes the four-convention inconsistency visible for a future unification. The be
   editing those files, and is the tracked next step to upgrade this from drift-detection to a true gate.
 - Prefix-freeness is defense-in-depth: most labels are used as a distinct CBOR array element (where
   canonical encoding is injective regardless), but the raw-string / HKDF-info usages benefit from it.
-- The four naming conventions are **not** unified here (that would touch wire bytes → Track-B + KAT
+- The several naming conventions are **not** unified here (that would touch wire bytes → Track-B + KAT
   regen); this registry makes the inconsistency checkable and is the prerequisite for any such cleanup.
 
 *Origin: Beyond-Apex Frontier item PQC-1 (see [BEYOND_APEX_FRONTIER.md](./BEYOND_APEX_FRONTIER.md));

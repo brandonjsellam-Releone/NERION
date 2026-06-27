@@ -9,9 +9,11 @@
  * MAC, KDF output, or commitment minted for one purpose from ever validating in another; a
  * COLLISION or accidental REUSE of a label silently merges two trust domains.
  *
- * Today these labels are scattered across ~15 modules in FOUR different naming conventions
- * (`polarseek/x/v1`, `PolarSeek/x/v1`, `PolarSeek-X-v1`, `polarseek-x-v1`) — ADR-0026 fixed one
- * cross-profile substitution reactively, which is exactly the symptom of an un-audited namespace.
+ * Today these labels are scattered across ~15 modules in multiple naming conventions
+ * (`polarseek/x/v1`, `PolarSeek/x/v1`, `PolarSeek-X-v1`, `polarseek-x-v1`, plus URI-form SLSA
+ * identifiers, and — since the PolarSeek→Nerion rename — the `nerion/x/v1` / `Nerion/x/v1` family) —
+ * ADR-0026 fixed one cross-profile substitution reactively, which is exactly the symptom of an
+ * un-audited namespace.
  * This registry + its conformance test (crypto/test/domain-labels.property.test.ts) make the
  * namespace CHECKABLE: global uniqueness, prefix-freeness, source-coverage, no-inline-escape, and
  * canonical-encoding injectivity.
@@ -81,6 +83,11 @@ export const DOMAIN_LABELS: readonly DomainLabel[] = [
     purpose: 'capability-grant signing context',
     module: 'capabilities/src/capability.ts',
   },
+  {
+    label: 'nerion/action-manifest/v1',
+    purpose: 'action-manifest digest domain (ADR-0025 standards-binding projection)',
+    module: 'capabilities/src/profile.ts',
+  },
   // --- disclosure / ZK ---
   {
     label: 'PolarSeek/disclosure/generator-H/v1',
@@ -108,6 +115,11 @@ export const DOMAIN_LABELS: readonly DomainLabel[] = [
     label: 'polarseek-psp-v1',
     purpose: 'policy-satisfaction-proof domain',
     module: 'disclosure/src/policyproof.ts',
+  },
+  {
+    label: 'Nerion/disclosure/salted-commit/v1',
+    purpose: 'salted receipt-field commitment domain (RCPT-001, ADR-0014)',
+    module: 'disclosure/src/selective.ts',
   },
   // --- governance / consensus / ledger ---
   {
