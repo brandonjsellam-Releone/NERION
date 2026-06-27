@@ -1,0 +1,47 @@
+{
+  "_note": "BENCH-01 regression baseline. Deterministic fields only (sizes, correctness, workload). Regenerate with `npm run bench -- --update-baseline`.",
+  "primitive": "ML-DSA-87",
+  "workload": {
+    "permits": 512,
+    "audiences": 64,
+    "revokedFraction": 0.1
+  },
+  "sizes": {
+    "publicKeyBytes": 2592,
+    "secretKeyBytes": 4896,
+    "signatureBytes": 4627,
+    "permitMessageBytes": 176,
+    "intentCommitmentBytes": 32,
+    "merkleRootBytes": 32
+  },
+  "correctness": {
+    "validIssued": 456,
+    "validAccepted": 456,
+    "revokedRejected": 56,
+    "adversarial": {
+      "wrongAudience": {
+        "n": 112,
+        "rejected": 112
+      },
+      "tamperedIntent": {
+        "n": 112,
+        "rejected": 112
+      },
+      "forgedSignature": {
+        "n": 112,
+        "rejected": 112
+      },
+      "suiteDowngrade": {
+        "n": 112,
+        "rejected": 112
+      },
+      "wrongKey": {
+        "n": 112,
+        "rejected": 112
+      }
+    },
+    "inclusionProofOk": true,
+    "allValidAccepted": true,
+    "allAdversarialRejected": true
+  }
+}
