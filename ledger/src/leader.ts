@@ -94,6 +94,17 @@ export function verifyViewChangeCert(
   finalityDen = 3,
 ): boolean {
   if (!Number.isSafeInteger(certRound) || certRound < 0) return false
+  // Fail-closed on a degenerate finality threshold (Team Apex max sweep 2026-06-28, F-A):
+  // finalityNum<=0 makes the cross-multiply RHS <= 0, so a ZERO-vote cert would pass. Require
+  // 1 <= finalityNum <= finalityDen (parity with verifyFinalized + receipts quorum.ts k<1 guard).
+  if (
+    !Number.isInteger(finalityNum) ||
+    !Number.isInteger(finalityDen) ||
+    finalityNum < 1 ||
+    finalityDen < 1 ||
+    finalityNum > finalityDen
+  )
+    return false
   if (!cert || cert.round !== certRound) return false
   const total = totalStake(set)
   if (total <= 0n) return false

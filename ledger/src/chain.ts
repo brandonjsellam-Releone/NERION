@@ -438,12 +438,26 @@ export function verifyFinalized(
   // threshold (council review).
   const wellFormedSet = isWellFormedStakeSet(set)
   const totalBig = totalStakeBig(set)
+  // Fail-closed on a degenerate finality threshold (Team Apex max sweep 2026-06-28,
+  // validatorset-epoch-toctou F-A): finalityNum/finalityDen are caller-supplied (default 2/3) and
+  // were unvalidated, so finalityNum<=0 made `attestingStake*den >= 0` true for ZERO stake — a
+  // zero-attestation block reported finalized. Require 1 <= finalityNum <= finalityDen, mirroring
+  // the k<1 guard the receipts quorum path already has (receipts/src/quorum.ts).
+  const validThreshold =
+    Number.isInteger(finalityNum) &&
+    Number.isInteger(finalityDen) &&
+    finalityNum >= 1 &&
+    finalityDen >= 1 &&
+    finalityNum <= finalityDen
   const finalized =
+    validThreshold &&
     wellFormedSet &&
     totalBig > 0n &&
     attestingStake * BigInt(finalityDen) >= BigInt(finalityNum) * totalBig
-  if (!wellFormedSet) {
-    reasons.push('validator set has a negative stake (malformed)')
+  if (!validThreshold) {
+    reasons.push('finality threshold is degenerate (require 1 <= finalityNum <= finalityDen)')
+  } else if (!wellFormedSet) {
+    reasons.push('validator set is malformed (negative stake or duplicate pubkeys)')
   } else if (!finalized) {
     reasons.push(
       `attesting stake ${attestingStake}/${total} below finality ${finalityNum}/${finalityDen}`,

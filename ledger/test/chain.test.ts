@@ -86,6 +86,24 @@ describe('pure-PoS ledger', () => {
     expect(verdict.finalized).toBe(false)
   })
 
+  it('F-A: finalityNum<=0 does not finalize a zero-attestation block (no zero-stake finalization)', () => {
+    const ledger = new Ledger(set, suite)
+    const proposer = leaderKey(GENESIS_PREV, 0)
+    const block = ledger.propose('be'.repeat(32), 0, 1000, proposer)
+    // finalityNum=0 made `attestingStake*den >= 0` true for an EMPTY attestation set (the bug).
+    expect(verifyFinalized(block, [], set, GENESIS_PREV, 0, 3).finalized).toBe(false)
+    expect(verifyFinalized(block, [], set, GENESIS_PREV, -1, 3).finalized).toBe(false)
+  })
+
+  it('F-C: a validator set with duplicate pubkeys is rejected as malformed (not finalized)', () => {
+    const ledger = new Ledger(set, suite)
+    const proposer = leaderKey(GENESIS_PREV, 0)
+    const block = ledger.propose('bf'.repeat(32), 0, 1000, proposer)
+    const atts = keys.map((k) => ledger.attest(block, k))
+    const dupSet = { ...set, validators: [...set.validators, set.validators[0]!] }
+    expect(verifyFinalized(block, atts, dupSet, GENESIS_PREV).finalized).toBe(false)
+  })
+
   it('light client rejects a tampered proposer signature', () => {
     const ledger = new Ledger(set, suite)
     const proposer = leaderKey(GENESIS_PREV, 0)

@@ -63,6 +63,14 @@ describe('verifyViewChangeCert — certRound range validation (A19)', () => {
     expect(verifyViewChangeCert(set, suite, 0, PREV, 1, cert)).toBe(true)
   })
 
+  it('F-A: finalityNum<=0 does not validate a zero-vote cert (no zero-stake finalization)', () => {
+    const { set } = makeSet()
+    const emptyCert: ViewChangeCert = { round: 0, votes: [] }
+    // finalityNum=0 made the cross-multiply RHS 0, so a zero-vote cert passed (0>=0). Now rejected.
+    expect(verifyViewChangeCert(set, suite, 0, PREV, 0, emptyCert, 0, 3)).toBe(false)
+    expect(verifyViewChangeCert(set, suite, 0, PREV, 0, emptyCert, -1, 3)).toBe(false)
+  })
+
   it('rejects certRound = -1 (negative)', () => {
     const { set, pubkey, secretKey } = makeSet()
     // Build a cert with round=-1 so the shape is otherwise correct; guard fires first.

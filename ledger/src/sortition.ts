@@ -38,9 +38,18 @@ export function safeStake(stake: unknown): bigint {
   return typeof stake === 'bigint' && stake >= 0n ? stake : 0n
 }
 
-/** Fail-closed malformed-set predicate: every validator's stake must be a NON-NEGATIVE BIGINT. */
+/**
+ * Fail-closed malformed-set predicate: every validator's stake must be a NON-NEGATIVE BIGINT and
+ * all pubkeys must be DISTINCT. The uniqueness check (Team Apex max sweep 2026-06-28, F-C) closes
+ * an inconsistent-dedup gap: the finality NUMERATOR dedups (counted/attempted + first-wins
+ * `stakeIndex`), but `totalStake` (denominator) and `selectLeader`/`vrfLeaderEligible` walk EVERY
+ * entry — so a duplicated pubkey double-counts in the denominator and inflates its leader-draw
+ * interval. Rejecting non-unique sets fail-closed (same posture as negative stake) keeps the
+ * numerator, denominator, and leader draw on one dedup discipline.
+ */
 export function isWellFormedStakeSet(set: ValidatorSet): boolean {
-  return set.validators.every((v) => typeof v.stake === 'bigint' && v.stake >= 0n)
+  if (!set.validators.every((v) => typeof v.stake === 'bigint' && v.stake >= 0n)) return false
+  return new Set(set.validators.map((v) => v.pubkey)).size === set.validators.length
 }
 
 export function totalStake(set: ValidatorSet): bigint {
