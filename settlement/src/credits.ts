@@ -69,8 +69,12 @@ export class MeteringLedger {
 
   /** Issue non-transferable credits to an account (issuer-signed). */
   grant(account: string, amount: number, nonce: string): CreditGrant {
-    if (!Number.isInteger(amount) || amount <= 0) {
-      throw new SettlementError('grant amount must be a positive integer')
+    // F8 (Team Apex max sweep 2026-06-28): Number.isInteger accepts integer-valued floats at/above
+    // 2^53, where `balance + amount` loses unit precision (2^53 + 1 === 2^53) — enabling silent
+    // under-charge / un-drainable inflated balances. Require a SAFE integer (matches ADR-0018's
+    // amount domain [0, 2^53-1] and grant.ts / quorum.ts), not merely an integer.
+    if (!Number.isSafeInteger(amount) || amount <= 0) {
+      throw new SettlementError('grant amount must be a positive safe integer')
     }
     // Replay protection (SETTLE-001): a given (account, nonce) may be granted at
     // most once, so the same signed CreditGrant cannot double-credit. The key is
@@ -78,6 +82,11 @@ export class MeteringLedger {
     const nonceKey = JSON.stringify([account, nonce])
     if (this.consumedNonces.has(nonceKey)) {
       throw new SettlementError('grant nonce already used for this account (replay rejected)')
+    }
+    // Cap the cumulative balance so repeated valid grants can never walk it across 2^53 into the
+    // lossy range (the overflow check is exact: both operands are safe integers). F8.
+    if (this.balance(account) > Number.MAX_SAFE_INTEGER - amount) {
+      throw new SettlementError('grant would overflow the safe-integer balance range')
     }
     this.consumedNonces.add(nonceKey)
     this.balances.set(account, this.balance(account) + amount)
@@ -101,8 +110,8 @@ export class MeteringLedger {
 
   /** Meter (consume) credits for a metered action; throws if insufficient. */
   meter(account: string, cost: number, ref: string): MeterRecord {
-    if (!Number.isInteger(cost) || cost < 0)
-      throw new SettlementError('cost must be a non-negative integer')
+    if (!Number.isSafeInteger(cost) || cost < 0)
+      throw new SettlementError('cost must be a non-negative safe integer')
     // Idempotency on `ref` (SETTLE-METER-001): a given (account, ref) is metered
     // at most once, so a replayed permit cannot decrement the balance repeatedly
     // and drain the account. JSON-encoded key — no separator aliasing.

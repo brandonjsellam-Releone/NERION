@@ -28,6 +28,20 @@ describe('settlement hardening (SETTLE-001 / SETTLE-002)', () => {
     expect(ledger.balance(ACCT)).toBe(100) // credited exactly once
   })
 
+  it('F8: rejects non-safe-integer amounts/costs and a balance that would cross 2^53', () => {
+    const ledger = new MeteringLedger(suite, issuer)
+    // Number.isInteger(2^53) is true but the arithmetic is lossy past it — must be rejected.
+    expect(() => ledger.grant(ACCT, 2 ** 53, 'big')).toThrow(SettlementError)
+    expect(() => ledger.grant(ACCT, 2 ** 53 + 2, 'big2')).toThrow(SettlementError)
+    expect(() => ledger.grant(ACCT, 1.5, 'frac')).toThrow(SettlementError)
+    // Cumulative grants cannot walk the balance across the safe-integer range.
+    ledger.grant(ACCT, Number.MAX_SAFE_INTEGER - 10, 'near')
+    expect(() => ledger.grant(ACCT, 100, 'over')).toThrow(SettlementError)
+    expect(ledger.balance(ACCT)).toBe(Number.MAX_SAFE_INTEGER - 10) // unchanged by the rejected grant
+    // meter() rejects a non-safe-integer cost too.
+    expect(() => ledger.meter(ACCT, 2 ** 53, 'm')).toThrow(SettlementError)
+  })
+
   it('SETTLE-001: distinct nonces still credit independently; same nonce on another account is fine', () => {
     const ledger = new MeteringLedger(suite, issuer)
     ledger.grant(ACCT, 100, 'n1')
