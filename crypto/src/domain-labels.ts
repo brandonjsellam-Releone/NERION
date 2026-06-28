@@ -206,6 +206,12 @@ export const DOMAIN_LABELS: readonly DomainLabel[] = [
     purpose: 'SLSA provenance builder-id URI',
     module: 'conformance/src/suite.ts',
   },
+  // --- label added by a frontier branch, reconciled at integration (GOV-MANIFEST-BIND) ---
+  {
+    label: 'nerion/policy-id/v1',
+    purpose: 'GOV-MANIFEST-BIND policy-identity hash domain (manifest policyHash binding)',
+    module: 'kernel/src/manifest-bind.ts',
+  },
 ]
 
 /** The exact label strings, for O(1) membership and the no-escape reconciliation. */
@@ -223,6 +229,11 @@ export const NON_LABEL_LITERALS: ReadonlyArray<{
   {
     literal: 'polarseek-kernel/0.1.0',
     reason: 'kernel VERSION string (KERNEL_VERSION), not a domain-separation context',
+  },
+  {
+    literal: 'polarseek/kem-seal/key-commitment/v1',
+    reason:
+      'PQC-4 HKDF extract SALT (a distinct mechanism from context/info labels; used as raw salt bytes, never concatenated) sub-namespaced under the seal domain — exempt from the context-label prefix-free invariant (would otherwise falsely conflict with the polarseek/kem-seal label)',
   },
   {
     literal: 'polarseek-seal-kek',
