@@ -68,6 +68,7 @@ export {
   openEnvelope,
   issuePermit,
   verifyPermit,
+  permitMac,
   readPermit,
   deriveAudiencePermitKey,
 } from './envelope.js'

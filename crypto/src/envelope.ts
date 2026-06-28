@@ -142,6 +142,19 @@ export function verifyPermit(token: PermitToken, sessionKey: Bytes): boolean {
   return HMAC_SHA384.verify(sessionKey, toBeMaced(token.suite, token.body), token.mac)
 }
 
+/**
+ * The root PermitToken MAC over (suite, body) under a session/audience key — i.e. the value
+ * `issuePermit` puts in `mac` and `verifyPermit` checks. Exposed so the macaroon caveat layer
+ * (planes/caveat.ts) can recompute it from the audience key WITHOUT the un-attenuated MAC ever
+ * appearing in a forwarded attenuated permit (which would let a holder strip its caveats).
+ */
+export function permitMac(
+  token: { readonly suite: string; readonly body: Bytes },
+  key: Bytes,
+): Bytes {
+  return HMAC_SHA384.compute(key, toBeMaced(token.suite, token.body))
+}
+
 /** Decode a PermitToken's claims. Caller MUST verify first. */
 export function readPermit(token: PermitToken): unknown {
   return decodeCbor(token.body)
