@@ -30,6 +30,8 @@ export { Ledger, LedgerError, blockHash, verifyFinalized, GENESIS_PREV } from '.
 export type { VerifyOpts } from './chain.js'
 export { detectEquivocations, verifyEquivocationProof, slash } from './equivocation.js'
 export type { EquivocationProof } from './equivocation.js'
+export { extractSlashableSet } from './accountable.js'
+export type { AccountableSafetyReport } from './accountable.js'
 export { GossipBus, GossipNode } from './gossip.js'
 export type { GossipMessage } from './gossip.js'
 export { prove, verify, vrfPublicKey, VrfError } from './vrf.js'
