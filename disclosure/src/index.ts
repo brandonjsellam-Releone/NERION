@@ -35,6 +35,8 @@ export {
   verifyBoundCommitment,
   verifyBoundAmount,
   bindAmountCommitment,
+  hasSaltedFields,
+  PUBLIC_INTENT_FIELDS,
   CommitBindError,
 } from './commitbind.js'
 export type { BoundAmount } from './commitbind.js'
