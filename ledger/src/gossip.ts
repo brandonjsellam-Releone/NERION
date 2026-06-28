@@ -47,6 +47,18 @@ const MAX_PENDING_PER_HEIGHT = 64
  *  pruning it bounds the orphan-attestation pool. */
 const MAX_ATTESTED_HASHES = MAX_FUTURE_HEIGHTS * MAX_PENDING_PER_HEIGHT
 
+/** Cap distinct blockHashes a SINGLE validator may occupy in the attestation pool
+ *  (GOSSIP-CENSOR-002, Team Apex max sweep 2026-06-28). An honest validator attests at most one
+ *  block per height, so across the live-height window it touches <= MAX_FUTURE_HEIGHTS+1 hashes; a
+ *  validator presenting attestations for many MORE distinct hashes is misbehaving. Without this
+ *  per-validator bound, the GOSSIP-CENSOR-001 ingress check (which only rejects ZERO-stake
+ *  attestations) still lets ONE staked validator self-sign valid attestations for
+ *  MAX_ATTESTED_HASHES distinct GARBAGE hashes, fill every global slot, and CENSOR the genuine
+ *  block (its hash is dropped at the global cap so it never finalizes — verified repro). 2x the
+ *  height window is generous headroom for honest load + round changes while bounding any one
+ *  validator far below the global cap. */
+const MAX_HASHES_PER_VALIDATOR = MAX_FUTURE_HEIGHTS * 2
+
 /** Deterministic in-process broadcast network with optional partitions. */
 export class GossipBus {
   private readonly handlers = new Map<string, Handler>()
@@ -92,6 +104,8 @@ export class GossipNode {
   private readonly knownBlocks = new Map<string, Block>()
   /** blockHash → (validator → attestation). */
   private readonly attestations = new Map<string, Map<string, Attestation>>()
+  /** validator → set of distinct blockHashes it has pooled (GOSSIP-CENSOR-002 per-validator cap). */
+  private readonly hashesByValidator = new Map<string, Set<string>>()
   /** height → the single block hash this honest node attested there. */
   private readonly attestedAt = new Map<number, string>()
   private readonly finalizedHashes = new Set<string>()
@@ -208,13 +222,26 @@ export class GossipNode {
     if (att.height < this.height() || att.height > this.height() + MAX_FUTURE_HEIGHTS) return
 
     let byValidator = this.attestations.get(att.blockHash)
+    if (byValidator?.has(att.validator)) return // already have this validator's attestation for this hash
+    // GOSSIP-CENSOR-002 (Team Apex max sweep 2026-06-28): bound the distinct hashes any ONE validator
+    // can pool, so a single staked validator cannot fill every global slot with valid-but-garbage
+    // attestations and censor the genuine block. Honest validators stay well under the cap (<=1
+    // hash/height); a flooder is bounded to MAX_HASHES_PER_VALIDATOR, leaving the pool open for
+    // everyone else. Checked BEFORE creating a pool entry so a rejected flood allocates nothing.
+    const vHashes = this.hashesByValidator.get(att.validator)
+    const validatorHasHash = vHashes?.has(att.blockHash) ?? false
+    if (!validatorHasHash && (vHashes?.size ?? 0) >= MAX_HASHES_PER_VALIDATOR) return
     if (!byValidator) {
-      if (this.attestations.size >= MAX_ATTESTED_HASHES) return // bound distinct hashes
+      if (this.attestations.size >= MAX_ATTESTED_HASHES) return // bound distinct hashes (global)
       byValidator = new Map()
       this.attestations.set(att.blockHash, byValidator)
     }
-    if (byValidator.has(att.validator)) return // already have this validator's attestation
     byValidator.set(att.validator, att)
+    if (!validatorHasHash) {
+      const hs = vHashes ?? new Set<string>()
+      hs.add(att.blockHash)
+      this.hashesByValidator.set(att.validator, hs)
+    }
     this.bus.broadcast(this.id, { kind: 'attestation', attestation: att }) // flood once
     this.tryFinalize(att.blockHash)
   }
@@ -256,6 +283,19 @@ export class GossipNode {
       for (const [h, byV] of [...this.attestations]) {
         const some = byV.values().next().value
         if (some !== undefined && some.height < height) this.attestations.delete(h)
+      }
+      // Rebuild the per-validator distinct-hash index (GOSSIP-CENSOR-002) from the pruned pool, so a
+      // validator's cap frees up as its sub-head hashes are pruned (the index never out-grows the pool).
+      this.hashesByValidator.clear()
+      for (const [h, byV] of this.attestations) {
+        for (const v of byV.keys()) {
+          let hs = this.hashesByValidator.get(v)
+          if (!hs) {
+            hs = new Set<string>()
+            this.hashesByValidator.set(v, hs)
+          }
+          hs.add(h)
+        }
       }
       for (const k of [...this.pendingBlocks.keys()]) if (k < height) this.pendingBlocks.delete(k)
       const due = this.pendingBlocks.get(height)
