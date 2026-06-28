@@ -58,6 +58,19 @@ export function stakeOf(set: ValidatorSet, pubkey: string): bigint {
   return safeStake(set.validators.find((v) => v.pubkey === pubkey)?.stake)
 }
 
+/**
+ * O(1) pubkey→stake index built ONCE per verify call, so a hot loop over attacker-supplied
+ * attestations/votes does not pay an O(V) `stakeOf` linear scan per entry (F6/F7 decode-side
+ * DoS, Team Apex max sweep 2026-06-28: the exported light-client verifiers ran O(A·V) string
+ * compares on uncapped peer input). First occurrence wins, matching `stakeOf`'s `find` so a
+ * (malformed) set with duplicate pubkeys behaves identically; malformed/negative stake → 0n.
+ */
+export function stakeIndex(set: ValidatorSet): Map<string, bigint> {
+  const m = new Map<string, bigint>()
+  for (const v of set.validators) if (!m.has(v.pubkey)) m.set(v.pubkey, safeStake(v.stake))
+  return m
+}
+
 /** Deterministic stake-weighted leader for a (prevHash, round). */
 export function selectLeader(set: ValidatorSet, prevHash: string, round: number): string {
   const total = totalStake(set)

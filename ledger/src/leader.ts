@@ -19,7 +19,13 @@
 import { encodeCanonical, signerFor } from '../../crypto/src/index.js'
 import type { Bytes } from '../../crypto/src/index.js'
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils.js'
-import { totalStake, totalStakeBig, stakeOf, safeStake, isWellFormedStakeSet } from './sortition.js'
+import {
+  totalStake,
+  totalStakeBig,
+  stakeIndex,
+  safeStake,
+  isWellFormedStakeSet,
+} from './sortition.js'
 import type { ValidatorSet, ViewChangeCert } from './types.js'
 
 /** The VRF input α for a draw. Mirrors the old sortition seed preimage. */
@@ -91,6 +97,14 @@ export function verifyViewChangeCert(
   if (!cert || cert.round !== certRound) return false
   const total = totalStake(set)
   if (total <= 0n) return false
+  // F7 (Team Apex max sweep 2026-06-28): bound attacker-supplied votes on this exported,
+  // peer-facing verifier. At most |validators| distinct votes can ever count, so a votes array
+  // far larger than the set is junk that only burns CPU (was O(votes·V): uncapped votes, O(V)
+  // stakeOf scan per vote, reachable pre-signature from verifyFinalized for any round>0 block).
+  // Reject past 4× the set size, fail-closed, before the loop; the O(1) stakeIndex makes each
+  // surviving vote an O(1) lookup.
+  if (cert.votes.length > Math.max(set.validators.length * 4, 256)) return false
+  const stakeBy = stakeIndex(set)
   const counted = new Set<string>()
   const attempted = new Set<string>()
   let stake = 0n
@@ -98,7 +112,7 @@ export function verifyViewChangeCert(
     if (v.suite !== suite) continue // bind to the block's suite (cross-suite hardening)
     if (v.height !== height || v.prevHash !== prevHash || v.round !== certRound) continue
     if (counted.has(v.validator)) continue
-    const s = stakeOf(set, v.validator)
+    const s = stakeBy.get(v.validator) ?? 0n
     if (s <= 0n) continue
     // DOS-VERIFY-001 (round-2 sweep): one PQ verify per distinct validator — duplicate garbage-sig
     // votes for a staked validator otherwise each ran a fresh ML-DSA-87 verify (O(N) attacker CPU).

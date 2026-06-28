@@ -74,6 +74,18 @@ describe('pure-PoS ledger', () => {
     expect(verdict.attestingStake).toBeGreaterThanOrEqual(67n)
   })
 
+  it('F6: rejects an over-cap attestations array fail-closed (decode-side DoS guard)', () => {
+    const ledger = new Ledger(set, suite)
+    const proposer = leaderKey(GENESIS_PREV, 0)
+    const block = ledger.propose('da'.repeat(32), 0, 1000, proposer)
+    const one = ledger.attest(block, keys[0]!)
+    // length > max(4*|set|, 256): the bound rejects before iterating the array.
+    const flood = Array.from({ length: 257 }, () => one)
+    const verdict = verifyFinalized(block, flood, set, GENESIS_PREV)
+    expect(verdict.ok).toBe(false)
+    expect(verdict.finalized).toBe(false)
+  })
+
   it('light client rejects a tampered proposer signature', () => {
     const ledger = new Ledger(set, suite)
     const proposer = leaderKey(GENESIS_PREV, 0)

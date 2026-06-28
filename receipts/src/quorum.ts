@@ -177,13 +177,24 @@ export function verifyQuorumReceipt(
 
   const members = new Set(set.validators.map((v) => v.pubkey))
   let distinct = 0
-  countDistinctValid(
-    receipt,
-    (v) => members.has(v),
-    () => {
-      distinct += 1
-    },
-  )
+  // F11 (Team Apex max sweep 2026-06-28): bound the attacker-supplied attestations array on this
+  // exported verifier before iterating it. At most |members| can ever count, so an array far
+  // larger than the set is junk that only burns O(A) iteration. Reject past 4× the set size,
+  // fail-closed, and SKIP the loop (do not push a reason and still iterate).
+  const maxAttestations = Math.max(set.validators.length * 4, 256)
+  if (receipt.attestations.length > maxAttestations) {
+    reasons.push(
+      `attestation count ${receipt.attestations.length} exceeds bound ${maxAttestations}`,
+    )
+  } else {
+    countDistinctValid(
+      receipt,
+      (v) => members.has(v),
+      () => {
+        distinct += 1
+      },
+    )
+  }
   if (distinct < k) reasons.push(`only ${distinct} distinct valid attestation(s); need ${k}`)
   return { ok: reasons.length === 0, distinctValid: distinct, threshold: k, reasons }
 }
@@ -222,15 +233,24 @@ export function verifyQuorumReceiptByStake(
   // subset UP across the threshold and accept it (parity with chain.ts/leader.ts BigInt finality).
   let stake = 0n
   let counted = 0
-  countDistinctValid(
-    receipt,
-    (v) => stakeOf.has(v),
-    (v) => {
-      const s = stakeOf.get(v)
-      stake += typeof s === 'bigint' && s >= 0n ? s : 0n
-      counted += 1
-    },
-  )
+  // F11 (Team Apex max sweep 2026-06-28): bound the attacker-supplied attestations array before
+  // iterating (at most |members| can ever count); reject past 4× the set size and skip the loop.
+  const maxAttestations = Math.max(set.validators.length * 4, 256)
+  if (receipt.attestations.length > maxAttestations) {
+    reasons.push(
+      `attestation count ${receipt.attestations.length} exceeds bound ${maxAttestations}`,
+    )
+  } else {
+    countDistinctValid(
+      receipt,
+      (v) => stakeOf.has(v),
+      (v) => {
+        const s = stakeOf.get(v)
+        stake += typeof s === 'bigint' && s >= 0n ? s : 0n
+        counted += 1
+      },
+    )
+  }
   if (stake < stakeThreshold)
     reasons.push(`distinct valid stake ${stake} < required ${stakeThreshold}`)
   return { ok: reasons.length === 0, distinctValid: counted, threshold: stakeThreshold, reasons }

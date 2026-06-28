@@ -60,6 +60,13 @@ describe('quorum receipts (decentralized k-of-n issuance)', () => {
     expect(verdict.distinctValid).toBe(1)
   })
 
+  it('F11: rejects an over-cap attestations array fail-closed (decode-side DoS guard)', () => {
+    const r = buildQuorumReceipt(body, set, k, epoch, [v[0]!], suite)
+    // length > max(4*|set|, 256): the bound rejects before iterating the array.
+    const flood = { ...r, attestations: Array.from({ length: 257 }, () => r.attestations[0]!) }
+    expect(verifyQuorumReceipt(flood, set, k, epoch).ok).toBe(false)
+  })
+
   it('a non-member attestation is not counted', () => {
     const outsider = kp(9)
     const r = buildQuorumReceipt(body, set, k, epoch, [v[0]!, outsider], suite)

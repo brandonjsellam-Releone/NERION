@@ -21,7 +21,7 @@ import {
 import { bytesToHex } from '@noble/hashes/utils.js'
 import {
   selectLeader,
-  stakeOf,
+  stakeIndex,
   totalStake,
   totalStakeBig,
   isWellFormedStakeSet,
@@ -293,6 +293,24 @@ export function verifyFinalized(
   const total = totalStake(set)
   const h = blockHash(block.header)
 
+  // F6 (Team Apex max sweep 2026-06-28): bound attacker-supplied input on this EXPORTED,
+  // peer-facing light-client verifier. At most |validators| DISTINCT validators can ever count
+  // (the counted/attempted dedup), so an `attestations` array far larger than the set is junk
+  // that only burns CPU — previously O(A·V) string compares (uncapped A, O(V) stakeOf scan per
+  // entry) before any signature work. Reject past 4× the set size, fail-closed, BEFORE the loop;
+  // paired with the O(1) `stakeIndex` below this is O(min(A,4V)) with O(1) per-entry lookup.
+  const maxAttestations = Math.max(set.validators.length * 4, 256)
+  if (attestations.length > maxAttestations) {
+    return {
+      ok: false,
+      finalized: false,
+      attestingStake: 0n,
+      totalStake: total,
+      reasons: [`attestation count ${attestations.length} exceeds bound ${maxAttestations}`],
+    }
+  }
+  const stakeBy = stakeIndex(set)
+
   if (opts.expectedSuite !== undefined && block.suite !== opts.expectedSuite) {
     reasons.push('block suite is not the ledger suite')
   }
@@ -393,7 +411,7 @@ export function verifyFinalized(
     if (a.suite !== block.suite) continue
     if (counted.has(a.validator)) continue
     if (opts.expectedSuite !== undefined && a.suite !== opts.expectedSuite) continue
-    const stake = stakeOf(set, a.validator)
+    const stake = stakeBy.get(a.validator) ?? 0n
     if (stake <= 0n) continue
     // DOS-VERIFY-001 (round-2 sweep): one PQ verify per distinct validator — duplicate garbage-sig
     // attestations for a staked validator otherwise each ran a fresh ML-DSA-87 verify (O(N) CPU on
