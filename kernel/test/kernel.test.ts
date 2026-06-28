@@ -174,6 +174,37 @@ describe('admission decisions', () => {
     expect(decide(input(near, { capabilities: [childRoot], policy })).effect).toBe('allow')
   })
 
+  it('intent-type canonicality: a malformed intent.type is denied BEFORE authorization (max sweep)', () => {
+    const malformed = [
+      ' payment.transfer',
+      'payment..transfer',
+      'payment.transfer ',
+      'payment.transfer.',
+      '',
+    ]
+    // A capability that authorizes the EXACT malformed strings — proves the gate fires first.
+    const malformedCap = issueRoot(
+      {
+        subject: holderHex,
+        actions: malformed,
+        perActionCeiling: null,
+        aggregateCap: null,
+        counterparties: null,
+        maxTier: 3,
+        notBefore: 0,
+        notAfter: 10_000_000_000,
+        delegable: false,
+      },
+      suite,
+      authority,
+    )
+    for (const t of malformed) {
+      const d = decide(input({ type: t, resource: 'r' }, { capabilities: [malformedCap] }))
+      expect(d.effect).toBe('deny')
+      expect(d.reasons.join(' ')).toContain('canonical')
+    }
+  })
+
   it('receipt-implies-authorization: an allow only ever follows authorization', () => {
     // Over-ceiling / wrong-holder inputs must never produce allow.
     expect(decide(input(PAY, { holder: 'deadbeef' })).effect).toBe('deny')

@@ -22,7 +22,13 @@ import {
   type EvalContext,
   type RiskTier,
 } from '../../capabilities/src/index.js'
-import { tierOf, actionInList, evaluatorVersion, KERNEL_VERSION } from './policy.js'
+import {
+  tierOf,
+  actionInList,
+  isCanonicalActionType,
+  evaluatorVersion,
+  KERNEL_VERSION,
+} from './policy.js'
 import { governedView, type GovernedIntent } from './blindness.js'
 import type { Decision, KernelInput } from './types.js'
 
@@ -86,6 +92,23 @@ function decideCore(input: GovernedInput): DecisionWithAuthorizer {
   let ev = `${KERNEL_VERSION}+uncomputed`
   try {
     ev = evaluatorVersion(input.policy)
+    // Canonicality gate (Team Apex max sweep 2026-06-28, intent-type-canonicality): reject a
+    // malformed intent.type BEFORE tiering/deny/transform/authorization, so a non-canonical sibling
+    // (trailing space, empty segment, NFD/confusable) can never keep a tier via the prefix rule
+    // while dodging the exact deny/transform leaf, nor alias the actionHash permit binding. Fail
+    // closed at the highest tier.
+    if (!isCanonicalActionType(input.intent.type)) {
+      return {
+        decision: {
+          effect: 'deny',
+          tier: 3,
+          reasons: ['intent.type is not a canonical action identifier'],
+          obligations: [],
+          evaluatorVersion: ev,
+        },
+        authorizingCapability: null,
+      }
+    }
     const tier = tierOf(input.intent, input.policy)
 
     if (actionInList(input.intent.type, input.policy.denyActions)) {

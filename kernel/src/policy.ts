@@ -47,6 +47,23 @@ export function actionInList(type: string, list: readonly string[]): boolean {
 }
 
 /**
+ * A well-formed action-type identifier: one or more dot-separated NON-EMPTY segments of
+ * `[A-Za-z0-9_-]` (ASCII only — no whitespace, no leading/trailing/double dots, no Unicode
+ * confusables/NFD), max 256 chars. `intent.type` drives `tierOf`, the deny/transform matchers,
+ * exact grant authorization, AND the `actionHash` permit binding — three different rules over the
+ * same raw string. Without a shared canonicality gate a non-canonical sibling (trailing space,
+ * empty segment, NFD variant) can keep its TIER via the prefix rule yet DODGE the exact
+ * deny/transform leaf, and the same logical verb can alias across grant/policy/permit (Team Apex
+ * max sweep 2026-06-28, intent-type-canonicality F-C/F-D). The kernel rejects a non-canonical type
+ * fail-closed so every downstream consumer only ever sees a canonical identifier; restricting to
+ * ASCII sidesteps NFC/NFD normalization entirely.
+ */
+const ACTION_TYPE_RE = /^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*$/
+export function isCanonicalActionType(type: unknown): boolean {
+  return typeof type === 'string' && type.length <= 256 && ACTION_TYPE_RE.test(type)
+}
+
+/**
  * Deterministic tier of an intent: first matching prefix wins, else default.
  *
  * Matching is SEGMENT-wise, not substring (PS-KERNEL-03) via {@link actionMatches}.
