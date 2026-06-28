@@ -12,6 +12,7 @@ import {
   isWellFormedStakeSet,
   viewChangeMessage,
   verifyViewChangeCert,
+  consensusSetId,
   GENESIS_PREV,
 } from '../src/index.js'
 import type { ValidatorSet, TimeoutVote, ViewChangeCert } from '../src/index.js'
@@ -52,7 +53,10 @@ describe('LEDGER-PRECISION-004 — exact bigint stake at the finality decision p
       round: 0,
       validator: bytesToHex(k.publicKey),
       suite,
-      sig: signer.sign(viewChangeMessage(suite, 0, GENESIS_PREV, 0), k.secretKey),
+      sig: signer.sign(
+        viewChangeMessage(suite, 0, GENESIS_PREV, 0, consensusSetId(set)),
+        k.secretKey,
+      ),
     })
     // 2 of 3 equal-stake validators = exactly 2/3 of a > 2^53 total -> finalize (boundary inclusive).
     const twoThirds: ViewChangeCert = { round: 0, votes: [voteOf(v[0]!), voteOf(v[1]!)] }
@@ -77,7 +81,10 @@ describe('LEDGER-PRECISION-004 — exact bigint stake at the finality decision p
       round: 0,
       validator: bytesToHex(kp.publicKey),
       suite,
-      sig: signer.sign(viewChangeMessage(suite, 0, GENESIS_PREV, 0), kp.secretKey),
+      sig: signer.sign(
+        viewChangeMessage(suite, 0, GENESIS_PREV, 0, consensusSetId(malformed)),
+        kp.secretKey,
+      ),
     }))
     // Even a unanimous cert must NOT finalize against a malformed set.
     expect(verifyViewChangeCert(malformed, suite, 0, GENESIS_PREV, 0, { round: 0, votes })).toBe(
@@ -103,7 +110,10 @@ describe('LEDGER-PRECISION-004 — exact bigint stake at the finality decision p
       round: 0,
       validator: bytesToHex(kp.publicKey),
       suite,
-      sig: signer.sign(viewChangeMessage(suite, 0, GENESIS_PREV, 0), kp.secretKey),
+      sig: signer.sign(
+        viewChangeMessage(suite, 0, GENESIS_PREV, 0, consensusSetId(malformed)),
+        kp.secretKey,
+      ),
     }))
     const cert = { round: 0, votes }
     expect(() => verifyViewChangeCert(malformed, suite, 0, GENESIS_PREV, 0, cert)).not.toThrow()

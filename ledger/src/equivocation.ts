@@ -15,7 +15,7 @@
 import { signerFor } from '../../crypto/src/index.js'
 import { hexToBytes } from '@noble/hashes/utils.js'
 import { blockHash, attestMessage } from './chain.js'
-import { stakeOf } from './sortition.js'
+import { stakeOf, consensusSetId } from './sortition.js'
 import type { Attestation, Block, ValidatorSet } from './types.js'
 
 export interface EquivocationProof {
@@ -27,11 +27,11 @@ export interface EquivocationProof {
   readonly attB: Attestation
 }
 
-function safeVerifyAtt(a: Attestation): boolean {
+function safeVerifyAtt(a: Attestation, setId: string): boolean {
   try {
     return signerFor(a.suite).verify(
       a.sig,
-      attestMessage(a.suite, a.height, a.blockHash),
+      attestMessage(a.suite, a.height, a.blockHash, setId),
       hexToBytes(a.validator),
     )
   } catch {
@@ -93,7 +93,11 @@ export function verifyEquivocationProof(proof: EquivocationProof, set: Validator
   if (proof.attA.height !== proof.attB.height) return false
   if (proof.height !== proof.attA.height) return false
   if (stakeOf(set, proof.validator) <= 0) return false
-  return safeVerifyAtt(proof.attA) && safeVerifyAtt(proof.attB)
+  // ADR-0020/B5: the attestations must verify under THIS set's id; a stale cross-epoch
+  // equivocation proof (signed under a different set) reconstructs to a different message and is
+  // rejected — slashing is scoped to the epoch the double-sign occurred in.
+  const setId = consensusSetId(set)
+  return safeVerifyAtt(proof.attA, setId) && safeVerifyAtt(proof.attB, setId)
 }
 
 /** Remove slashed validators, returning a new ValidatorSet (their stake is forfeit). */

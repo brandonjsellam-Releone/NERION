@@ -22,6 +22,7 @@ import { bytesToHex } from '@noble/hashes/utils.js'
 import {
   selectLeader,
   stakeIndex,
+  consensusSetId,
   totalStake,
   totalStakeBig,
   isWellFormedStakeSet,
@@ -81,8 +82,11 @@ function blockSignMessage(suite: string, hash: string): Bytes {
  * a SAME-height double-sign — an honest validator's distinct attestations across
  * different heights must not be slashable (LEDGER-EQUIV-001, Team Apex 2026-06-21).
  */
-export function attestMessage(suite: string, height: number, hash: string): Bytes {
-  return encodeCanonical(['polarseek-attest-v1', suite, height, hash])
+export function attestMessage(suite: string, height: number, hash: string, setId: string): Bytes {
+  // ADR-0020/B5: bind the validator-set id (members+stake+epoch) so an attestation made under
+  // set S(epoch e) is not re-counted by a verifier holding a different set (cross-epoch
+  // consent-transfer / set-substitution). v2 tag marks the format change.
+  return encodeCanonical(['polarseek-attest-v2', suite, height, hash, setId])
 }
 
 export class Ledger {
@@ -186,7 +190,7 @@ export class Ledger {
     const h = blockHash(block.header)
     const height = block.header.height
     const sig = signerFor(this.suite).sign(
-      attestMessage(this.suite, height, h),
+      attestMessage(this.suite, height, h, consensusSetId(this.set)),
       validator.secretKey,
     )
     return {
@@ -258,11 +262,11 @@ function safeVerify(suite: string, sig: Bytes, msg: Bytes, pub: Bytes): boolean 
  * that occupy each (blockHash, validator) slot first and censor finalization
  * (GOSSIP-CENSOR-001, Team Apex 2026-06-21).
  */
-export function verifyAttestationSig(att: Attestation): boolean {
+export function verifyAttestationSig(att: Attestation, set: ValidatorSet): boolean {
   return safeVerify(
     att.suite,
     att.sig,
-    attestMessage(att.suite, att.height, att.blockHash),
+    attestMessage(att.suite, att.height, att.blockHash, consensusSetId(set)),
     hexToBytesLocal(att.validator),
   )
 }
@@ -310,6 +314,9 @@ export function verifyFinalized(
     }
   }
   const stakeBy = stakeIndex(set)
+  // ADR-0020/B5: attestations bind the verifier's-own set id; one signed under a different
+  // set/epoch reconstructs to a different message here and fails the signature check (skipped).
+  const setId = consensusSetId(set)
 
   if (opts.expectedSuite !== undefined && block.suite !== opts.expectedSuite) {
     reasons.push('block suite is not the ledger suite')
@@ -422,7 +429,7 @@ export function verifyFinalized(
       !safeVerify(
         a.suite,
         a.sig,
-        attestMessage(a.suite, block.header.height, h),
+        attestMessage(a.suite, block.header.height, h, setId),
         hexToBytesLocal(a.validator),
       )
     ) {

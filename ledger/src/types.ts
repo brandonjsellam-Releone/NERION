@@ -31,6 +31,14 @@ export interface Validator {
 
 export interface ValidatorSet {
   readonly validators: readonly Validator[]
+  /**
+   * Reconfiguration epoch this membership is for (ADR-0020/B5). Folded into
+   * `consensusSetId`, which is bound into every signed attestation/timeout message — so an
+   * attestation/vote made under set S(epoch e) is NOT re-counted by a verifier holding a
+   * different set S'(epoch e+1), even when membership is unchanged. Optional, defaults to 0
+   * (single-epoch deployments are unaffected and back-compatible).
+   */
+  readonly epoch?: number
 }
 
 export interface BlockHeader {

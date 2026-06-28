@@ -25,6 +25,7 @@ export {
   canonicalRound,
   safeStake,
   isWellFormedStakeSet,
+  consensusSetId,
 } from './sortition.js'
 export { Ledger, LedgerError, blockHash, verifyFinalized, GENESIS_PREV } from './chain.js'
 export type { VerifyOpts } from './chain.js'

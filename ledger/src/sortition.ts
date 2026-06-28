@@ -80,6 +80,25 @@ export function stakeIndex(set: ValidatorSet): Map<string, bigint> {
   return m
 }
 
+/**
+ * Stable identity of a validator-set CONFIGURATION = SHAKE256 over its sorted members
+ * (pubkey + stake + VRF key) and reconfiguration epoch (ADR-0020/B5, Team Apex max sweep
+ * 2026-06-28). Bound into every signed attestation/timeout message so a signature gathered
+ * under set S(epoch e) cannot be re-counted under a DIFFERENT set S'(epoch e+1) — the
+ * cross-epoch consent-transfer / set-substitution TOCTOU the consensus path previously left
+ * open (receipts/quorum.ts already had the analogous `quorumSetId`). Sorting by pubkey makes
+ * it order-independent; stake + epoch make a reweighted or re-epoched set a DIFFERENT id.
+ */
+export function consensusSetId(set: ValidatorSet): string {
+  const sorted = set.validators
+    .map((v) => [v.pubkey, v.stake, v.vrfPubkey ?? null] as const)
+    .slice()
+    .sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
+  return bytesToHex(
+    SHA3_SHAKE256.digest(encodeCanonical(['polarseek-consensus-set/v1', sorted, set.epoch ?? 0])),
+  )
+}
+
 /** Deterministic stake-weighted leader for a (prevHash, round). */
 export function selectLeader(set: ValidatorSet, prevHash: string, round: number): string {
   const total = totalStake(set)

@@ -23,6 +23,7 @@ import {
   totalStake,
   totalStakeBig,
   stakeIndex,
+  consensusSetId,
   safeStake,
   isWellFormedStakeSet,
 } from './sortition.js'
@@ -65,8 +66,11 @@ export function viewChangeMessage(
   height: number,
   prevHash: string,
   round: number,
+  setId: string,
 ): Bytes {
-  return encodeCanonical(['polarseek-timeout-v1', suite, height, prevHash, round])
+  // ADR-0020/B5: bind the validator-set id (members+stake+epoch) so a timeout vote made under one
+  // set/epoch cannot be re-counted by a verifier holding a different set. v2 tag marks the change.
+  return encodeCanonical(['polarseek-timeout-v2', suite, height, prevHash, round, setId])
 }
 
 function safeVerifyTimeout(suite: string, sig: Bytes, msg: Bytes, pub: Bytes): boolean {
@@ -129,7 +133,7 @@ export function verifyViewChangeCert(
     // votes for a staked validator otherwise each ran a fresh ML-DSA-87 verify (O(N) attacker CPU).
     if (attempted.has(v.validator)) continue
     attempted.add(v.validator)
-    const msg = viewChangeMessage(v.suite, height, prevHash, certRound)
+    const msg = viewChangeMessage(v.suite, height, prevHash, certRound, consensusSetId(set))
     if (!safeVerifyTimeout(v.suite, v.sig, msg, hexToBytes(v.validator))) continue
     counted.add(v.validator)
     stake += safeStake(s)

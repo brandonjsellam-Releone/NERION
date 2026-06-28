@@ -13,7 +13,12 @@
 import { describe, it, expect } from 'vitest'
 import { bytesToHex } from '@noble/hashes/utils.js'
 import { signerFor, SUITE_IDS } from '../../crypto/src/index.js'
-import { vrfPublicKey, viewChangeMessage, verifyViewChangeCert } from '../src/index.js'
+import {
+  vrfPublicKey,
+  viewChangeMessage,
+  verifyViewChangeCert,
+  consensusSetId,
+} from '../src/index.js'
 import type { ValidatorSet, TimeoutVote, ViewChangeCert } from '../src/index.js'
 
 const suite = SUITE_IDS.PS_5
@@ -35,6 +40,7 @@ function makeVote(
   height: number,
   prevHash: string,
   round: number,
+  setId: string,
 ): TimeoutVote {
   return {
     height,
@@ -42,7 +48,7 @@ function makeVote(
     round,
     validator: pubkey,
     suite,
-    sig: signer.sign(viewChangeMessage(suite, height, prevHash, round), secretKey),
+    sig: signer.sign(viewChangeMessage(suite, height, prevHash, round, setId), secretKey),
   }
 }
 
@@ -51,14 +57,14 @@ const PREV = '00'.repeat(32)
 describe('verifyViewChangeCert — certRound range validation (A19)', () => {
   it('accepts a valid certRound=0 (baseline positive)', () => {
     const { set, pubkey, secretKey } = makeSet()
-    const vote = makeVote(pubkey, secretKey, 0, PREV, 0)
+    const vote = makeVote(pubkey, secretKey, 0, PREV, 0, consensusSetId(set))
     const cert: ViewChangeCert = { round: 0, votes: [vote] }
     expect(verifyViewChangeCert(set, suite, 0, PREV, 0, cert)).toBe(true)
   })
 
   it('accepts a valid certRound=1 (round > 0 positive)', () => {
     const { set, pubkey, secretKey } = makeSet()
-    const vote = makeVote(pubkey, secretKey, 0, PREV, 1)
+    const vote = makeVote(pubkey, secretKey, 0, PREV, 1, consensusSetId(set))
     const cert: ViewChangeCert = { round: 1, votes: [vote] }
     expect(verifyViewChangeCert(set, suite, 0, PREV, 1, cert)).toBe(true)
   })
@@ -80,7 +86,7 @@ describe('verifyViewChangeCert — certRound range validation (A19)', () => {
       round: -1,
       validator: pubkey,
       suite,
-      sig: signer.sign(viewChangeMessage(suite, 0, PREV, -1), secretKey),
+      sig: signer.sign(viewChangeMessage(suite, 0, PREV, -1, consensusSetId(set)), secretKey),
     }
     const cert: ViewChangeCert = { round: -1, votes: [vote] }
     expect(verifyViewChangeCert(set, suite, 0, PREV, -1, cert)).toBe(false)

@@ -5,14 +5,42 @@ SPDX-License-Identifier: Apache-2.0
 
 # ADR-0020 — Bind validator-set id + epoch into consensus messages (view-change votes, attestations, equivocation proofs)
 
-**Status: PROPOSED — design only, UNIMPLEMENTED.** No code, KAT, or behavior change ships with this
-ADR; it specifies a preimage/verification change for council + external-audit review before any
-implementation. Date: 2026-06-21. Track-B item **B5**. This is a *design decision record*, not a
-security result: the construction below is **UNAUDITED**, makes **no** proven / non-infringement /
-FIPS claim, and rests on the residual assumptions flagged in **Trust model / limits**. Routes to
-the OSTIF / OTF-Security-Lab audit threads and the multi-model council alongside ADR-0004
-(view-change liveness, still Proposed) and the implemented ADR-0005 (quorum-receipt set-binding) it
-mirrors.
+**Status: IMPLEMENTED (as-built variant) — 2026-06-28.** The cross-epoch consent-transfer hole is
+now closed in code (Team Apex max-hardening sweep). The shipped design is a **simplification** of the
+preimage spec below — see **As-built** immediately after this banner for the exact divergence. Still
+**UNAUDITED**; makes **no** proven / non-infringement / FIPS claim; rests on the residual assumptions
+in **Trust model / limits** (epoch authenticity is still the finalized-chain's job). Original design
+date 2026-06-21, Track-B item **B5**; mirrors the implemented ADR-0005 (quorum-receipt set-binding).
+
+## As-built (2026-06-28) — how the shipped code differs from the proposed preimage
+
+The security property (a signature binds the exact `(members, stake, vrfPubkey, epoch)` it was made
+under, recompute-and-compare at verify) is delivered exactly as argued. The implementation chose the
+**lower-churn** shape:
+
+- **`epoch` lives on `ValidatorSet`** (`ledger/src/types.ts`, optional, default `0`) — not as a
+  separate `Ledger` constructor param nor a wire field on `Attestation`/`TimeoutVote`/
+  `EquivocationProof`. `consensusSetId(set)` folds `set.epoch ?? 0` into the id.
+- **The signed preimage binds `setId` only** (epoch is _inside_ `setId`), not `setId` + a separate
+  explicit `epoch` field:
+  `attestMessage = ['polarseek-attest-v2', suite, height, hash, setId]`;
+  `viewChangeMessage = ['polarseek-timeout-v2', suite, height, prevHash, round, setId]`.
+  (The "belt-and-suspenders" explicit-epoch field from §2 was dropped as redundant — `setId`
+  collision-resistantly commits the epoch already.)
+- **Verifiers derive `setId` from their own `set`** (`consensusSetId(set)`) — no new `epoch`
+  parameter is threaded; `verifyEquivocationProof(proof, set)` keeps its signature and derives the
+  id internally. A cross-set/epoch signature reconstructs to a different preimage and fails
+  `safeVerify` (contributes zero stake / rejects the proof) — Attacks A/B/C all closed by the same
+  comparison.
+- **`consensusSetId`** is exported from `ledger/src/index.ts`; helper in `sortition.ts`.
+- **Regression coverage** is in the ledger unit suite (a same-members/different-epoch bundle is
+  finalized under epoch 0 but NOT under epoch 1 — `ledger/test/chain.test.ts`; all timeout-vote tests
+  bind `consensusSetId`). Equivocation slashing is now **epoch-scoped** (a stale cross-epoch proof is
+  rejected — Attack C closed in the "reject" direction).
+- **Still a follow-up (NOT done here):** the conformance **C24** check + the `ps-kat.json` consensus
+  vectors from the Implementation-plan §5 — the count stays **23/23** for now; the property is
+  unit-tested, not yet pinned as a conformance vector. The TLA⁺ accountable-safety model is **not**
+  extended to a multi-epoch dimension (single-epoch model remains valid; the binding is additive).
 
 ## Context
 
@@ -23,47 +51,47 @@ rejecting on mismatch (ADR-0005). `governance/src/quorum.ts` carries the analogo
 binding for committee approvals (GOV-QUORUM-001). The **consensus-layer messages in `ledger/`,
 however, do NOT bind the validator set or the epoch.** Their signed preimages are:
 
-| Message | Builder / verifier | Signed preimage today (`ledger/src`) |
-|---|---|---|
-| Attestation | `attestMessage` (`chain.ts`) | `['polarseek-attest-v1', suite, height, hash]` |
-| View-change (timeout) vote | `viewChangeMessage` (`leader.ts`) | `['polarseek-timeout-v1', suite, height, prevHash, round]` |
-| Equivocation proof | wraps two `Attestation`s (`equivocation.ts`) | (no preimage of its own — inherits the attestation's) |
+| Message                    | Builder / verifier                           | Signed preimage today (`ledger/src`)                       |
+| -------------------------- | -------------------------------------------- | ---------------------------------------------------------- |
+| Attestation                | `attestMessage` (`chain.ts`)                 | `['polarseek-attest-v1', suite, height, hash]`             |
+| View-change (timeout) vote | `viewChangeMessage` (`leader.ts`)            | `['polarseek-timeout-v1', suite, height, prevHash, round]` |
+| Equivocation proof         | wraps two `Attestation`s (`equivocation.ts`) | (no preimage of its own — inherits the attestation's)      |
 
 None of these three carries the validator-set identity or an epoch. The proposer block-signature
 preimage (`blockSignMessage`) and the block header are likewise set-agnostic, but the three messages
 above are the consent-bearing votes whose reuse transfers consent, so they are the scope of B5.
 
 **The gap — cross-epoch consent transfer.** A validator's signature over an attestation or a
-timeout vote is valid for *any* `ValidatorSet` and *any* epoch that happens to present the same
+timeout vote is valid for _any_ `ValidatorSet` and _any_ epoch that happens to present the same
 `(suite, height, hash)` / `(suite, height, prevHash, round)` tuple. Because the verifier never
 checks which set/epoch the signature was made under, a signature gathered in one epoch can be
 **replayed into another**:
 
 - **Attack A — finality forgery across an epoch boundary.** Stake is reweighted, validators
-  rotate in/out, or slashing changes the set between epoch *e* and *e+1*. Heights and block hashes
+  rotate in/out, or slashing changes the set between epoch _e_ and _e+1_. Heights and block hashes
   are not globally unique across epochs (a fork/replay or a re-org can re-present a height; a
   light client bootstrapping a different epoch can be fed an old `(height, hash)`). Honest
-  attestations collected under epoch *e* — where their signers *were* high-stake validators — are
-  re-presented to a verifier operating under the epoch-*e+1* set, where those same keys may carry
-  different (or zero, if slashed/rotated-out) stake. `verifyFinalized` counts them by the *current*
-  set's stake but never checks they were signed *for* this set, so consent minted for one
+  attestations collected under epoch _e_ — where their signers _were_ high-stake validators — are
+  re-presented to a verifier operating under the epoch-_e+1_ set, where those same keys may carry
+  different (or zero, if slashed/rotated-out) stake. `verifyFinalized` counts them by the _current_
+  set's stake but never checks they were signed _for_ this set, so consent minted for one
   validator-set configuration is **transferred** to another. Combined with a substituted/permissive
   set at verification time (the ADR-0005 threat, here unguarded), this lets an attacker assemble a
   "finalized" block under a configuration the signers never consented to.
 - **Attack B — view-change vote replay across epochs.** A `TimeoutVote` for `(height, prevHash,
-  round)` made in epoch *e* is re-counted in epoch *e+1* (same height/prevHash after a re-org, or a
+round)` made in epoch _e_ is re-counted in epoch _e+1_ (same height/prevHash after a re-org, or a
   deliberately reconstructed view) to manufacture a ≥2/3 view-change certificate and force a round
   skip / re-draw the VRF leader among an epoch the voters never timed out in — without any voter
   acting in the new epoch.
 - **Attack C — stale equivocation slashing across epochs.** `verifyEquivocationProof` already
-  requires *same-height* double-signing (LEDGER-EQUIV-001) and that the validator has positive
+  requires _same-height_ double-signing (LEDGER-EQUIV-001) and that the validator has positive
   stake in the supplied set. But the two attestations are not bound to an epoch, so an equivocation
-  that occurred in epoch *e* can be submitted against the epoch-*e+1* set to slash a validator whose
-  epoch-*e+1* identity/stake should not be answerable for an epoch-*e* fault (or, symmetrically, to
-  *evade* slashing by presenting the proof against a set where the offender's stake reads zero). The
+  that occurred in epoch _e_ can be submitted against the epoch-_e+1_ set to slash a validator whose
+  epoch-_e+1_ identity/stake should not be answerable for an epoch-_e_ fault (or, symmetrically, to
+  _evade_ slashing by presenting the proof against a set where the offender's stake reads zero). The
   proof carries no epoch to pin which set it is accountable under.
 
-This is the same *consent-transfer / set-substitution* class ADR-0005 closed for receipts and
+This is the same _consent-transfer / set-substitution_ class ADR-0005 closed for receipts and
 GOV-QUORUM-001 closed for governance, now identified at the consensus layer (Track-B B5). The
 existing per-message hardening — suite binding, height binding, BigInt-exact thresholds,
 distinct-signer dedupe — does **not** address it, because all of those quantities can recur
@@ -90,13 +118,13 @@ consensusSetId(set: ValidatorSet, epoch: number): string
 ```
 
 - Sorting by `pubkey` makes it order-independent (mirrors `quorumSetId` / `vrfLeaderEligible`).
-- `stake` is included so a **reweighted** set is a *different* set (mirrors ADR-0005).
+- `stake` is included so a **reweighted** set is a _different_ set (mirrors ADR-0005).
 - `vrfPubkey` is included because the ledger's leader eligibility is keyed off it (ADR-0004); a set
   that swaps a validator's VRF key is a different consensus configuration and must not share an id.
   (This is the one field beyond the `quorumSetId` preimage — justified by the consensus layer's VRF
   dependency. `quorumSetId` binds `k`; consensus messages have no fixed `k`, so `k` is **not** in
   this id — the finality fraction is a verifier parameter, not a set property.)
-- No threshold is folded in: attestation finality is `≥ finalityNum/finalityDen` of *total stake*,
+- No threshold is folded in: attestation finality is `≥ finalityNum/finalityDen` of _total stake_,
   which is already pinned because total stake is a function of the bound `(pubkey, stake)` list.
 
 ### 2. Preimage changes (the three messages)
@@ -141,7 +169,7 @@ epoch)` already does) and recompute `setId = consensusSetId(set, epoch)`:
   preimage with `attestMessageV2(a.suite, setId, epoch, height, hash)`. An attestation whose
   committed `epoch` ≠ the verifier's `epoch` is **not counted** (same `continue`-skip discipline as
   the existing height/suite filters), and one whose signature was made for a different `setId`
-  fails `safeVerify` and is not counted. Fail-closed: an attestation that does not bind *this*
+  fails `safeVerify` and is not counted. Fail-closed: an attestation that does not bind _this_
   set/epoch contributes zero stake.
 - **`verifyViewChangeCert` (`leader.ts`)** — recompute `viewChangeMessageV2(..., setId, epoch, ...)`;
   votes not bound to the trusted set/epoch are skipped, so a sub-set/cross-epoch certificate cannot
@@ -160,30 +188,30 @@ single-epoch tests) into `attest` / `propose*` / `submit` so produced messages a
 
 Zero new cryptographic primitives: pure composition of the already-used SHAKE256 + deterministic
 CBOR + ML-DSA-87 over a domain-separated preimage. The defense is **recompute-and-compare** at
-verification time — the *same* mechanism that makes ADR-0005 load-bearing — lifted to the consensus
+verification time — the _same_ mechanism that makes ADR-0005 load-bearing — lifted to the consensus
 votes. Safety stays fully post-quantum (ML-DSA-87 EUF-CMA); no classical assumption is added beyond
 the ed25519 VRF that ADR-0004 already owns.
 
 ## Soundness / security argument (informal, UNAUDITED)
 
-Let *H* = SHAKE256 modeled as a collision/2nd-preimage-resistant hash, and assume ML-DSA-87 is
+Let _H_ = SHAKE256 modeled as a collision/2nd-preimage-resistant hash, and assume ML-DSA-87 is
 EUF-CMA. A signature counted by a v2 verifier under trusted `(set, epoch)` is a valid ML-DSA-87
 signature over a message containing `consensusSetId(set, epoch)`.
 
 - **Closes Attack A/B (cross-epoch reuse).** A signature minted under `(set', epoch')` commits
   `consensusSetId(set', epoch')`. For it to be counted under `(set, epoch)` the verifier must
-  recompute the *same* preimage, which requires `consensusSetId(set, epoch) =
-  consensusSetId(set', epoch')`. By collision-resistance of *H* over an injective canonical encoding,
+  recompute the _same_ preimage, which requires `consensusSetId(set, epoch) =
+consensusSetId(set', epoch')`. By collision-resistance of _H_ over an injective canonical encoding,
   that holds only if the sorted `(pubkey, stake, vrfPubkey)` list **and** `epoch` are identical —
   i.e. it is literally the same configuration. So consent minted for one set/epoch cannot be counted
   for a different one; an attacker cannot make an old-epoch attestation/vote count under a new epoch
-  without forging ML-DSA-87 (contradiction) or finding an *H* collision (contradiction).
+  without forging ML-DSA-87 (contradiction) or finding an _H_ collision (contradiction).
 - **Closes Attack C (stale slashing).** The equivocation proof and both inner attestations are
   pinned to one `epoch`; judged under any other epoch they are rejected, so a fault is slashable only
   under the set/epoch it was committed in.
 - **Composes with ADR-0005's substitution defense.** Even a verifier fed a permissive/substituted
-  set cannot benefit: the recomputed `setId` then reflects the *attacker's* set, so honestly-signed
-  attestations (bound to the *real* set's id) no longer match and are not counted — substitution and
+  set cannot benefit: the recomputed `setId` then reflects the _attacker's_ set, so honestly-signed
+  attestations (bound to the _real_ set's id) no longer match and are not counted — substitution and
   cross-epoch reuse are closed by the same comparison.
 
 **This is an argument, not a proof.** It is informal, in the random-oracle idealization of SHAKE256,
@@ -202,7 +230,7 @@ Nothing here is built by this ADR. When council approves implementation:
    flag, default **off** initially so the legacy single-epoch path and existing tests are
    unaffected; flip to on (and v2-only) once ported. The v2 domain tags guarantee a v2 verifier
    never accepts a v1 signature, so the two cannot be confused during migration.
-4. **Tests.** Regression tests for: (a) an epoch-*e* attestation/vote not counted under epoch *e+1*;
+4. **Tests.** Regression tests for: (a) an epoch-_e_ attestation/vote not counted under epoch _e+1_;
    (b) a reweighted set (same members) rejected; (c) a swapped `vrfPubkey` rejected; (d) an
    equivocation proof rejected under the wrong epoch; (e) no-regression for the single-epoch
    (`epoch=0`) path.
@@ -212,33 +240,33 @@ Nothing here is built by this ADR. When council approves implementation:
      to `conformance/src/suite.ts`, lifting the count from 23 to **24**; update every "23-of-23"
      reference (README/STATUS/ASSURANCE and the memory index) to "24-of-24" **in the implementing
      PR, not here**. Mirrors how C12 (ADR-0005) and C23 (ADR-0014) were added.
-   - **KAT:** `conformance/vectors/ps-kat.json` currently pins only the deterministic *primitives*
+   - **KAT:** `conformance/vectors/ps-kat.json` currently pins only the deterministic _primitives_
      (hash/mac/aead/sig) — it has **no** consensus-message vectors today, so nothing existing is
      invalidated. The plan adds a new `consensus` section to `tools/gen-kat.mjs` pinning the exact
      bytes of `consensusSetId`, `attestMessageV2`, and `viewChangeMessageV2` for a fixed toy set +
      epoch, then regenerates via `npm run build && npm run kat` and commits the refreshed
      `ps-kat.json` (covered for REUSE by the existing `**/*.json` annotation). The Rust hot-path
      crate inherits these as its byte contract.
-   - No *existing* KAT bytes change (the v1 preimages and all primitive vectors are untouched), so
+   - No _existing_ KAT bytes change (the v1 preimages and all primitive vectors are untouched), so
      this is purely additive — the regen adds vectors, it does not rewrite old ones.
 
 ## Alternatives considered
 
 1. **Bind only `epoch` (a bare counter), not the full set id — REJECTED.** An epoch counter alone
-   does not detect a *substituted* set at the same epoch number (the ADR-0005 threat), and couples
+   does not detect a _substituted_ set at the same epoch number (the ADR-0005 threat), and couples
    safety to a monotonic counter being assigned honestly. Hashing the actual `(pubkey, stake,
-   vrfPubkey)` list makes the binding self-certifying: the id *is* the configuration.
+vrfPubkey)` list makes the binding self-certifying: the id _is_ the configuration.
 2. **Bind only the set id, not `epoch` — REJECTED.** Two genuinely identical sets can recur across
    epochs (no rotation that round); without `epoch`, a vote is still replayable between them. Folding
    `epoch` in (and committing it explicitly) makes every epoch a distinct domain even for an
    unchanged set.
 3. **Per-message random nonces / freshness tokens — REJECTED for this layer.** Nonces need
-   distribution + anti-replay state and don't express *which configuration* consented. The
+   distribution + anti-replay state and don't express _which configuration_ consented. The
    recompute-and-compare set id is stateless and verifier-recomputable, matching the rest of the
    stack (no clock, no module state — the property `verifyQuorumReceipt` advertises).
 4. **A monotonic cert-chain from epoch 0 (analogous to the LEDGER-007 view-change cert chain) —
    DEFERRED, complementary.** A chain proving epoch transitions is a stronger, separate property
-   (it would also pin *order* of epochs); B5's set/epoch binding is the minimal, surgical close of
+   (it would also pin _order_ of epochs); B5's set/epoch binding is the minimal, surgical close of
    the consent-transfer hole and composes with a future cert-chain rather than competing with it.
 5. **Truncate `consensusSetId` to save bytes — REJECTED.** Per GOV-QID-001 the binding id is the
    security anchor; a truncated id invites a birthday-bound cross-configuration collision. Full
@@ -254,7 +282,7 @@ Nothing here is built by this ADR. When council approves implementation:
   council-routed rather than shipped.
 - **Additive, no-regression intent:** the `epoch=0` single-epoch path reproduces today's behavior;
   v1 functions stay during migration.
-- **Conformance count moves 23 → 24** (new C24) *in the implementing PR*; this ADR does not touch
+- **Conformance count moves 23 → 24** (new C24) _in the implementing PR_; this ADR does not touch
   any count, test, or vector.
 - **FTO still required** before any public claim — design-around is engineering intent, not a legal
   opinion ([FTO_TODO.md](../FTO_TODO.md)). © TRELYAN; Apache-2.0.
@@ -264,8 +292,8 @@ Nothing here is built by this ADR. When council approves implementation:
 - **UNAUDITED design.** The soundness argument is informal and in the SHAKE256 random-oracle
   idealization; it is **not** a proof and **not** externally audited. No "proven," "audited," "FIPS,"
   or non-infringement claim is made or implied.
-- **Residual assumption — epoch authenticity.** This ADR makes a signature *bind* the epoch/set it
-  was made under; it does **not** establish *which* epoch/set is the canonical current one. The
+- **Residual assumption — epoch authenticity.** This ADR makes a signature _bind_ the epoch/set it
+  was made under; it does **not** establish _which_ epoch/set is the canonical current one. The
   verifier's trusted `(set, epoch)` is an input, assumed correct (delivered by the finalized PoS
   chain / the operator's trust root). Authenticating the current epoch is the cert-chain /
   finalized-chain's job (Alternative 4), out of scope for B5.
@@ -275,7 +303,7 @@ Nothing here is built by this ADR. When council approves implementation:
 - **Scope.** Covers the three consent-bearing messages named in B5. The block header / proposer
   signature carry the set only implicitly (via the attestations that finalize them); a separate
   decision could bind the header too, but B5 does not.
-- **Liveness vs safety.** As with ADR-0005, this is a *safety* hardening; it adds no liveness
+- **Liveness vs safety.** As with ADR-0005, this is a _safety_ hardening; it adds no liveness
   assumption and no new classical primitive.
 
 ## References

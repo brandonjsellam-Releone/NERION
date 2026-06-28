@@ -13,7 +13,12 @@
 import { describe, it, expect } from 'vitest'
 import { bytesToHex } from '@noble/hashes/utils.js'
 import { signerFor, SUITE_IDS } from '../../crypto/src/index.js'
-import { vrfPublicKey, viewChangeMessage, verifyViewChangeCert } from '../src/index.js'
+import {
+  vrfPublicKey,
+  viewChangeMessage,
+  verifyViewChangeCert,
+  consensusSetId,
+} from '../src/index.js'
 import type { ValidatorSet, TimeoutVote, ViewChangeCert } from '../src/index.js'
 
 const suite = SUITE_IDS.PS_5
@@ -53,13 +58,15 @@ function makeEqualStakeSet(
   }
 }
 
-/** Build a well-formed, signature-valid TimeoutVote for the given parameters. */
+/** Build a well-formed, signature-valid TimeoutVote for the given parameters. The vote binds the
+ *  set's consensusSetId (ADR-0020/B5), so it only counts under that exact set/epoch. */
 function makeVote(
   pubkey: string,
   secretKey: Uint8Array,
   height: number,
   prevHash: string,
   round: number,
+  set: ValidatorSet,
 ): TimeoutVote {
   return {
     height,
@@ -67,7 +74,10 @@ function makeVote(
     round,
     validator: pubkey,
     suite,
-    sig: signer.sign(viewChangeMessage(suite, height, prevHash, round), secretKey),
+    sig: signer.sign(
+      viewChangeMessage(suite, height, prevHash, round, consensusSetId(set)),
+      secretKey,
+    ),
   }
 }
 
@@ -83,7 +93,7 @@ describe('SUB_TWO_THIRDS_QUORUM — below 2/3 threshold must be rejected', () =>
     const keys = makeKeys(3, 20)
     const set = makeEqualStakeSet(keys, 1n)
     // Only the first validator signs — 1/3 of total stake.
-    const vote = makeVote(keys[0]!.pubkey, keys[0]!.secretKey, 0, PREV, 0)
+    const vote = makeVote(keys[0]!.pubkey, keys[0]!.secretKey, 0, PREV, 0, set)
     const cert: ViewChangeCert = { round: 0, votes: [vote] }
     expect(verifyViewChangeCert(set, suite, 0, PREV, 0, cert)).toBe(false)
   })
@@ -100,7 +110,7 @@ describe('SUB_TWO_THIRDS_QUORUM — below 2/3 threshold must be rejected', () =>
     const set = makeEqualStakeSet(keys, 1n)
     // Outsider key not in the set.
     const outsider = makeKeys(1, 99)[0]!
-    const vote = makeVote(outsider.pubkey, outsider.secretKey, 0, PREV, 0)
+    const vote = makeVote(outsider.pubkey, outsider.secretKey, 0, PREV, 0, set)
     const cert: ViewChangeCert = { round: 0, votes: [vote] }
     expect(verifyViewChangeCert(set, suite, 0, PREV, 0, cert)).toBe(false)
   })
@@ -121,7 +131,7 @@ describe('CROSS_EPOCH_CERT — cert round mismatch must be rejected', () => {
     // Build a quorum-valid cert for round=1.
     const votes = keys
       .slice(0, 2)
-      .map(({ pubkey, secretKey }) => makeVote(pubkey, secretKey, 0, PREV, 1))
+      .map(({ pubkey, secretKey }) => makeVote(pubkey, secretKey, 0, PREV, 1, set))
     const cert: ViewChangeCert = { round: 1, votes }
     // Present it as justifying certRound=0 — epoch/round mismatch.
     expect(verifyViewChangeCert(set, suite, 0, PREV, 0, cert)).toBe(false)
@@ -133,7 +143,7 @@ describe('CROSS_EPOCH_CERT — cert round mismatch must be rejected', () => {
     // Votes signed for round=0 but cert.round=1.
     const votes = keys
       .slice(0, 2)
-      .map(({ pubkey, secretKey }) => makeVote(pubkey, secretKey, 0, PREV, 0))
+      .map(({ pubkey, secretKey }) => makeVote(pubkey, secretKey, 0, PREV, 0, set))
     const cert: ViewChangeCert = { round: 1, votes }
     expect(verifyViewChangeCert(set, suite, 0, PREV, 1, cert)).toBe(false)
   })
@@ -150,9 +160,9 @@ describe('DUPLICATE_VOTE — duplicate validator votes must not inflate quorum',
   it('rejects a cert where the same pubkey appears twice and sole signer is 1-of-3 stake', () => {
     const keys = makeKeys(3, 60)
     const set = makeEqualStakeSet(keys, 1n)
-    const vote1 = makeVote(keys[0]!.pubkey, keys[0]!.secretKey, 0, PREV, 0)
+    const vote1 = makeVote(keys[0]!.pubkey, keys[0]!.secretKey, 0, PREV, 0, set)
     // Second entry: SAME pubkey — dedup prevents double-counting.
-    const vote2 = makeVote(keys[0]!.pubkey, keys[0]!.secretKey, 0, PREV, 0)
+    const vote2 = makeVote(keys[0]!.pubkey, keys[0]!.secretKey, 0, PREV, 0, set)
     const cert: ViewChangeCert = { round: 0, votes: [vote1, vote2] }
     // After dedup: only 1/3 of stake counted → rejected.
     expect(verifyViewChangeCert(set, suite, 0, PREV, 0, cert)).toBe(false)
@@ -161,7 +171,9 @@ describe('DUPLICATE_VOTE — duplicate validator votes must not inflate quorum',
   it('rejects a cert where one validator appears three times (still 1-of-3 stake after dedup)', () => {
     const keys = makeKeys(3, 65)
     const set = makeEqualStakeSet(keys, 1n)
-    const votes = [0, 0, 0].map(() => makeVote(keys[0]!.pubkey, keys[0]!.secretKey, 0, PREV, 0))
+    const votes = [0, 0, 0].map(() =>
+      makeVote(keys[0]!.pubkey, keys[0]!.secretKey, 0, PREV, 0, set),
+    )
     const cert: ViewChangeCert = { round: 0, votes }
     expect(verifyViewChangeCert(set, suite, 0, PREV, 0, cert)).toBe(false)
   })
@@ -170,9 +182,9 @@ describe('DUPLICATE_VOTE — duplicate validator votes must not inflate quorum',
     // 4-validator set with equal stake: 2/4 = 0.5 < 2/3.
     const keys = makeKeys(4, 70)
     const set = makeEqualStakeSet(keys, 1n)
-    const v0vote = makeVote(keys[0]!.pubkey, keys[0]!.secretKey, 0, PREV, 0)
-    const v1vote = makeVote(keys[1]!.pubkey, keys[1]!.secretKey, 0, PREV, 0)
-    const v0dup = makeVote(keys[0]!.pubkey, keys[0]!.secretKey, 0, PREV, 0)
+    const v0vote = makeVote(keys[0]!.pubkey, keys[0]!.secretKey, 0, PREV, 0, set)
+    const v1vote = makeVote(keys[1]!.pubkey, keys[1]!.secretKey, 0, PREV, 0, set)
+    const v0dup = makeVote(keys[0]!.pubkey, keys[0]!.secretKey, 0, PREV, 0, set)
     // Apparent votes: v0, v1, v0 (dup) → effective unique: v0 + v1 = 2/4 stake.
     const cert: ViewChangeCert = { round: 0, votes: [v0vote, v1vote, v0dup] }
     expect(verifyViewChangeCert(set, suite, 0, PREV, 0, cert)).toBe(false)
@@ -193,7 +205,7 @@ describe('CROSS_PREV_HASH — votes with mismatched prevHash must be filtered ou
     // Quorum-sized but signed for ALT_PREV.
     const votes = keys
       .slice(0, 2)
-      .map(({ pubkey, secretKey }) => makeVote(pubkey, secretKey, 0, ALT_PREV, 0))
+      .map(({ pubkey, secretKey }) => makeVote(pubkey, secretKey, 0, ALT_PREV, 0, set))
     const cert: ViewChangeCert = { round: 0, votes }
     // Presented for PREV — prevHash mismatch filters every vote.
     expect(verifyViewChangeCert(set, suite, 0, PREV, 0, cert)).toBe(false)
@@ -203,9 +215,9 @@ describe('CROSS_PREV_HASH — votes with mismatched prevHash must be filtered ou
     const keys = makeKeys(3, 85)
     const set = makeEqualStakeSet(keys, 1n)
     // One vote for PREV (1/3), two votes for ALT_PREV (would be 2/3 but wrong hash).
-    const correctVote = makeVote(keys[0]!.pubkey, keys[0]!.secretKey, 0, PREV, 0)
-    const wrongVote1 = makeVote(keys[1]!.pubkey, keys[1]!.secretKey, 0, ALT_PREV, 0)
-    const wrongVote2 = makeVote(keys[2]!.pubkey, keys[2]!.secretKey, 0, ALT_PREV, 0)
+    const correctVote = makeVote(keys[0]!.pubkey, keys[0]!.secretKey, 0, PREV, 0, set)
+    const wrongVote1 = makeVote(keys[1]!.pubkey, keys[1]!.secretKey, 0, ALT_PREV, 0, set)
+    const wrongVote2 = makeVote(keys[2]!.pubkey, keys[2]!.secretKey, 0, ALT_PREV, 0, set)
     const cert: ViewChangeCert = { round: 0, votes: [correctVote, wrongVote1, wrongVote2] }
     // Only correctVote survives filtering → 1/3 stake → rejected.
     expect(verifyViewChangeCert(set, suite, 0, PREV, 0, cert)).toBe(false)
@@ -216,7 +228,7 @@ describe('CROSS_PREV_HASH — votes with mismatched prevHash must be filtered ou
     const set = makeEqualStakeSet(keys, 1n)
     const votes = keys
       .slice(0, 2)
-      .map(({ pubkey, secretKey }) => makeVote(pubkey, secretKey, 5, ALT_PREV, 0))
+      .map(({ pubkey, secretKey }) => makeVote(pubkey, secretKey, 5, ALT_PREV, 0, set))
     const cert: ViewChangeCert = { round: 0, votes }
     expect(verifyViewChangeCert(set, suite, 5, PREV, 0, cert)).toBe(false)
   })
@@ -239,7 +251,7 @@ describe('BIGINT_THRESHOLD_EDGE — BigInt cross-multiply at exactly the 2/3 fin
     // 2 of 3 equal-stake validators sign — exactly at the 2/3 boundary.
     const votes = keys
       .slice(0, 2)
-      .map(({ pubkey, secretKey }) => makeVote(pubkey, secretKey, 0, PREV, 0))
+      .map(({ pubkey, secretKey }) => makeVote(pubkey, secretKey, 0, PREV, 0, set))
     const cert: ViewChangeCert = { round: 0, votes }
     expect(verifyViewChangeCert(set, suite, 0, PREV, 0, cert)).toBe(true)
   })
@@ -248,7 +260,7 @@ describe('BIGINT_THRESHOLD_EDGE — BigInt cross-multiply at exactly the 2/3 fin
     const keys = makeKeys(3, 95)
     const set = makeEqualStakeSet(keys, 1n)
     // 1 of 3 equal-stake validators signs — one unit below the 2/3 threshold.
-    const vote = makeVote(keys[0]!.pubkey, keys[0]!.secretKey, 0, PREV, 0)
+    const vote = makeVote(keys[0]!.pubkey, keys[0]!.secretKey, 0, PREV, 0, set)
     const cert: ViewChangeCert = { round: 0, votes: [vote] }
     expect(verifyViewChangeCert(set, suite, 0, PREV, 0, cert)).toBe(false)
   })
@@ -264,7 +276,7 @@ describe('BIGINT_THRESHOLD_EDGE — BigInt cross-multiply at exactly the 2/3 fin
     // Cross-multiply: (2*MAX) * 3 >= 2 * (3*MAX) → 6*MAX >= 6*MAX → true.
     const votes = keys
       .slice(0, 2)
-      .map(({ pubkey, secretKey }) => makeVote(pubkey, secretKey, 0, PREV, 0))
+      .map(({ pubkey, secretKey }) => makeVote(pubkey, secretKey, 0, PREV, 0, set))
     const cert: ViewChangeCert = { round: 0, votes }
     expect(verifyViewChangeCert(set, suite, 0, PREV, 0, cert)).toBe(true)
   })
@@ -277,7 +289,7 @@ describe('BIGINT_THRESHOLD_EDGE — BigInt cross-multiply at exactly the 2/3 fin
     }
     // One validator signs = MAX stake out of 3*MAX total.
     // Cross-multiply: MAX * 3 >= 2 * (3*MAX) → 3*MAX >= 6*MAX → false.
-    const vote = makeVote(keys[0]!.pubkey, keys[0]!.secretKey, 0, PREV, 0)
+    const vote = makeVote(keys[0]!.pubkey, keys[0]!.secretKey, 0, PREV, 0, set)
     const cert: ViewChangeCert = { round: 0, votes: [vote] }
     expect(verifyViewChangeCert(set, suite, 0, PREV, 0, cert)).toBe(false)
   })
@@ -288,7 +300,7 @@ describe('BIGINT_THRESHOLD_EDGE — BigInt cross-multiply at exactly the 2/3 fin
     const set = makeEqualStakeSet(keys, 1n)
     const votes = keys
       .slice(0, 3)
-      .map(({ pubkey, secretKey }) => makeVote(pubkey, secretKey, 0, PREV, 0))
+      .map(({ pubkey, secretKey }) => makeVote(pubkey, secretKey, 0, PREV, 0, set))
     const cert: ViewChangeCert = { round: 0, votes }
     expect(verifyViewChangeCert(set, suite, 0, PREV, 0, cert)).toBe(false)
   })
@@ -299,7 +311,7 @@ describe('BIGINT_THRESHOLD_EDGE — BigInt cross-multiply at exactly the 2/3 fin
     const set = makeEqualStakeSet(keys, 1n)
     const votes = keys
       .slice(0, 4)
-      .map(({ pubkey, secretKey }) => makeVote(pubkey, secretKey, 0, PREV, 0))
+      .map(({ pubkey, secretKey }) => makeVote(pubkey, secretKey, 0, PREV, 0, set))
     const cert: ViewChangeCert = { round: 0, votes }
     expect(verifyViewChangeCert(set, suite, 0, PREV, 0, cert)).toBe(true)
   })

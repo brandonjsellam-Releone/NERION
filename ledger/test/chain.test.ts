@@ -104,6 +104,20 @@ describe('pure-PoS ledger', () => {
     expect(verifyFinalized(block, atts, dupSet, GENESIS_PREV).finalized).toBe(false)
   })
 
+  it('ADR-0020/B5: an epoch-0 attestation bundle is NOT finalized under the epoch-1 set (cross-epoch substitution)', () => {
+    // Same members + stake, different reconfiguration epoch ⇒ different consensusSetId. Attestations
+    // signed under epoch 0 bind that setId and fail verification under the epoch-1 set, so the same
+    // bundle cannot be replayed to assert finality the epoch-1 set never gave.
+    const set0 = { ...set, epoch: 0 }
+    const set1 = { ...set, epoch: 1 }
+    const ledger0 = new Ledger(set0, suite)
+    const proposer = leaderKey(GENESIS_PREV, 0) // leader selection is epoch-independent (same members)
+    const block = ledger0.propose('ea'.repeat(32), 0, 1000, proposer)
+    const atts = keys.map((k) => ledger0.attest(block, k))
+    expect(verifyFinalized(block, atts, set0, GENESIS_PREV).finalized).toBe(true)
+    expect(verifyFinalized(block, atts, set1, GENESIS_PREV).finalized).toBe(false)
+  })
+
   it('light client rejects a tampered proposer signature', () => {
     const ledger = new Ledger(set, suite)
     const proposer = leaderKey(GENESIS_PREV, 0)

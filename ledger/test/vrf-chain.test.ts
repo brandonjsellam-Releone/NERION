@@ -16,6 +16,7 @@ import {
   prove,
   viewChangeMessage,
   verifyViewChangeCert,
+  consensusSetId,
 } from '../src/index.js'
 import type { ValidatorSet, TimeoutVote, ViewChangeCert } from '../src/index.js'
 
@@ -79,7 +80,10 @@ describe('VRF-mode ledger (ADR-0004)', () => {
       round: 0,
       validator: v.record.pubkey,
       suite,
-      sig: signer.sign(viewChangeMessage(suite, 0, GENESIS_PREV, 0), v.kp.secretKey),
+      sig: signer.sign(
+        viewChangeMessage(suite, 0, GENESIS_PREV, 0, consensusSetId(set)),
+        v.kp.secretKey,
+      ),
     }
     const cert: ViewChangeCert = { round: 0, votes: [vote] }
     expect(verifyViewChangeCert(set, suite, 0, GENESIS_PREV, 0, cert)).toBe(true)
@@ -174,7 +178,7 @@ describe('VRF-mode ledger (ADR-0004)', () => {
       round: 0,
       validator: v.record.pubkey,
       suite,
-      sig: signer.sign(viewChangeMessage(suite, 1, head, 0), v.kp.secretKey),
+      sig: signer.sign(viewChangeMessage(suite, 1, head, 0, consensusSetId(set)), v.kp.secretKey),
     }
     const b1 = ledger.proposeVrf('h1', 1, 2, v.kp, v.seed, { round: 0, votes: [vote] })
     expect(ledger.submit(b1, [ledger.attest(b1, v.kp)]).finalized).toBe(true)
@@ -187,7 +191,10 @@ describe('VRF-mode ledger (ADR-0004)', () => {
       round: 0,
       validator: v.record.pubkey,
       suite,
-      sig: signer.sign(viewChangeMessage(suite, 2, GENESIS_PREV, 0), v.kp.secretKey),
+      sig: signer.sign(
+        viewChangeMessage(suite, 2, GENESIS_PREV, 0, consensusSetId(set)),
+        v.kp.secretKey,
+      ),
     }
     expect(() => ledger.proposeVrf('h2', 1, 3, v.kp, v.seed, { round: 0, votes: [wrong] })).toThrow(
       /view-change/,

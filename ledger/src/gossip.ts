@@ -201,7 +201,7 @@ export class GossipNode {
     // network-wide. A garbage entry can never occupy a slot now.
     if (att.suite !== this.suite) return
     if (stakeOf(this.set, att.validator) <= 0) return
-    if (!verifyAttestationSig(att)) return
+    if (!verifyAttestationSig(att, this.set)) return
     // Only retain attestations for the live height window (att.height is now
     // signature-bound, so it is authentic). Sub-head entries are pruned in
     // drainBuffered; this bounds the orphan-attestation pool (GOSSIP-DOS-001).
