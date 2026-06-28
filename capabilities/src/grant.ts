@@ -32,6 +32,12 @@ export function authorizesIntent(
   // Defense in depth at the trust boundary: an undefined/negative/non-integer tier
   // would make `ctx.tier > maxTier` false and skip the cap (CAP-001, Team Apex).
   if (!(Number.isSafeInteger(ctx.tier) && ctx.tier >= 0)) return false
+  // The signed GRANT's own maxTier must be finite too (Team Apex missed-classes sweep 2026-06-28):
+  // a non-finite maxTier (NaN/Infinity from a malformed/misconfigured trusted-signed grant) makes
+  // `ctx.tier > maxTier` false, silently skipping the tier cap so the grant authorizes ANY tier. A
+  // delegated NaN cannot reach here (isAttenuationOf rejects it), but a ROOT signed with a malformed
+  // maxTier could — guard it like the window/ctx above. Fail closed.
+  if (!(Number.isSafeInteger(grant.maxTier) && grant.maxTier >= 0)) return false
   if (ctx.tier > grant.maxTier) return false
 
   if (grant.counterparties !== null) {
@@ -48,6 +54,21 @@ export function authorizesIntent(
   if (!(Number.isSafeInteger(ctx.observedAggregate) && ctx.observedAggregate >= 0)) return false
 
   const amount = intent.amount ?? 0
+  // The signed GRANT's own ceilings must be finite when set (Team Apex missed-classes sweep): a
+  // non-null but non-finite perActionCeiling/aggregateCap makes `amount > NaN` false, skipping the
+  // cap so the grant authorizes ANY amount. Fail closed on a malformed ceiling.
+  if (
+    grant.perActionCeiling !== null &&
+    !(Number.isSafeInteger(grant.perActionCeiling) && grant.perActionCeiling >= 0)
+  ) {
+    return false
+  }
+  if (
+    grant.aggregateCap !== null &&
+    !(Number.isSafeInteger(grant.aggregateCap) && grant.aggregateCap >= 0)
+  ) {
+    return false
+  }
   if (grant.perActionCeiling !== null && amount > grant.perActionCeiling) return false
   if (grant.aggregateCap !== null && ctx.observedAggregate + amount > grant.aggregateCap) {
     return false
@@ -69,12 +90,31 @@ function setNarrows(child: readonly string[] | null, parent: readonly string[] |
   return child.every((x) => p.has(x))
 }
 
+/** Every numeric dimension of a grant is well-formed (finite, in range). */
+function isWellFormedGrantNumerics(g: CapabilityGrant): boolean {
+  return (
+    Number.isSafeInteger(g.maxTier) &&
+    g.maxTier >= 0 &&
+    Number.isSafeInteger(g.notBefore) &&
+    Number.isSafeInteger(g.notAfter) &&
+    (g.perActionCeiling === null ||
+      (Number.isSafeInteger(g.perActionCeiling) && g.perActionCeiling >= 0)) &&
+    (g.aggregateCap === null || (Number.isSafeInteger(g.aggregateCap) && g.aggregateCap >= 0))
+  )
+}
+
 /**
  * True iff `child` is a valid attenuation of `parent`: it narrows (or holds
  * equal) on EVERY dimension and broadens on none, and is bound to the parent's
  * subject as its issuer (the delegation link).
  */
 export function isAttenuationOf(child: CapabilityGrant, parent: CapabilityGrant): boolean {
+  // Defense in depth (Team Apex missed-classes sweep 2026-06-28): monotonicity must NOT depend on
+  // the incidental fact that `NaN <= x` is false. A malformed grant (non-finite tier/window/ceiling
+  // on either side) is never a valid attenuation; rejecting it explicitly means a future comparator
+  // flip cannot silently re-open authority widening, and narrow()'s Math.min/Math.max NaN-propagation
+  // can never yield an "accepted" child.
+  if (!isWellFormedGrantNumerics(child) || !isWellFormedGrantNumerics(parent)) return false
   const parentActions = new Set(parent.actions)
   return (
     child.issuer === parent.subject &&
