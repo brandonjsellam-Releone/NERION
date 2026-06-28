@@ -23,6 +23,7 @@ import {
   type RiskTier,
 } from '../../capabilities/src/index.js'
 import { tierOf, evaluatorVersion, KERNEL_VERSION } from './policy.js'
+import { governedView, type GovernedIntent } from './blindness.js'
 import type { Decision, KernelInput } from './types.js'
 
 function obligationsForTier(tier: RiskTier): string[] {
@@ -45,14 +46,22 @@ export interface DecisionWithAuthorizer {
 }
 
 /**
- * Like {@link decide}, but ALSO returns the capability the resolver selected to authorize the
- * intent — the first candidate that verified and authorized, at ANY index. A receipt must commit
- * THIS capability, not the caller-supplied `capabilities[0]`, which the resolver is free to skip
- * (RECEIPT-CAP-001, Team Apex round-2 sweep — capability-order mis-attribution in the evidence
- * trail). One resolve; the returned `Decision` is byte-identical to `decide()`'s, so the authorizer
- * rides OUTSIDE the committed decision and changes no replay/receipt hash.
+ * KernelInput projected params-blind: the only shape the decision core ever sees. `intent` is a
+ * {@link GovernedIntent} (perception payload `params` omitted), so decideCore cannot reference
+ * `input.intent.params` — it is a compile error — and no raw full intent is in scope to reach
+ * around it (GOV-PARAMS-BLINDNESS; see kernel/src/blindness.ts).
  */
-export function decideWithAuthorizer(input: KernelInput): DecisionWithAuthorizer {
+type GovernedInput = Omit<KernelInput, 'intent'> & { readonly intent: GovernedIntent }
+
+/**
+ * The decision core: like {@link decide}, but ALSO returns the capability the resolver selected to
+ * authorize the intent — the first candidate that verified and authorized, at ANY index. A receipt
+ * must commit THIS capability, not the caller-supplied `capabilities[0]`, which the resolver is free
+ * to skip (RECEIPT-CAP-001). One resolve; the returned `Decision` is byte-identical to `decide()`'s,
+ * so the authorizer rides OUTSIDE the committed decision and changes no replay/receipt hash. A pure
+ * function of the params-blind {@link GovernedInput}.
+ */
+function decideCore(input: GovernedInput): DecisionWithAuthorizer {
   // Computed inside the try so a policy that cannot be canonicalized fails
   // closed (deny) rather than throwing (PS-KERNEL-02).
   let ev = `${KERNEL_VERSION}+uncomputed`
@@ -124,6 +133,17 @@ export function decideWithAuthorizer(input: KernelInput): DecisionWithAuthorizer
       authorizingCapability: null,
     }
   }
+}
+
+/**
+ * Like {@link decide}, but also returns the authorizing capability. The public entry point: it
+ * projects the intent params-blind ONCE at the boundary and hands a {@link GovernedInput} to
+ * {@link decideCore}, which never sees the raw intent — so the decision provably cannot read
+ * `params` (GOV-PARAMS-BLINDNESS). Callers still pass the full intent; its `params` is hashed
+ * into receipts elsewhere, never here.
+ */
+export function decideWithAuthorizer(input: KernelInput): DecisionWithAuthorizer {
+  return decideCore({ ...input, intent: governedView(input.intent) })
 }
 
 /** The decision alone — a pure function of the explicit input (see {@link decideWithAuthorizer}). */
