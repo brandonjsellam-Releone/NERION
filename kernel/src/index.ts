@@ -24,3 +24,10 @@ export type {
   DiagnosticCode,
   DiagnosticSeverity,
 } from './policy-algebra.js'
+export {
+  expectedRiskClass,
+  expectedPolicyBinding,
+  checkManifestConsistency,
+  assertManifestConsistent,
+} from './manifest-bind.js'
+export type { ManifestConsistency } from './manifest-bind.js'
