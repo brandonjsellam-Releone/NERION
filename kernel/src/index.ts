@@ -17,3 +17,10 @@ export { governedView } from './blindness.js'
 export type { ParamsBlind, GovernedIntent } from './blindness.js'
 export { buildReplayBundle, replay } from './replay.js'
 export type { ReplayBundle, ReplayResult } from './replay.js'
+export { analyzePolicy, assertWellFormedPolicy } from './policy-algebra.js'
+export type {
+  PolicyAnalysis,
+  PolicyDiagnostic,
+  DiagnosticCode,
+  DiagnosticSeverity,
+} from './policy-algebra.js'
