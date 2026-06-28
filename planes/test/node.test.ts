@@ -249,6 +249,66 @@ describe('PolarSeekNode admission', () => {
     ).toBe(false)
   })
 
+  it('F4: a transform permit is rejected by default (no silent transform->allow), accepted on opt-in', () => {
+    const node = new PolarSeekNode({
+      suite,
+      policy: { ...DEFAULT_POLICY, transformActions: ['payment.transfer'] },
+      trustedRoots: [authority.publicKey],
+      issuer,
+      log: new TransparencyLog(),
+      jurisdiction: 'US',
+      permitTtlSeconds: 30,
+    })
+    const out = node.admit({
+      intent: pay(500),
+      capabilities: [cap],
+      session,
+      audience: 'acct://treasury',
+      now: NOW,
+      observedAggregate: 0,
+    })
+    expect(out.decision.effect).toBe('transform')
+    const treasuryKey = deriveAudiencePermitKey(session.sessionKey, 'acct://treasury')
+    // No expectedEffect now defaults to requiring 'allow' — a transform permit is rejected.
+    expect(
+      verifyPermitForAction(out.permit!, treasuryKey, {
+        audience: 'acct://treasury',
+        intent: pay(500),
+        now: NOW + 5,
+      }).ok,
+    ).toBe(false)
+    // A resource that applies the transform opts in explicitly.
+    expect(
+      verifyPermitForAction(out.permit!, treasuryKey, {
+        audience: 'acct://treasury',
+        intent: pay(500),
+        now: NOW + 5,
+        expectedEffect: 'transform',
+      }).ok,
+    ).toBe(true)
+  })
+
+  it('F5: an oversized permit token body is rejected fail-closed before the HMAC', () => {
+    const node = makeNode()
+    const out = node.admit({
+      intent: pay(500),
+      capabilities: [cap],
+      session,
+      audience: 'acct://treasury',
+      now: NOW,
+      observedAggregate: 0,
+    })
+    const treasuryKey = deriveAudiencePermitKey(session.sessionKey, 'acct://treasury')
+    const huge = { ...out.permit!, body: new Uint8Array(9000) }
+    const verdict = verifyPermitForAction(huge, treasuryKey, {
+      audience: 'acct://treasury',
+      intent: pay(500),
+      now: NOW + 5,
+    })
+    expect(verdict.ok).toBe(false)
+    expect(verdict.reasons.join(' ')).toContain('size bound')
+  })
+
   it('PERMIT-001: a key-holding resource cannot forge a permit for another audience', () => {
     const node = makeNode()
     const out = node.admit({

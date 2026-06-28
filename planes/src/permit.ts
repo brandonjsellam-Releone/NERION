@@ -25,6 +25,11 @@ import {
 import { bytesToHex } from '@noble/hashes/utils.js'
 import type { ActionIntent } from '../../capabilities/src/index.js'
 
+/** Generous upper bounds on an attacker-supplied PermitToken before the HMAC runs (F5). A real
+ *  permit body is a small fixed claims set (a few hundred bytes) and the suite is a short id. */
+const MAX_PERMIT_BODY_BYTES = 8192
+const MAX_PERMIT_SUITE_LEN = 64
+
 /** Canonical commitment to the exact action a permit authorizes. */
 export function actionHash(intent: ActionIntent): string {
   return bytesToHex(SHA3_SHAKE256.digest(encodeCanonical(intent)))
@@ -89,6 +94,13 @@ export function verifyPermitForAction(
   audienceKey: Bytes,
   check: PermitCheck,
 ): PermitVerdict {
+  // F5 (Team Apex max sweep 2026-06-28): bound the attacker-supplied token BEFORE verifyPermit
+  // canonical-re-encodes and HMACs its body (pre-auth verifier work-amplification). A PermitToken
+  // body is a small fixed claims set and the suite is a short id; reject an oversized token cheaply
+  // so an attacker cannot force a full HMAC pass over a multi-MB body guaranteed to fail the MAC.
+  if (token.body.length > MAX_PERMIT_BODY_BYTES || token.suite.length > MAX_PERMIT_SUITE_LEN) {
+    return { ok: false, reasons: ['permit token exceeds size bound'] }
+  }
   if (!verifyPermit(token, audienceKey)) {
     return { ok: false, reasons: ['permit MAC invalid (wrong audience key or tampered)'] }
   }
@@ -106,8 +118,15 @@ export function verifyPermitForAction(
   if (check.sessionId !== undefined && claims.sessionId !== check.sessionId) {
     reasons.push('permit session mismatch')
   }
-  if (check.expectedEffect !== undefined && claims.effect !== check.expectedEffect) {
-    reasons.push('permit effect does not match the expected effect')
+  // F4 (Team Apex max sweep 2026-06-28): the bound effect is fail-closed BY DEFAULT. A 'transform'
+  // permit means the action must be modified (e.g. redacted) before execution; a resource that
+  // verifies without declaring an expectedEffect must NOT silently run it as a plain allow. An
+  // unspecified expectedEffect therefore requires effect==='allow'; a resource that applies the
+  // transform opts in with expectedEffect:'transform' explicitly. Previously enforcement was
+  // skipped entirely when expectedEffect was omitted, so a transform permit passed as an allow.
+  const requiredEffect = check.expectedEffect ?? 'allow'
+  if (claims.effect !== requiredEffect) {
+    reasons.push(`permit effect "${claims.effect}" is not the required "${requiredEffect}"`)
   }
   return { ok: reasons.length === 0, reasons }
 }
