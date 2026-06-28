@@ -17,7 +17,18 @@ import type { AdmissionOutcome } from '../../../planes/src/index.js'
 import type { Receipt } from '../../../receipts/src/index.js'
 import type { PolarSeekClient, GuardContext } from './client.js'
 
-/** Map an MCP-style tool call to a typed PolarSeek action intent. */
+/**
+ * Map an MCP-style tool call to a typed PolarSeek action intent.
+ *
+ * SECURITY CONTRACT (load-bearing — the whole adapter's guarantee reduces to this): the returned
+ * intent MUST FAITHFULLY describe what `handler` will actually do — the same action `type`,
+ * `resource`, `counterparty`, and `amount` the handler will execute. The kernel authorizes the
+ * INTENT, not the handler; if `mapIntent` under-states the action (e.g. maps a large transfer to a
+ * smaller `amount`, a different `resource`, or a benign `type`), the guard admits the understated
+ * intent and then runs the real, over-authorized handler — a guard bypass by mis-mapping, not a
+ * flaw in `guardTool`. `mapIntent` is the integrator's trusted boundary; keep it a pure, total,
+ * faithful projection of the call (and validate `args` before mapping).
+ */
 export type IntentMapper<A> = (toolName: string, args: A) => ActionIntent
 
 export interface GuardedResult<R> {
