@@ -41,12 +41,15 @@ export function constantTimeEqual(a: Bytes, b: Bytes): boolean {
   return diff === 0
 }
 
-// SECURITY (Team Apex 2026-06-21): AES-GCM is catastrophic under (key, nonce) REUSE — a single
-// repeated nonce under the same key voids BOTH confidentiality and authentication. `seal` takes a
-// CALLER-supplied 12-byte nonce and does NOT enforce uniqueness; any production caller MUST
-// guarantee a unique nonce per key (a fresh `randomBytes(12)` or a never-repeating counter).
-// There is currently NO production caller of this AEAD (used only in tests / KAT vectors), so no
-// nonce-reuse path exists today; this warning gates any future wiring.
+// SECURITY (Team Apex 2026-06-21; comment corrected 2026-06-28): AES-GCM is catastrophic under
+// (key, nonce) REUSE — a single repeated nonce under the same key voids BOTH confidentiality and
+// authentication. `seal` takes a CALLER-supplied 12-byte nonce and does NOT enforce uniqueness, so
+// every caller MUST guarantee a unique nonce per key (a fresh `randomBytes(12)` or a never-repeating,
+// persisted counter). The in-tree production caller is `crypto/src/seal.ts` (ADR-0028 `sealToKem`),
+// which satisfies this contract structurally: it draws a fresh `randomBytes(12)` per seal over a
+// SINGLE-USE key (HKDF of a fresh per-message KEM shared secret), so a (key, nonce) pair never
+// repeats. This standing invariant gates any FUTURE caller of the raw AEAD. (The earlier note that
+// there was "no production caller" is stale — seal.ts is now one, and is safe.)
 export const AES_256_GCM: Aead = {
   id: 'AES-256-GCM',
   keyLength: 32,
