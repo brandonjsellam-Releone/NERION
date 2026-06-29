@@ -274,4 +274,7 @@ export function verifyBelow(commitment: Pt, threshold: bigint, proof: RangeProof
   return true
 }
 
-export { randScalar as randomScalar }
+// Low-level group primitives reused by the set-membership proof (disclosure/setmembership.ts) so the
+// SAME generators G/H, group order L, and scalar reduction are shared — one source of truth (no
+// duplicated/diverging generator derivation). Additive export; does not change range-proof behavior.
+export { randScalar as randomScalar, G, H, L, mul, sub, scalarFromBytes }

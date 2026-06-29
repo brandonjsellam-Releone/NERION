@@ -38,3 +38,5 @@ export {
   CommitBindError,
 } from './commitbind.js'
 export type { BoundAmount } from './commitbind.js'
+export { proveMembership, verifyMembership, SetMembershipError } from './setmembership.js'
+export type { MembershipProof } from './setmembership.js'
