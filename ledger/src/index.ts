@@ -49,3 +49,5 @@ export {
   deserializeFinalityProof,
 } from './portable.js'
 export type { PortableFinalityProof } from './portable.js'
+export { finalityProofToEvmInput } from './evm.js'
+export type { EvmFinalityInput, EvmValidator, EvmAttestation } from './evm.js'
