@@ -17,6 +17,9 @@ import {
   randomScalar,
   proveMembership,
   verifyMembership,
+  codeFor,
+  commitCategory,
+  membershipProofDigest,
   SetMembershipError,
 } from '../src/index.js'
 
@@ -98,5 +101,37 @@ describe('ZK set-membership (1-of-k CDS OR, UNAUDITED reference)', () => {
     const proof = proveMembership(77n, r, [77n])
     expect(verifyMembership(C, [77n], proof)).toBe(true)
     expect(verifyMembership(commit(78n, r), [77n], proof)).toBe(false)
+  })
+})
+
+describe('categorical disclosure — action-type / counterparty allow-lists', () => {
+  it('codeFor is deterministic and label-distinct', () => {
+    expect(codeFor('payment.transfer')).toBe(codeFor('payment.transfer'))
+    expect(codeFor('payment.transfer')).not.toBe(codeFor('data.read'))
+  })
+
+  it('end-to-end: prove the action-type is in the governed allow-set, reveal nothing', () => {
+    const allowed = ['payment.transfer', 'data.read', 'infra.deploy'].map(codeFor)
+    const { commitment, opening, code } = commitCategory('data.read')
+    const proof = proveMembership(code, opening, allowed)
+    expect(verifyMembership(commitment, allowed, proof)).toBe(true)
+  })
+
+  it('a category NOT in the allow-set cannot be proven', () => {
+    const allowed = ['payment.transfer', 'data.read'].map(codeFor)
+    const { opening, code } = commitCategory('key.export') // not in the allow-set
+    expect(() => proveMembership(code, opening, allowed)).toThrow(SetMembershipError)
+  })
+
+  it('membershipProofDigest is deterministic and binds commitment + set + proof + policy', () => {
+    const allowed = ['a', 'b', 'c'].map(codeFor)
+    const { commitment, opening, code } = commitCategory('b')
+    const proof = proveMembership(code, opening, allowed)
+    const d = membershipProofDigest(commitment, allowed, proof, 'evaluator-v1')
+    expect(membershipProofDigest(commitment, allowed, proof, 'evaluator-v1')).toBe(d) // deterministic
+    expect(membershipProofDigest(commitment, allowed, proof, 'evaluator-v2')).not.toBe(d) // policy binding
+    const other = commitCategory('b')
+    const proof2 = proveMembership(other.code, other.opening, allowed)
+    expect(membershipProofDigest(other.commitment, allowed, proof2, 'evaluator-v1')).not.toBe(d) // commitment binding
   })
 })

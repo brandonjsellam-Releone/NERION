@@ -28,9 +28,9 @@
  */
 
 import { shake256 } from '@noble/hashes/sha3.js'
-import { concatBytes, utf8ToBytes } from '@noble/hashes/utils.js'
+import { concatBytes, utf8ToBytes, bytesToHex } from '@noble/hashes/utils.js'
 import { G, H, L, mul, sub, scalarFromBytes, commit, randomScalar, type Pt } from './zkrange.js'
-import type { Bytes } from '../../crypto/src/index.js'
+import { encodeCanonical, SHA3_SHAKE256, type Bytes } from '../../crypto/src/index.js'
 
 const DOMAIN = 'Nerion/disclosure/set-membership/v1'
 
@@ -144,4 +144,58 @@ export function verifyMembership(
   } catch {
     return false
   }
+}
+
+// ─── Categorical-disclosure helpers ─────────────────────────────────────────────────────────────
+// Make set-membership usable for the real governance use case: prove the action's CATEGORY (its
+// action-type or counterparty) is in the policy's allow-list, revealing nothing else. A category is
+// a STRING label; these map labels → scalar codes deterministically so an allow-list is a set of
+// codes and the prover commits to the code of the action's own category.
+
+const CODE_DOMAIN = `${DOMAIN}/code`
+
+/**
+ * Deterministic, domain-separated string → scalar code for a category label (action-type or
+ * counterparty). Same label ⇒ same code (so two parties build the same allow-set); distinct labels
+ * ⇒ distinct codes except with negligible (SHA3) collision probability. Reduced mod L.
+ */
+export function codeFor(label: string): bigint {
+  return scalarFromBytes(SHA3_SHAKE256.digest(encodeCanonical([CODE_DOMAIN, label])))
+}
+
+/** Commit to a category label's code with a fresh blinding; keep the opening to prove membership. */
+export function commitCategory(label: string): {
+  readonly commitment: Pt
+  readonly opening: bigint
+  readonly code: bigint
+} {
+  const code = codeFor(label)
+  const opening = randomScalar()
+  return { commitment: commit(code, opening), opening, code }
+}
+
+/**
+ * Binding digest that ties a membership proof to a specific commitment, allow-set, and policy — the
+ * value a v:2 receipt carries so the categorical proof is transitively ML-DSA-87-signed and
+ * transparency-log-anchored (mirrors `policyProofDigest` for the numeric clause). Binds the policy
+ * identity so a proof issued under policy P cannot be re-presented as satisfying P'.
+ */
+export function membershipProofDigest(
+  commitment: Pt,
+  set: readonly bigint[],
+  proof: MembershipProof,
+  policyBinding: string,
+): string {
+  return bytesToHex(
+    SHA3_SHAKE256.digest(
+      encodeCanonical([
+        'nerion-setmembership-v1',
+        policyBinding,
+        bytesToHex(commitment.toBytes()),
+        set.map((s) => mod(s).toString(16)),
+        proof.c.map((x) => mod(x).toString(16)),
+        proof.s.map((x) => mod(x).toString(16)),
+      ]),
+    ),
+  )
 }
