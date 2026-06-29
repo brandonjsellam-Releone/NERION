@@ -42,3 +42,10 @@ export {
   viewChangeMessage,
   verifyViewChangeCert,
 } from './leader.js'
+export {
+  exportFinalityProof,
+  verifyPortableFinality,
+  serializeFinalityProof,
+  deserializeFinalityProof,
+} from './portable.js'
+export type { PortableFinalityProof } from './portable.js'
