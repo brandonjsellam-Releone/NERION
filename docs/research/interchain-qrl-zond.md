@@ -40,28 +40,39 @@ block, verified by the destination chain itself** — not a custodial committee.
 
 ## What is built here
 
-- **`ledger/src/evm.ts` — `finalityProofToEvmInput(proof, trustedSet)`** (TESTED, `ledger/test/evm.test.ts`):
-  packages a portable finality proof into the 0x-hex shape the contract consumes. It emits the
-  `setId` and each attestation's signed message **exactly** as Nerion's own `consensusSetId` /
-  `attestMessage` produce them, so an on-chain recomputation agrees byte-for-byte.
-- **`contracts/NerionFinalityVerifier.sol`** (REFERENCE, uncompiled here): the destination verifier.
-  Recovers each attestor's stake, dedups distinct validators, verifies each ML-DSA-87 signature via
-  the QRVM precompile, and returns finalized iff a >2/3 stake quorum signed — the gas-sensitive core.
+The **soundness gap is now closed (option B implemented)**: an EVM-native, keccak256-only
+attestation profile the contract recomputes on-chain.
+
+- **`ledger/src/evmprofile.ts`** (TESTED, `ledger/test/evmprofile.test.ts`, 7 tests) — the EVM-native
+  profile + the **canonical TS reference verifier**:
+  - `evmSetId(set)` / `evmAttestMessage(...)` — a keccak256 fold (no SHAKE, no CBOR) an EVM
+    reproduces cheaply: `evmSetId = keccak(fold over keccak(pubkey)‖uint256(stake)‖keccak(vrf))`,
+    `evmMessage = keccak(keccak(tag)‖keccak(suite)‖uint256(height)‖blockHash‖setId)`.
+  - `signEvmAttestation(...)` — a validator's ML-DSA-87 signature over the profile message (opt-in,
+    co-signed alongside consensus; the native dCBOR/SHAKE256 path is untouched).
+  - `verifyEvmFinality(...)` — **recomputes setId + message from the trusted set** (NOT from a
+    relayer), verifies each ML-DSA-87 signature, dedups distinct members, and finalizes iff a >2/3
+    stake quorum signed. This is the byte-for-byte spec the contract must match. Fully tested:
+    finalizes a real quorum; fails closed on sub-quorum, tampered sig, duplicated signer, a different
+    set, and an epoch change.
+- **`contracts/NerionFinalityVerifier.sol`** (REFERENCE, uncompiled here): now **sound** — it
+  recomputes `evmSetId` (keccak fold, sorted-pubkey check) and `evmMessage` ON-CHAIN and verifies
+  each ML-DSA-87 signature over the recomputed message via the QRVM precompile, so a relayer cannot
+  substitute the message or the set. The keccak fold is byte-identical to `evmprofile.ts`.
+- **`ledger/src/evm.ts` — `finalityProofToEvmInput(...)`** (TESTED): the dCBOR-view packer (option-A
+  reference / relayer convenience), retained.
 
 ## Honest open items (the remaining integration work)
 
-1. **On-chain message recomputation (soundness).** `setId` and the attestation message must be
-   recomputed *by the contract* from the validator set + header, not trusted from the relayer.
-   Nerion signs `dCBOR(['polarseek-attest-v2', suite, height, hash, setId])` and
-   `setId = SHAKE256(dCBOR([...sortedValidators, epoch]))`. Two options: **(A)** port the minimal,
-   fixed-shape dCBOR + SHAKE256 into Hyperion; **(B)** add a Nerion EVM-native attestation profile
-   (keccak/abi.encode) signed alongside the dCBOR one so the contract recomputes cheaply. The
-   reference currently enforces all attestations agree on a caller-supplied message; choosing A or B
-   is the next step.
-2. **Compile + test on QRVM.** Needs the Zond toolchain (Hyperion compiler, the live ML-DSA-87
-   precompile address, a testnet RPC at `test-zond.theqrl.org`). Out of scope for this TS/Rust repo.
-3. **Input caps** on `validators.length` / `attestations.length` (decode-side DoS), mirroring the
-   off-chain `verifyFinalized` caps.
+1. **Compile + test on QRVM.** The contract is byte-matched to the tested TS reference but needs the
+   Zond toolchain to compile (Hyperion), the live ML-DSA-87 precompile address, and a testnet RPC at
+   `test-zond.theqrl.org`. Out of scope for this TS/Rust repo.
+2. **Validator co-signing rollout.** `signEvmAttestation` is the primitive; wiring it into the
+   validator's per-block flow (so the evm-profile signature is collected alongside the native
+   attestation) is a small, opt-in deployment step — deliberately NOT wired into the consensus hot
+   path here.
+3. **Input caps** on `validators.length` / `attestations.length` on-chain (decode-side DoS),
+   mirroring the off-chain `verifyFinalized` caps.
 
 ## Not a claim
 

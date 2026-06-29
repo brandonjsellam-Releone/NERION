@@ -5,15 +5,18 @@
 // Reference contract — NOT YET COMPILED/DEPLOYED in this repo (Nerion is TypeScript/Rust; there is
 // no Solidity toolchain here). It targets QRL Zond's QRVM (an EVM fork) + Hyperion (a post-quantum
 // superset of Solidity that natively verifies lattice signatures; cf. EIP-8051 ML-DSA precompile).
-// It is the on-chain "destination" of the Nerion interchain: see docs/research/interchain-qrl-zond.md
-// and ledger/src/evm.ts (the off-chain encoder that produces this contract's input).
+//
+// SOUND BY RECOMPUTATION: it reconstructs the validator-set id AND the signed attestation message
+// ON-CHAIN (keccak256 fold, EVM-cheap — Nerion's EVM-native attestation profile, option B) from the
+// trusted validator set + header, so a relayer cannot substitute either. The canonical reference is
+// ledger/src/evmprofile.ts `verifyEvmFinality` (TESTED), which this MUST match byte-for-byte.
+// See docs/research/interchain-qrl-zond.md.
 
 pragma solidity ^0.8.24;
 
-/// @notice ML-DSA-87 (FIPS-204) signature-verification precompile exposed by QRVM / Hyperion.
-/// @dev On QRL Zond the account/consensus signature scheme is ALSO ML-DSA-87, so Nerion's existing
-///      attestations verify natively — no scheme translation. The precompile address is Zond-network
-///      specific (EIP-8051-style); pin it from the Zond spec at deployment. Placeholder below.
+/// @notice ML-DSA-87 (FIPS-204) verification precompile exposed by QRVM / Hyperion. QRL Zond signs
+/// its whole stack with ML-DSA-87 — the SAME scheme Nerion uses — so Nerion attestations verify
+/// natively. The precompile address is Zond-network specific (EIP-8051-style); pin it at deployment.
 interface IMLDSA87 {
     function verify(bytes calldata publicKey, bytes calldata message, bytes calldata signature)
         external
@@ -22,41 +25,68 @@ interface IMLDSA87 {
 }
 
 /// @title NerionFinalityVerifier
-/// @notice Verifies a Nerion portable finality proof on-chain: a block is "finalized" iff a >2/3
-///         STAKE quorum of the trusted validator set signed it with ML-DSA-87. This is the
-///         post-quantum alternative to trusted-multisig bridges (which lost ~$1B): the trust root is
-///         a transparency-logged stake quorum verified by the chain itself, not a custodial committee.
+/// @notice A block is "finalized" iff a >finalityNum/finalityDen STAKE quorum of DISTINCT trusted
+///         validators signed the recomputed message with ML-DSA-87 — the post-quantum alternative to
+///         trusted-multisig bridges (which lost ~$1B): the trust root is a transparency-logged stake
+///         quorum the chain verifies itself.
 contract NerionFinalityVerifier {
     /// @dev Zond-specific ML-DSA-87 precompile. Set the real address at deployment.
     IMLDSA87 public constant MLDSA87 = IMLDSA87(address(0x0000000000000000000000000000000000000900));
 
+    bytes internal constant SET_TAG = "Nerion/evm-consensus-set/v1";
+    bytes internal constant ATT_TAG = "Nerion/evm-attest/v1";
+
     struct Validator {
-        bytes pubkey; // ML-DSA-87 public key
-        uint256 stake; // non-negative stake weight
+        bytes pubkey; // ML-DSA-87 public key; the `validators` array MUST be sorted ascending by pubkey
+        uint256 stake;
+        bytes vrfPubkey; // empty bytes if none
     }
 
     struct Attestation {
         bytes pubkey; // attestor's ML-DSA-87 public key (must be a set member)
-        bytes message; // the exact bytes Nerion signed (relayer-provided; see SECURITY note)
-        bytes signature; // ML-DSA-87 signature over `message`
+        bytes signature; // ML-DSA-87 signature over the recomputed evm-profile message
     }
 
-    /// @notice Verify a Nerion finality proof. Returns true iff a >finalityNum/finalityDen stake
-    ///         quorum of DISTINCT set members produced a valid ML-DSA-87 signature for this block.
-    /// @param validators the verifier's OWN trusted validator set (the trust anchor).
-    /// @param attestations the attestations carried by the portable proof.
-    /// @param expectedMessage the canonical attestation message the contract REQUIRES every valid
-    ///        attestation to equal (see SECURITY). The caller computes it; this contract enforces
-    ///        byte-equality so a relayer cannot mix messages.
-    /// @param finalityNum,finalityDen the finality fraction (default 2/3).
+    /// @notice Recompute the keccak256 validator-set id (matches evmprofile.ts `evmSetId`).
+    /// @dev Requires `validators` pre-sorted ascending by pubkey (the fold is order-dependent).
+    function evmSetId(Validator[] calldata validators, uint256 epoch) public pure returns (bytes32) {
+        bytes32 h = keccak256(SET_TAG);
+        for (uint256 i = 0; i < validators.length; i++) {
+            if (i > 0) require(_lt(validators[i - 1].pubkey, validators[i].pubkey), "unsorted/dup");
+            bytes32 vrfH = keccak256(validators[i].vrfPubkey); // keccak256("") when none
+            h = keccak256(abi.encodePacked(h, keccak256(validators[i].pubkey), validators[i].stake, vrfH));
+        }
+        return keccak256(abi.encodePacked(h, epoch));
+    }
+
+    /// @notice Recompute the message a validator signs (matches evmprofile.ts `evmAttestMessage`).
+    function evmMessage(string calldata suite, uint256 height, bytes32 blockHash, bytes32 setId)
+        public
+        pure
+        returns (bytes32)
+    {
+        return keccak256(
+            abi.encodePacked(keccak256(ATT_TAG), keccak256(bytes(suite)), height, blockHash, setId)
+        );
+    }
+
+    /// @notice Verify Nerion finality. Reconstructs setId + message on-chain (no trusted relayer
+    ///         input), verifies each ML-DSA-87 signature via the precompile, dedups distinct members,
+    ///         and returns true iff the stake quorum is met.
     function verifyFinality(
         Validator[] calldata validators,
         Attestation[] calldata attestations,
-        bytes calldata expectedMessage,
+        string calldata suite,
+        uint256 height,
+        bytes32 blockHash,
+        uint256 epoch,
         uint256 finalityNum,
         uint256 finalityDen
     ) external view returns (bool finalized) {
         require(finalityNum >= 1 && finalityDen >= 1 && finalityNum <= finalityDen, "bad threshold");
+
+        bytes32 setId = evmSetId(validators, epoch);
+        bytes memory message = abi.encodePacked(evmMessage(suite, height, blockHash, setId));
 
         uint256 total = 0;
         for (uint256 i = 0; i < validators.length; i++) {
@@ -65,55 +95,51 @@ contract NerionFinalityVerifier {
         require(total > 0, "empty set");
 
         uint256 attesting = 0;
-        // Distinct-attestor accumulation. O(n^2) membership/dedup is fine for the small validator
-        // sets a light-client proof carries; cap the input length at the call site.
         for (uint256 a = 0; a < attestations.length; a++) {
-            Attestation calldata at = attestations[a];
+            bytes calldata pk = attestations[a].pubkey;
 
-            // Every counted attestation must sign the SAME canonical message (binds height+hash+setId).
-            if (keccak256(at.message) != keccak256(expectedMessage)) continue;
-
-            // Resolve the attestor to a set member + its stake; skip non-members.
-            uint256 stake = 0;
-            bool member = false;
-            for (uint256 v = 0; v < validators.length; v++) {
-                if (keccak256(validators[v].pubkey) == keccak256(at.pubkey)) {
-                    stake = validators[v].stake;
-                    member = true;
-                    break;
-                }
-            }
-            if (!member || stake == 0) continue;
-
-            // Dedup: count each distinct validator at most once (no stake inflation by replay).
+            // Dedup: count each distinct validator at most once.
             bool seen = false;
             for (uint256 p = 0; p < a; p++) {
-                if (keccak256(attestations[p].pubkey) == keccak256(at.pubkey)) {
+                if (keccak256(attestations[p].pubkey) == keccak256(pk)) {
                     seen = true;
                     break;
                 }
             }
             if (seen) continue;
 
-            // Native post-quantum verification (QRVM/Hyperion ML-DSA-87 precompile).
-            if (!MLDSA87.verify(at.pubkey, at.message, at.signature)) continue;
+            // Resolve to a set member + its stake.
+            uint256 stake = 0;
+            for (uint256 v = 0; v < validators.length; v++) {
+                if (keccak256(validators[v].pubkey) == keccak256(pk)) {
+                    stake = validators[v].stake;
+                    break;
+                }
+            }
+            if (stake == 0) continue;
+
+            // Native post-quantum verification over the RECOMPUTED message.
+            if (!MLDSA87.verify(pk, message, attestations[a].signature)) continue;
 
             attesting += stake;
         }
 
-        // Exact >=2/3 cross-multiply (no division).
         finalized = (attesting * finalityDen >= finalityNum * total);
+    }
+
+    /// @dev Lexicographic byte-string less-than (for the ascending-pubkey sortedness check).
+    function _lt(bytes calldata x, bytes calldata y) internal pure returns (bool) {
+        uint256 n = x.length < y.length ? x.length : y.length;
+        for (uint256 i = 0; i < n; i++) {
+            if (x[i] != y[i]) return x[i] < y[i];
+        }
+        return x.length < y.length;
     }
 }
 
-// SECURITY / INTEGRATION NOTES (read before deploying):
-//   1. `expectedMessage` and the `setId` it embeds MUST be recomputed BY THE VERIFIER, not trusted
-//      from the relayer, or a relayer could substitute a different validator set. Two sound options:
-//      (A) port Nerion's dCBOR + SHAKE256 `consensusSetId`/`attestMessage` faithfully into Hyperion
-//          and recompute `expectedMessage` here from (suite, height, blockHash, validators, epoch);
-//      (B) add a Nerion EVM-native attestation profile (keccak/abi.encode) signed alongside the
-//          dCBOR one, so this contract recomputes cheaply. Until then this reference accepts the
-//          message as a parameter and only enforces all attestations agree on it (option-A/B is the
-//          remaining integration work). docs/research/interchain-qrl-zond.md tracks the decision.
-//   2. Cap `attestations.length` and `validators.length` at the call site (decode-side DoS).
-//   3. The ML-DSA-87 precompile address is Zond-network specific — pin it from the live spec.
+// INTEGRATION NOTES:
+//   1. Cap `validators.length` / `attestations.length` at the call site (decode-side DoS).
+//   2. The ML-DSA-87 precompile address is Zond-network specific — pin it from the live spec.
+//   3. Validators co-sign the evm-profile (evmprofile.ts `signEvmAttestation`) alongside consensus
+//      when interchain export is wanted (opt-in); the native dCBOR/SHAKE256 consensus path is
+//      unchanged. The keccak fold here is byte-identical to evmprofile.ts (the tested TS reference).

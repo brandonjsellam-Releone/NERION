@@ -51,3 +51,5 @@ export {
 export type { PortableFinalityProof } from './portable.js'
 export { finalityProofToEvmInput } from './evm.js'
 export type { EvmFinalityInput, EvmValidator, EvmAttestation } from './evm.js'
+export { evmSetId, evmAttestMessage, signEvmAttestation, verifyEvmFinality } from './evmprofile.js'
+export type { EvmSignedAttestation, EvmFinalityVerdict } from './evmprofile.js'
