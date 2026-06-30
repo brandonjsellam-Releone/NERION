@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: 2026 TRELYAN
+# SPDX-License-Identifier: Apache-2.0
+#
+# Foundry config for the Nerion interchain reference contracts. NOT built in CI here (Nerion is a
+# TypeScript/Rust repo with no Solidity toolchain); this targets a Foundry + QRL Zond / Hyperion
+# environment. See contracts/README.md.
+
+[profile.default]
+src = "."
+test = "test"
+out = "out"
+libs = ["lib"]
+solc_version = "0.8.24"
+# Allow tests to read the golden cross-impl vectors if they parse the JSON directly.
+fs_permissions = [{ access = "read", path = "./test" }]

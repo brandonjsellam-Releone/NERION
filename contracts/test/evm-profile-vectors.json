@@ -1,0 +1,45 @@
+{
+  "_comment": "Cross-implementation golden vectors for the Nerion EVM-native attestation profile (ledger/src/evmprofile.ts). The Hyperion/Solidity NerionFinalityVerifier MUST reproduce evmSetId() and evmMessage() byte-for-byte. Pubkeys are SYNTHETIC byte strings (the keccak256 fold is independent of ML-DSA validity, so small inputs suffice to pin the encoding). All hex is without 0x prefix; stake is a decimal string (uint256).",
+  "_generatedFrom": "ledger/src/evmprofile.ts via ledger/test/evmprofile-vectors.test.ts (the TS lock test asserts these stay current)",
+  "setIdCases": [
+    {
+      "name": "setA_epoch0",
+      "epoch": 0,
+      "validators": [
+        { "pubkey": "aa", "stake": "1", "vrfPubkey": "" },
+        { "pubkey": "bb", "stake": "2", "vrfPubkey": "" },
+        { "pubkey": "cc", "stake": "3", "vrfPubkey": "" }
+      ],
+      "expectedSetId": "f36be9d1442b4257844332f3b3fc593ebb6cbed5e529ef87ef8dc9e811480e9a"
+    },
+    {
+      "name": "setA_epoch5",
+      "epoch": 5,
+      "validators": [
+        { "pubkey": "aa", "stake": "1", "vrfPubkey": "" },
+        { "pubkey": "bb", "stake": "2", "vrfPubkey": "" },
+        { "pubkey": "cc", "stake": "3", "vrfPubkey": "" }
+      ],
+      "expectedSetId": "0da6a1e08739d5d2b0fc4792e46a7f239532290718b695ee5fa3325075543210"
+    },
+    {
+      "name": "setVrf_epoch0",
+      "epoch": 0,
+      "validators": [
+        { "pubkey": "aa", "stake": "1", "vrfPubkey": "dd" },
+        { "pubkey": "bb", "stake": "2", "vrfPubkey": "" }
+      ],
+      "expectedSetId": "9e19f696615dfb6f70a6a7170fc5eb3098d8b4a091a8c54f26716e2dff310ebc"
+    }
+  ],
+  "messageCases": [
+    {
+      "name": "msg_PS5_h7_cd",
+      "suite": "PS-5",
+      "height": 7,
+      "blockHash": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+      "setId": "f36be9d1442b4257844332f3b3fc593ebb6cbed5e529ef87ef8dc9e811480e9a",
+      "expectedMessage": "bc5a622754c371fbba0b674c31110bc8ccff816dce790e0082056a015e4b392e"
+    }
+  ]
+}
