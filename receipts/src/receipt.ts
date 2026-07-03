@@ -21,6 +21,7 @@
  */
 
 import {
+  activeSuiteIds,
   encodeCanonical,
   SHA3_SHAKE256,
   signerFor,
@@ -151,9 +152,19 @@ export function receiptLeaf(r: Receipt): Bytes {
   return encodeCanonical(r.body)
 }
 
-/** Verify the receipt's PQ signature under its embedded issuer key. */
+/** Verify the receipt's PQ signature under its embedded issuer key. Fail-closed: a receipt is
+ *  "regulator-ready evidence anyone can verify", so `r.body.suite` is attacker-transportable. Reject an
+ *  inactive/unknown suite and swallow any signer throw, so verifying a batch of gossiped receipts
+ *  never crashes on one poisoned receipt (RECEIPT-SUITE-THROW-001, AAC cycle-5 completeness sweep —
+ *  the sole verify-side signerFor dispatch that lacked this guard). The suite is bound into the signed
+ *  body, so a swapped label already fails the signature; this only converts a crash into a clean false. */
 export function verifyReceipt(r: Receipt): boolean {
-  return signerFor(r.body.suite).verify(r.sig, encodeCanonical(r.body), r.signerPublicKey)
+  if (!activeSuiteIds().includes(r.body.suite)) return false
+  try {
+    return signerFor(r.body.suite).verify(r.sig, encodeCanonical(r.body), r.signerPublicKey)
+  } catch {
+    return false
+  }
 }
 
 /**

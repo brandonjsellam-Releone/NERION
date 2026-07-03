@@ -243,7 +243,14 @@ export class PolarSeekNode {
   /** Deny (return an outcome) if `session` is not bound to a verified attestation. */
   private checkAttestedSession(session: Session, now: number): AdmissionOutcome | null {
     let reason: string | null = null
-    if (this.cfg.sessionRootSecret === undefined) {
+    // AAC cycle-5 (completeness sweep): `session` is caller-supplied; sessionKey is dereferenced by
+    // constantTimeEqual (which reads .length) and claims flows into deriveSessionKey + the notAfter
+    // check. A null/non-Uint8Array sessionKey or a null claims would THROW instead of failing closed to
+    // a deny — guard the shape first so admit() returns a tier-3 deny rather than crashing.
+    const s = session as unknown as { sessionKey?: unknown; claims?: unknown }
+    if (!(s.sessionKey instanceof Uint8Array) || s.claims == null || typeof s.claims !== 'object') {
+      reason = 'attested session is malformed (missing/invalid sessionKey or claims)'
+    } else if (this.cfg.sessionRootSecret === undefined) {
       reason = 'requireAttestedSession is set but the node has no sessionRootSecret'
     } else {
       const expected = deriveSessionKey(this.cfg.sessionRootSecret, session.claims)

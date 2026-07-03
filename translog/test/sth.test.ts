@@ -42,6 +42,16 @@ describe('signed tree heads', () => {
     expect(verifyTreeHead({ ...sth, suite: SUITE_IDS.PS_1 }, op.publicKey)).toBe(false)
     expect(verifyTreeHead({ ...sth, suite: SUITE_IDS.PS_5_HQC }, op.publicKey)).toBe(false)
   })
+
+  it('STH-SUITE-THROW-001: an unknown/inactive suite fails CLOSED, never throwing (completeness sweep)', () => {
+    const log = new TransparencyLog()
+    log.append(data('a'))
+    const sth = signTreeHead(log.size(), log.root(), suite, op)
+    // signerFor('PS-BOGUS') throws UnknownSuiteError; the EXPORTED verifyTreeHead must fail closed
+    // (not crash a direct external caller) on a bogus gossiped STH suite.
+    expect(() => verifyTreeHead({ ...sth, suite: 'PS-BOGUS' }, op.publicKey)).not.toThrow()
+    expect(verifyTreeHead({ ...sth, suite: 'PS-BOGUS' }, op.publicKey)).toBe(false)
+  })
 })
 
 describe('split-view / equivocation detection', () => {

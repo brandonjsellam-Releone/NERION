@@ -15,7 +15,13 @@
  * it — the multi-operator, mirrorable transparency property.
  */
 
-import { encodeCanonical, signerFor, type Bytes, type KeyPair } from '../../crypto/src/index.js'
+import {
+  activeSuiteIds,
+  encodeCanonical,
+  signerFor,
+  type Bytes,
+  type KeyPair,
+} from '../../crypto/src/index.js'
 import { bytesToHex } from '@noble/hashes/utils.js'
 import { verifyConsistency } from './merkle.js'
 
@@ -51,11 +57,20 @@ export function signTreeHead(
 
 export function verifyTreeHead(sth: SignedTreeHead, operatorPublicKey: Bytes): boolean {
   if (bytesToHex(operatorPublicKey) !== sth.operator) return false
-  return signerFor(sth.suite).verify(
-    sth.sig,
-    encodeCanonical([STH_CONTEXT, sth.operator, sth.suite, sth.size, sth.rootHex]),
-    operatorPublicKey,
-  )
+  // Fail-closed inside the EXPORTED symbol (STH-SUITE-THROW-001, AAC cycle-5 completeness sweep):
+  // `sth.suite` is an attacker-transportable wire field, and signerFor() throws on an unknown suite.
+  // The internal monitors go through verifyTreeHeadSelf (which try/catch-wraps this), but a DIRECT
+  // external caller of verifyTreeHead must also fail closed rather than crash on a bogus gossiped STH.
+  if (!activeSuiteIds().includes(sth.suite)) return false
+  try {
+    return signerFor(sth.suite).verify(
+      sth.sig,
+      encodeCanonical([STH_CONTEXT, sth.operator, sth.suite, sth.size, sth.rootHex]),
+      operatorPublicKey,
+    )
+  } catch {
+    return false
+  }
 }
 
 /**

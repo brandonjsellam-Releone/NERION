@@ -57,6 +57,16 @@ describe('receipts', () => {
     expect(verifyReceipt({ ...r, signerPublicKey: other.publicKey })).toBe(false)
   })
 
+  it('RECEIPT-SUITE-THROW-001: an unknown body.suite fails CLOSED (false), never throwing', () => {
+    const r = buildReceipt(params())
+    const bogus = { ...r, body: { ...r.body, suite: 'PS-BOGUS' } }
+    // signerFor('PS-BOGUS') throws UnknownSuiteError; verifyReceipt (and thus verifyReceiptInclusion)
+    // must fail closed so an auditor/SDK verifying a batch of gossiped receipts never crashes on one
+    // poisoned receipt (AAC cycle-5 completeness sweep — the sole verify-side signerFor left unwrapped).
+    expect(() => verifyReceipt(bogus)).not.toThrow()
+    expect(verifyReceipt(bogus)).toBe(false)
+  })
+
   it('externally verifies signature + log inclusion with no operator trust', () => {
     const log = new TransparencyLog()
     // Interleave other entries so the receipt is not the only/first leaf.

@@ -165,9 +165,21 @@ export function verifyAttenuatedPermit(
   //      it runs AFTER permitMac here — so without an equal pre-check an attacker forces a full
   //      canonical-encode + HMAC-SHA-384 over an UNAUTHENTICATED multi-MB `ap.body` (pre-auth work-
   //      amplification DoS). Enforce the identical cap before permitMac.
-  const w = ap as unknown as { body?: unknown; suite?: unknown; caveats?: unknown }
-  if (!(w.body instanceof Uint8Array) || typeof w.suite !== 'string' || !Array.isArray(w.caveats)) {
-    return { ok: false, reasons: ['attenuated permit is malformed (body/suite/caveats)'] }
+  // AAC cycle-5: `mac` was excluded from the cycle-4 shape guard; a null/non-Uint8Array mac would
+  // throw in constantTimeEqual(chainMac(...), ap.mac) below (an authorized holder self-DoS). Guard it.
+  const w = ap as unknown as {
+    body?: unknown
+    suite?: unknown
+    caveats?: unknown
+    mac?: unknown
+  }
+  if (
+    !(w.body instanceof Uint8Array) ||
+    typeof w.suite !== 'string' ||
+    !Array.isArray(w.caveats) ||
+    !(w.mac instanceof Uint8Array)
+  ) {
+    return { ok: false, reasons: ['attenuated permit is malformed (body/suite/caveats/mac)'] }
   }
   if (ap.body.length > MAX_PERMIT_BODY_BYTES || ap.suite.length > MAX_PERMIT_SUITE_LEN) {
     return { ok: false, reasons: ['permit token exceeds size bound'] }
