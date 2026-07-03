@@ -133,17 +133,25 @@ export function enact(
   // tried — so a member's genuine approval is still verified after an earlier garbage one. Total
   // verifies ≤ maxApprovals (linear, attacker-bounded); the censorship is removed. Honest inputs
   // (one approval per member) are counted exactly as before.
-  const maxApprovals = Math.max(quorum.members.length * 4, 256)
-  if (approvals.length > maxApprovals) {
-    reasons.push(`approval count ${approvals.length} exceeds bound ${maxApprovals}`)
-  }
   const threshold =
     Number.isInteger(quorum.threshold) && quorum.threshold >= 1 ? quorum.threshold : Infinity
-  const toScan = approvals.length <= maxApprovals ? approvals : []
-  for (const a of toScan) {
+  // GOV-QUORUM-FLOOD-001 (AAC cycle-6 self-verify): bound the expensive ML-DSA-87 verifies (DoS)
+  // WITHOUT rejecting the whole list. An earlier version wholesale-rejected when approvals.length
+  // exceeded a cap — but governance approvals may be assembled by an adversarial aggregator/gossip
+  // (unlike a receipt's builder-controlled attestations), so padding a GENUINE quorum's list past the
+  // cap would force enacted:false — flooding-censorship of an emergency revoke/rotate/kill quorum, the
+  // same harm GOV-QUORUM-CENSOR-001 exists to prevent, in another guise. Non-members and already-
+  // counted members are skipped CHEAPLY (no verify), so junk padding never consumes the verify budget
+  // and a genuine quorum still enacts regardless of how much junk is appended; only the expensive
+  // verifies are bounded.
+  const maxVerifies = Math.max(quorum.members.length * 4, 256)
+  let verifies = 0
+  for (const a of approvals) {
     if (distinctValid.size >= threshold) break // quorum already reached — no need to verify more
-    if (!members.has(a.signer)) continue // non-member
-    if (distinctValid.has(a.signer)) continue // this member is already counted — do not re-verify
+    if (!members.has(a.signer)) continue // non-member — cheap, consumes no verify budget
+    if (distinctValid.has(a.signer)) continue // already counted — cheap, consumes no verify budget
+    if (verifies >= maxVerifies) break // bound the expensive verifies (DoS); do NOT reject the list
+    verifies++
     if (verifyApproval(p, a, quorum)) distinctValid.add(a.signer)
   }
   const n = distinctValid.size

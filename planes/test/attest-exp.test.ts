@@ -117,6 +117,28 @@ describe('ATTEST-EXP-001 — attested session expires at its attestation notAfte
     expect(out.decision.effect).toBe('deny')
   })
 
+  it('AAC cycle-5 (self-verify ADV-003): a malformed session (null sessionKey / claims) denies, no throw', () => {
+    const node = attestedNode()
+    const good = node.establishSession(evidence, attPolicy)
+    const admitWith = (sess: unknown) =>
+      node.admit({
+        intent: pay(500),
+        capabilities: [cap],
+        session: sess as typeof good,
+        audience: 'acct://treasury',
+        now: NOW,
+        observedAggregate: 0,
+      })
+    // Pre-fix, checkAttestedSession derefs sessionKey.length / claims and THROWS; post-fix it denies.
+    for (const bad of [
+      { ...good, sessionKey: null },
+      { ...good, claims: null },
+    ]) {
+      expect(() => admitWith(bad)).not.toThrow()
+      expect(admitWith(bad).decision.effect).toBe('deny')
+    }
+  })
+
   it('PERMIT-EXP-CLAMP: a permit expiry never outlives the attestation notAfter', () => {
     const node = attestedNode() // permitTtlSeconds: 30; attestation NOT_AFTER = NOW + 300
     const session = node.establishSession(evidence, attPolicy)

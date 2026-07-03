@@ -102,6 +102,23 @@ describe('M-of-N quorum', () => {
     expect(r.validApprovals).toBe(2)
   })
 
+  it('GOV-QUORUM-FLOOD-001: a genuine quorum padded with junk non-member approvals still enacts', () => {
+    // An adversarial aggregator pads the approval list FAR past max(4*|members|, 256) with non-member
+    // entries. A wholesale length cap would have rejected the whole list (enacted:false) — flooding-
+    // censorship. Non-members are skipped cheaply (no verify), so the genuine quorum must still enact.
+    const outsider = s.keygen()
+    const junkOne = approve(p, suite, outsider, quorum) // valid sig, but a NON-member
+    const flood = Array.from({ length: 300 }, () => junkOne) // 300 > the 256 verify bound
+    const r = enact(
+      p,
+      [...flood, approve(p, suite, m1, quorum), approve(p, suite, m2, quorum)],
+      quorum,
+      NOW,
+    )
+    expect(r.enacted).toBe(true)
+    expect(r.validApprovals).toBe(2)
+  })
+
   it('ignores non-member and invalid approvals', () => {
     const r = enact(
       p,

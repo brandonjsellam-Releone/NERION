@@ -213,4 +213,12 @@ describe('attestation hardening (ATTEST-TIME-001 / ATTEST-NOFM-001)', () => {
       appraiseNofM([evidenceA, nullClaims, tdxEvidence(B)], basePolicy(), 2, verifiers).valid,
     ).toBe(true)
   })
+
+  it('MAX_EVIDENCES: an over-cap evidence array is rejected before per-item verification', () => {
+    // Decode-side DoS cap: >256 evidences would otherwise force 256+ ML-DSA-87 verifies. Rejected up-front.
+    const flood = Array.from({ length: 257 }, () => evidenceA)
+    const r = appraiseNofM(flood, basePolicy(), 2, verifiers)
+    expect(r.valid).toBe(false)
+    expect(r.reasons.some((x) => x.includes('exceeds bound'))).toBe(true)
+  })
 })

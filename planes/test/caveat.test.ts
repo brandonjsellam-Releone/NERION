@@ -104,10 +104,13 @@ describe('permit caveats — offline macaroon-style attenuation', () => {
     expect(verifyPermitForAction(permit, key, check(NOW + 10)).ok).toBe(true)
   })
 
-  it('AAC cycle-4 (F5 parity): an oversized attenuated-permit body is rejected BEFORE the HMAC', () => {
-    // The F5 size cap only lived in the non-attenuated verifyPermitForAction (which runs AFTER
-    // permitMac here). Without a pre-check, an attacker forces a full canonical-encode + HMAC over an
-    // unauthenticated multi-MB body. The cap must reject an oversized body up-front.
+  it('AAC cycle-4 (F5 parity): an oversized attenuated-permit body is rejected', () => {
+    // OUTCOME lock: an oversized attenuated permit is rejected. NOTE (per self-verify ADV-002): the
+    // fix's real value is rejecting BEFORE the outer permitMac HMAC (a pre-auth work-amplification
+    // guard); because verifyPermitForAction carries the IDENTICAL cap with the same reason string, the
+    // pre-HMAC rejection is a defense-in-depth duplicate that is NOT black-box distinguishable from the
+    // inner cap — this asserts the outcome, not the timing. The distinguishing throw-vs-fail-closed
+    // behavior is locked by the shape test below.
     const huge: AttenuatedPermit = {
       suite,
       body: new Uint8Array(9000), // > MAX_PERMIT_BODY_BYTES (8192)
@@ -117,15 +120,19 @@ describe('permit caveats — offline macaroon-style attenuation', () => {
     expect(verifyAttenuatedPermit(huge, key, check(NOW)).ok).toBe(false)
   })
 
-  it('AAC cycle-4: a non-array caveats field fails closed (verdict), not a thrown TypeError', () => {
-    const bad = {
-      suite,
-      body: new Uint8Array(16),
-      caveats: undefined,
-      mac: new Uint8Array(48),
-    } as unknown as AttenuatedPermit
-    expect(() => verifyAttenuatedPermit(bad, key, check(NOW))).not.toThrow()
-    expect(verifyAttenuatedPermit(bad, key, check(NOW)).ok).toBe(false)
+  it('AAC cycle-4/5: a malformed wire shape (null caveats / body / mac) fails closed, not a thrown TypeError', () => {
+    // These DISTINGUISH pre/post: pre-fix, a null caveats throws on `.length`, a null body throws in
+    // verifyPermitForAction's `token.body.length`, and a null mac throws in constantTimeEqual — all
+    // ESCAPE the verifier. Post-fix the shape guard returns a fail-closed verdict for each.
+    const base = { suite, body: new Uint8Array(16), caveats: [], mac: new Uint8Array(48) }
+    for (const bad of [
+      { ...base, caveats: undefined },
+      { ...base, body: null },
+      { ...base, mac: null },
+    ] as unknown as AttenuatedPermit[]) {
+      expect(() => verifyAttenuatedPermit(bad, key, check(NOW))).not.toThrow()
+      expect(verifyAttenuatedPermit(bad, key, check(NOW)).ok).toBe(false)
+    }
   })
 
   it('expiresAtMost: a holder tightens the lifetime OFFLINE; the resource enforces the shorter window', () => {
