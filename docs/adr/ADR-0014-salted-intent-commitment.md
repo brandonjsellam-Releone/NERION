@@ -60,8 +60,9 @@ commitments.intent  = SHA3‑256(encodeCanonical({ d: "Nerion/disclosure/salted-
   no concatenation‑splitting), and domain‑separates this commitment from other SHA3 uses.
 
 The salt is optional in `commitField`/`verifyDisclosure` so the **unsalted** form (`SHA3(canonical(value))`)
-is unchanged for the receipt's other, non‑secret hash commitments (`capability`, `policy`, …) and for any
-existing caller.
+remains available for any existing caller. (The receipt's `capability` and `policy` commitments were
+originally left unsalted here but are now ALSO salted — see decision #4 / RCPT‑PRIV‑001 — so the whole
+published leaf is unlinkable, not just the `intent`.)
 
 ### Why salt‑and‑hash here, not Pedersen
 
@@ -110,10 +111,14 @@ So:
 3. **Encrypt the intent to authorized verifiers instead of committing — REJECTED.** Key management +
    confidentiality is a heavier, separate trust model; the log only needs a *hiding commitment*, which a
    salted hash provides without any new key material.
-4. **Salt the other commitments (`capability`, `policy`) too — NOT NOW.** Same mechanism applies and the
-   knob exists (`commitField(value, salt)`), but RCPT‑001 is specifically the low‑entropy `amount` in the
-   intent. Capability/policy hashes are left unsalted pending their own low‑entropy assessment; this keeps
-   the change surgical. Documented as a follow‑up.
+4. **Salt the other commitments (`capability`, `policy`) too — DONE (RCPT‑PRIV‑001, 2026‑07‑03).**
+   Originally deferred, but the cross-cutting privacy-composition review showed an unsalted
+   `commitments.capability` is a STABLE deterministic fingerprint (a `Capability` is a fully
+   deterministic grant chain), so a passive log observer could cluster the whole log by it — re-linking
+   a holder's actions and defeating the very unlinkability this ADR adds to `intent`, one field over.
+   Both are now salted with the same off-leaf `intentSalt` via `commitField(value, salt)`, so the WHOLE
+   leaf is unlinkable to a passive observer while an authorized party holding the salt can still
+   recompute the commitment.
 
 ## Consequences
 
