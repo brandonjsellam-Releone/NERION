@@ -45,6 +45,21 @@ describe('receipts', () => {
     expect(JSON.stringify(r.body)).not.toContain('payment.transfer')
   })
 
+  it('RCPT-PRIV-001: capability + policy commitments are salted → not cross-receipt-linkable', () => {
+    const p = params() // same capability + policy for both receipts, but fresh per-receipt salts
+    const r1 = buildReceipt(p)
+    const r2 = buildReceipt(p)
+    // A passive log observer cannot link two receipts by the SAME capability/policy — the published
+    // commitments differ (previously they were unsalted, hence a stable cross-receipt fingerprint).
+    expect(r1.body.commitments.capability).not.toBe(r2.body.commitments.capability)
+    expect(r1.body.commitments.policy).not.toBe(r2.body.commitments.policy)
+    // An AUTHORIZED party holding the salt can still recompute the commitment (disclosure); a passive
+    // observer WITHOUT the salt cannot — matching the salted-intent pattern.
+    expect(verifyDisclosure(r1.body.commitments.capability, p.capability, r1.intentSalt)).toBe(true)
+    expect(verifyDisclosure(r1.body.commitments.policy, p.policy, r1.intentSalt)).toBe(true)
+    expect(verifyDisclosure(r1.body.commitments.capability, p.capability)).toBe(false) // no salt
+  })
+
   it('rejects a tampered receipt body', () => {
     const r = buildReceipt(params())
     const tampered = { ...r, body: { ...r.body, effect: 'deny' } }

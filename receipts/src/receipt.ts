@@ -23,12 +23,10 @@
 import {
   activeSuiteIds,
   encodeCanonical,
-  SHA3_SHAKE256,
   signerFor,
   randomBytes,
   type Bytes,
 } from '../../crypto/src/index.js'
-import { bytesToHex } from '@noble/hashes/utils.js'
 import { bytesEqual, checkInclusion, type InclusionWitness } from '../../translog/src/index.js'
 import { commitField, verifyDisclosure } from '../../disclosure/src/selective.js'
 
@@ -87,8 +85,6 @@ export interface Receipt {
   readonly intentSalt: Bytes
 }
 
-const hashHex = (v: unknown): string => bytesToHex(SHA3_SHAKE256.digest(encodeCanonical(v)))
-
 export interface BuildReceiptParams {
   readonly suite: string
   readonly evaluatorVersion: string
@@ -126,8 +122,16 @@ export function buildReceipt(p: BuildReceiptParams): Receipt {
     timestamp: p.timestamp,
     commitments: {
       intent: commitField(p.intent, intentSalt),
-      capability: p.capability === null ? 'none' : hashHex(p.capability),
-      policy: hashHex(p.policy),
+      // RCPT-PRIV-001 (AAC cycle-8 privacy-composition review): SALT the capability + policy
+      // commitments too. Previously these were UNSALTED SHA3, so `commitments.capability` was a stable,
+      // deterministic fingerprint identical on every receipt authorized by the same capability — a
+      // passive log observer clusters the whole log by it (re-linking all of a holder's actions and
+      // de-anonymizing the cluster from any one known capability), silently reintroducing the very
+      // cross-receipt linkage the salted `intent` removes. Salting with the same off-leaf intentSalt
+      // makes the WHOLE leaf unlinkable to a passive observer while an AUTHORIZED party holding the
+      // salt (+ the capability/policy) can still recompute the commitment — matching the intent pattern.
+      capability: p.capability === null ? 'none' : commitField(p.capability, intentSalt),
+      policy: commitField(p.policy, intentSalt),
       // The replay input/decision hashes are SHA3 over the full KernelInput, which
       // contains the low-entropy `amount`. Published RAW, they re-leak the amount
       // from the PUBLIC leaf by brute-force — bypassing the salted `intent`
