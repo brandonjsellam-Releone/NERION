@@ -126,15 +126,15 @@ function countDistinctValid(
   // Must match buildQuorumReceipt's domain-separated message exactly.
   const msg = encodeCanonical([QUORUM_CONTEXT, receipt.body])
   const seen = new Set<string>()
-  const attempted = new Set<string>()
   for (const a of receipt.attestations) {
     if (a.suite !== q.suite) continue // bind to the quorum's committed suite
     if (!isMember(a.validator) || seen.has(a.validator)) continue
-    // DOS-VERIFY-001 (round-2 sweep): cap PQ verification to ONE per distinct member. `seen` is
-    // populated only on a VALID sig, so duplicate garbage-sig attestations for a known member each
-    // ran a fresh ML-DSA-87 verify — O(N) attacker-controlled CPU. Skip a member already attempted.
-    if (attempted.has(a.validator)) continue
-    attempted.add(a.validator)
+    // GOV-QUORUM-CENSOR-001 (AAC cycle-2, 2026-07-03): count a member on its FIRST VALID attestation
+    // and skip only members already counted (`seen`) — NOT members merely tried. The earlier
+    // DOS-VERIFY-001 cap marked a member "attempted" before verifying, so a garbage-sig attestation
+    // seen first burned that member's single verify budget and suppressed its genuine one (an
+    // order-dependent censorship). Total verifies stay bounded by the callers' decode-side
+    // `maxAttestations` cap (fail-closed above), so this is O(attestations) WITHOUT the censorship.
     let valid = false
     try {
       valid = signerFor(a.suite).verify(a.sig, msg, hexToBytes(a.validator))

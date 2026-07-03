@@ -64,6 +64,44 @@ describe('M-of-N quorum', () => {
     expect(r.enacted).toBe(false)
   })
 
+  it('GOV-QUORUM-CENSOR-001: a garbage-sig approval prepended per member cannot censor a genuine quorum', () => {
+    // The roster is public. An attacker prepends ONE invalid-signature approval per member, trying to
+    // burn each member's verify budget BEFORE its genuine approval is seen. The genuine quorum must
+    // still enact — counting is order-independent (skip only members already COUNTED, not tried).
+    const garbage = (k: typeof m1) => {
+      const a = approve(p, suite, k, quorum)
+      const sig = Uint8Array.from(a.sig)
+      sig[0]! ^= 0x01 // corrupt ⇒ invalid signature
+      return { ...a, sig }
+    }
+    const approvals = [
+      garbage(m1),
+      garbage(m2),
+      garbage(m3),
+      approve(p, suite, m1, quorum),
+      approve(p, suite, m2, quorum),
+    ]
+    const r = enact(p, approvals, quorum, NOW)
+    expect(r.enacted).toBe(true)
+    expect(r.validApprovals).toBe(2)
+  })
+
+  it('GOV-QUORUM-CENSOR-001: an invalid approval before a valid one for the SAME member still counts', () => {
+    const a = approve(p, suite, m1, quorum)
+    const bad = Uint8Array.from(a.sig)
+    bad[0]! ^= 0x01
+    const garbageM1 = { ...a, sig: bad }
+    // garbage(m1), valid(m1), valid(m2): m1's genuine vote must not be dropped by its earlier garbage.
+    const r = enact(
+      p,
+      [garbageM1, approve(p, suite, m1, quorum), approve(p, suite, m2, quorum)],
+      quorum,
+      NOW,
+    )
+    expect(r.enacted).toBe(true)
+    expect(r.validApprovals).toBe(2)
+  })
+
   it('ignores non-member and invalid approvals', () => {
     const r = enact(
       p,

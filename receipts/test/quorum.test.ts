@@ -67,6 +67,25 @@ describe('quorum receipts (decentralized k-of-n issuance)', () => {
     expect(verifyQuorumReceipt(flood, set, k, epoch).ok).toBe(false)
   })
 
+  it('GOV-QUORUM-CENSOR-001: garbage attestations prepended per member cannot censor a genuine quorum', () => {
+    // Roster is public. Prepending one invalid-sig attestation per member must NOT burn that member's
+    // verify budget and suppress its genuine attestation — counting skips only members already COUNTED.
+    const genuine = buildQuorumReceipt(body, set, k, epoch, [v[0]!, v[1]!], suite)
+    const bust = (i: number) => {
+      const att = genuine.attestations[i]!
+      const sig = Uint8Array.from(att.sig)
+      sig[0]! ^= 0x01 // corrupt ⇒ invalid signature
+      return { ...att, sig }
+    }
+    const censored = {
+      ...genuine,
+      attestations: [bust(0), bust(1), ...genuine.attestations],
+    }
+    const verdict = verifyQuorumReceipt(censored, set, k, epoch)
+    expect(verdict.ok).toBe(true)
+    expect(verdict.distinctValid).toBe(2)
+  })
+
   it('a non-member attestation is not counted', () => {
     const outsider = kp(9)
     const r = buildQuorumReceipt(body, set, k, epoch, [v[0]!, outsider], suite)

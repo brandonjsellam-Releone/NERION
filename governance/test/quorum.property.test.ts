@@ -110,9 +110,13 @@ describe('QuorumIntegrity — property-based (mirrors the machine-checked TLA+ m
           expect(r.validApprovals).toBeLessThanOrEqual(full)
           // When it enacts, the count genuinely meets threshold.
           if (expectedEnacted) expect(r.validApprovals).toBeGreaterThanOrEqual(threshold)
+          // Censorship guard (GOV-QUORUM-CENSOR-001): below threshold there is NO early-exit, so
+          // every genuine valid member approval must be counted — a garbage-sig approval seen first
+          // for a member can NOT suppress that member's genuine one. Undercount here == censorship.
+          if (thrOk && inWindow && full < threshold) expect(r.validApprovals).toBe(full)
         },
       ),
-      { numRuns: 40 },
+      { numRuns: 60 },
     )
   })
 })

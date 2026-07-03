@@ -123,30 +123,28 @@ export function enact(
 
   const members = new Set(quorum.members)
   const distinctValid = new Set<string>()
-  // DOS-VERIFY-001 (back-port from receipts/quorum.ts `countDistinctValid`): cap the expensive
-  // ML-DSA-87 `verifyApproval` to ONE per distinct member and short-circuit once threshold is
-  // reached or mathematically unreachable. Without this, an attacker who knows a member's pubkey
-  // can submit N garbage-sig approvals for that one member; the old loop ran a fresh PQ verify on
-  // every one (O(N) attacker-controlled CPU) and never stopped early. `distinctValid` is the set of
-  // valid signers (the count), `attempted` the set of members already verified (the cap). Behavior
-  // is identical for honest inputs: distinct valid members are still counted exactly the same.
-  const attempted = new Set<string>()
-  // Distinct quorum members not yet attempted — the only ones that could still add to the count.
-  // When `distinctValid.size + remaining < threshold` the quorum can no longer be reached, so we
-  // stop verifying (the verdict cannot change). Guard against a non-positive threshold so we never
-  // skip the loop on a malformed quorum (that case is already failed-closed above).
-  const remaining = new Set(quorum.members)
+  // GOV-QUORUM-CENSOR-001 (AAC cycle-2, 2026-07-03): the earlier DOS-VERIFY-001 cap marked a member
+  // "attempted" — spending its single ML-DSA-87 verify budget — on the FIRST approval seen for that
+  // signer, BEFORE checking the signature. Since the roster is public, an attacker could prepend ONE
+  // garbage-sig approval per member and thereby suppress every genuine vote: a unanimous approval set
+  // returned enacted:false (an order-dependent censorship of an emergency revoke/rotate/kill quorum).
+  // Fix: bound the expensive verifies by a DECODE-SIDE cap on the approval list (matching
+  // receipts/quorum.ts) and skip only members already COUNTED (`distinctValid`), never members merely
+  // tried — so a member's genuine approval is still verified after an earlier garbage one. Total
+  // verifies ≤ maxApprovals (linear, attacker-bounded); the censorship is removed. Honest inputs
+  // (one approval per member) are counted exactly as before.
+  const maxApprovals = Math.max(quorum.members.length * 4, 256)
+  if (approvals.length > maxApprovals) {
+    reasons.push(`approval count ${approvals.length} exceeds bound ${maxApprovals}`)
+  }
   const threshold =
     Number.isInteger(quorum.threshold) && quorum.threshold >= 1 ? quorum.threshold : Infinity
-  for (const a of approvals) {
+  const toScan = approvals.length <= maxApprovals ? approvals : []
+  for (const a of toScan) {
     if (distinctValid.size >= threshold) break // quorum already reached — no need to verify more
-    if (!members.has(a.signer)) continue
-    if (attempted.has(a.signer)) continue // one PQ verify per distinct member (the DOS cap)
-    attempted.add(a.signer)
-    remaining.delete(a.signer)
+    if (!members.has(a.signer)) continue // non-member
+    if (distinctValid.has(a.signer)) continue // this member is already counted — do not re-verify
     if (verifyApproval(p, a, quorum)) distinctValid.add(a.signer)
-    // Unreachable: even verifying every still-unattempted distinct member cannot reach threshold.
-    if (distinctValid.size + remaining.size < threshold) break
   }
   const n = distinctValid.size
   if (n < quorum.threshold) reasons.push(`need ${quorum.threshold} approvals, have ${n}`)
