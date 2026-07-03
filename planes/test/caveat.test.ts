@@ -104,6 +104,30 @@ describe('permit caveats — offline macaroon-style attenuation', () => {
     expect(verifyPermitForAction(permit, key, check(NOW + 10)).ok).toBe(true)
   })
 
+  it('AAC cycle-4 (F5 parity): an oversized attenuated-permit body is rejected BEFORE the HMAC', () => {
+    // The F5 size cap only lived in the non-attenuated verifyPermitForAction (which runs AFTER
+    // permitMac here). Without a pre-check, an attacker forces a full canonical-encode + HMAC over an
+    // unauthenticated multi-MB body. The cap must reject an oversized body up-front.
+    const huge: AttenuatedPermit = {
+      suite,
+      body: new Uint8Array(9000), // > MAX_PERMIT_BODY_BYTES (8192)
+      caveats: [],
+      mac: new Uint8Array(48),
+    }
+    expect(verifyAttenuatedPermit(huge, key, check(NOW)).ok).toBe(false)
+  })
+
+  it('AAC cycle-4: a non-array caveats field fails closed (verdict), not a thrown TypeError', () => {
+    const bad = {
+      suite,
+      body: new Uint8Array(16),
+      caveats: undefined,
+      mac: new Uint8Array(48),
+    } as unknown as AttenuatedPermit
+    expect(() => verifyAttenuatedPermit(bad, key, check(NOW))).not.toThrow()
+    expect(verifyAttenuatedPermit(bad, key, check(NOW)).ok).toBe(false)
+  })
+
   it('expiresAtMost: a holder tightens the lifetime OFFLINE; the resource enforces the shorter window', () => {
     const ap = attenuate(permit, { kind: 'expiresAtMost', value: NOW + 5 })
     expect(verifyAttenuatedPermit(ap, key, check(NOW + 3)).ok).toBe(true) // within base AND caveat

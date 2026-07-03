@@ -26,9 +26,11 @@ import { bytesToHex } from '@noble/hashes/utils.js'
 import type { ActionIntent } from '../../capabilities/src/index.js'
 
 /** Generous upper bounds on an attacker-supplied PermitToken before the HMAC runs (F5). A real
- *  permit body is a small fixed claims set (a few hundred bytes) and the suite is a short id. */
-const MAX_PERMIT_BODY_BYTES = 8192
-const MAX_PERMIT_SUITE_LEN = 64
+ *  permit body is a small fixed claims set (a few hundred bytes) and the suite is a short id.
+ *  Exported so the attenuated-permit entry point (caveat.ts) enforces the IDENTICAL cap before its
+ *  own HMAC (AAC cycle-4: F5 covered only the non-attenuated path). */
+export const MAX_PERMIT_BODY_BYTES = 8192
+export const MAX_PERMIT_SUITE_LEN = 64
 
 /** Canonical commitment to the exact action a permit authorizes. */
 export function actionHash(intent: ActionIntent): string {

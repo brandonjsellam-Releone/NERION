@@ -50,7 +50,13 @@ import {
   type Bytes,
   type PermitToken,
 } from '../../crypto/src/index.js'
-import { verifyPermitForAction, type PermitCheck, type PermitVerdict } from './permit.js'
+import {
+  verifyPermitForAction,
+  MAX_PERMIT_BODY_BYTES,
+  MAX_PERMIT_SUITE_LEN,
+  type PermitCheck,
+  type PermitVerdict,
+} from './permit.js'
 
 /** Domain separator for the caveat MAC chain (separates it from the base permit MAC transcript). */
 const CAVEAT_CONTEXT = 'Nerion/permit-caveat/v1'
@@ -152,6 +158,20 @@ export function verifyAttenuatedPermit(
   audienceKey: Bytes,
   check: PermitCheck,
 ): PermitVerdict {
+  // AAC cycle-4 — two use-time bypasses on this newer attenuated path:
+  //  (1) Shape: `caveats` (and body/suite) are attacker-controlled wire fields. A non-array `caveats`
+  //      would throw `.length` below (throw-instead-of-fail-closed); guard the shape first.
+  //  (2) F5 size cap: the non-attenuated verifyPermitForAction caps body/suite BEFORE its HMAC, but
+  //      it runs AFTER permitMac here — so without an equal pre-check an attacker forces a full
+  //      canonical-encode + HMAC-SHA-384 over an UNAUTHENTICATED multi-MB `ap.body` (pre-auth work-
+  //      amplification DoS). Enforce the identical cap before permitMac.
+  const w = ap as unknown as { body?: unknown; suite?: unknown; caveats?: unknown }
+  if (!(w.body instanceof Uint8Array) || typeof w.suite !== 'string' || !Array.isArray(w.caveats)) {
+    return { ok: false, reasons: ['attenuated permit is malformed (body/suite/caveats)'] }
+  }
+  if (ap.body.length > MAX_PERMIT_BODY_BYTES || ap.suite.length > MAX_PERMIT_SUITE_LEN) {
+    return { ok: false, reasons: ['permit token exceeds size bound'] }
+  }
   if (ap.caveats.length > MAX_CAVEATS) {
     return { ok: false, reasons: [`too many caveats (> ${MAX_CAVEATS})`] }
   }
