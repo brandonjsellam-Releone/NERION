@@ -56,6 +56,20 @@ export const DOMAIN_TAGS = {
   /** planes/caveat.ts — macaroon caveat chain MAC. */
   PERMIT_CAVEAT: 'Nerion/permit-caveat/v1',
 
+  // ── COSE_Sign1 profiles (RFC 9052, crypto/cose.ts) — externalAad domain tags ─────────────────────
+  /** EAT attestation-result COSE profile. */
+  COSE_EAT: 'polarseek/cose/eat-result/v1',
+  /** CycloneDX SBOM/CBOM COSE profile. */
+  COSE_SBOM: 'polarseek/cose/cyclonedx-sbom/v1',
+  /** SLSA provenance COSE profile. */
+  COSE_SLSA: 'polarseek/cose/slsa-provenance/v1',
+
+  // ── HKDF / negotiation labels ────────────────────────────────────────────────────────────────────
+  /** crypto/suites.ts — suite-negotiation transcript. */
+  SUITE_NEGOTIATION: 'polarseek/suite-negotiation',
+  /** planes/node.ts — attested-session key HKDF. */
+  SESSION_KDF: 'polarseek/session-key/v1',
+
   // ── AEAD seals / KEM (ADR-0028) ────────────────────────────────────────────────────────────────
   /** crypto/seal.ts — hybrid-KEM AEAD seal AAD/HKDF. */
   KEM_SEAL: 'polarseek/kem-seal',
@@ -65,8 +79,27 @@ export const DOMAIN_TAGS = {
   SALTED_COMMIT: 'Nerion/disclosure/salted-commit/v1',
   /** disclosure/commitbind.ts — v:2 commitment-to-intent binding. */
   COMMIT_BIND: 'PolarSeek/disclosure/commit-bind/v2',
+  /** disclosure/setmembership.ts — set-membership Fiat-Shamir challenge (base; suffixed by k). */
+  SET_MEMBERSHIP: 'Nerion/disclosure/set-membership/v1',
+  /** disclosure/policyproof.ts — policy-satisfaction proof digest. */
+  POLICY_PROOF: 'polarseek-psp-v1',
+  /** disclosure/zkrange.ts — NUMS generator-H derivation (nothing-up-my-sleeve). */
+  ZK_GENERATOR_H: 'PolarSeek/disclosure/generator-H/v1',
+  /** ledger/chain.ts — native block hash. */
+  BLOCK_HASH: 'polarseek-block-v1',
+  /** ledger/leader.ts — VRF alpha / seed. */
+  VRF: 'polarseek-vrf-v1',
+  /** ledger/sortition.ts — native consensus-set id (DISTINCT from EVM_CONSENSUS_SET). */
+  NATIVE_CONSENSUS_SET: 'polarseek-consensus-set/v1',
+  /** ledger/sortition.ts — leader sortition seed. */
+  SORTITION: 'polarseek-sortition-v1',
   /** ledger/evmprofile.ts — EVM validator-set id fold. */
   EVM_CONSENSUS_SET: 'Nerion/evm-consensus-set/v1',
+
+  // NOTE: the zkrange statement/bit Fiat-Shamir tags ('PolarSeek/disclosure/stmt/v2',
+  // 'PolarSeek/disclosure/bit/{amount|diff}/{i}') are built with dynamic (n/threshold/bit-index)
+  // suffixes off a static prefix; their prefixes are distinct from every entry above. Migrating them
+  // to a registry-sourced prefix is part of the DS-REGISTRY-001 module-migration follow-up.
 } as const
 
 export type DomainTag = (typeof DOMAIN_TAGS)[keyof typeof DOMAIN_TAGS]
