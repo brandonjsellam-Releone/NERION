@@ -17,8 +17,11 @@ rationale: [`docs/research/interchain-qrl-zond.md`](../docs/research/interchain-
   **recomputing** the validator-set id + signed message on-chain (keccak256 fold) so a relayer can
   substitute neither, and **binding the destination** (`require(chainId == block.chainid)`,
   `require(verifier == address(this))`) so a finality proof can not be replayed on another chain or
-  deployment. Caps `validators.length` / `attestations.length` (decode-side DoS). The post-quantum
-  alternative to trusted-multisig bridges.
+  deployment. Caps `validators.length` / `attestations.length` (decode-side DoS). It also exposes
+  **`verifyEquivocation`** — accountable slashing evidence: a validator that co-signed VALID
+  attestations for two DISTINCT blocks at the SAME height is caught (matches `evmprofile.ts`
+  `verifyEvmEquivocationProof`, LEDGER-EVM-ACCT-001). The post-quantum alternative to trusted-multisig
+  bridges.
 - **`test/NerionFinalityVerifier.t.sol`** — Foundry test asserting the on-chain encoding matches the
   golden vectors.
 - **`test/evm-profile-vectors.json`** — golden cross-implementation vectors.

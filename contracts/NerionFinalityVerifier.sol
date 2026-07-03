@@ -157,6 +157,55 @@ contract NerionFinalityVerifier {
         finalized = (attesting * finalityDen >= finalityNum * total);
     }
 
+    /// @notice Verify a slashable EVM-profile equivocation proof (matches evmprofile.ts
+    ///         `verifyEvmEquivocationProof` — LEDGER-EVM-ACCT-001). Returns true iff `validator` is a
+    ///         set member with stake AND validly signed the recomputed messages for BOTH distinct
+    ///         blocks at the SAME height. Same-height double-signing is the offense; honest
+    ///         one-block-per-height behavior across DIFFERENT heights is NOT (each call pins one
+    ///         height), matching the native equivocation semantics. The messages are RECOMPUTED from
+    ///         the trusted set + destination (never a relayer), and the destination is pinned to this
+    ///         chain/verifier, so a proof cannot be forged, replayed cross-chain, or (because setId
+    ///         folds the epoch) reused across epochs.
+    /// @dev The CALLER slashes on a true return; this contract only adjudicates the evidence.
+    function verifyEquivocation(
+        Validator[] calldata validators,
+        bytes calldata validator,
+        string calldata suite,
+        uint256 chainId,
+        address verifier,
+        uint256 height,
+        bytes32 blockHashA,
+        bytes calldata sigA,
+        bytes32 blockHashB,
+        bytes calldata sigB,
+        uint256 epoch
+    ) external view returns (bool slashable) {
+        require(chainId == block.chainid, "wrong chain");
+        require(verifier == address(this), "wrong verifier");
+        require(validators.length <= MAX_VALIDATORS, "too many validators");
+        if (blockHashA == blockHashB) return false; // same block is not equivocation
+
+        // The named validator must be a set member with positive stake.
+        uint256 stake = 0;
+        for (uint256 v = 0; v < validators.length; v++) {
+            if (keccak256(validators[v].pubkey) == keccak256(validator)) {
+                stake = validators[v].stake;
+                break;
+            }
+        }
+        if (stake == 0) return false;
+
+        bytes32 setId = evmSetId(validators, epoch);
+        bytes memory msgA =
+            abi.encodePacked(evmMessage(suite, chainId, verifier, height, blockHashA, setId));
+        bytes memory msgB =
+            abi.encodePacked(evmMessage(suite, chainId, verifier, height, blockHashB, setId));
+
+        // BOTH signatures must verify under the validator's key over the two same-height messages.
+        slashable =
+            MLDSA87.verify(validator, msgA, sigA) && MLDSA87.verify(validator, msgB, sigB);
+    }
+
     /// @dev Lexicographic byte-string less-than (for the ascending-pubkey sortedness check).
     function _lt(bytes calldata x, bytes calldata y) internal pure returns (bool) {
         uint256 n = x.length < y.length ? x.length : y.length;

@@ -110,8 +110,9 @@ double-signing is the offense and honest one-block-per-height behavior across DI
 (LEDGER-EQUIV-001 parity), exactly matching the native path. Not a live threat regardless (forging
 conflicting finality needs ≥2/3 of stake to co-sign, already breaking honest-majority), but the
 accountability guarantee now extends to the exported finality surface, not only native consensus.
-On-chain, the QRVM contract would expose the same equivocation check when the interchain profile is
-deployed (tracked with the compile/precompile-pin items above).
+On-chain, the reference `NerionFinalityVerifier.sol` now exposes the matching `verifyEquivocation`
+(same recompute-from-trusted-set + destination binding), so the TS reference and the reference contract
+stay in lock-step; compiling + fuzzing it on QRVM remains tracked with the compile/precompile-pin items.
 
 ## Not a claim
 
