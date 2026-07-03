@@ -3,7 +3,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { describe, it, expect } from 'vitest'
-import { merkleRoot, consistencyProof, verifyConsistency, emptyRoot } from '../src/merkle.js'
+import {
+  merkleRoot,
+  consistencyProof,
+  verifyConsistency,
+  emptyRoot,
+  verifyInclusion,
+  inclusionProof,
+} from '../src/merkle.js'
 
 /**
  * Consistency-proof SOUNDNESS regression — bakes in the Team Apex post-fix
@@ -49,6 +56,36 @@ describe('Merkle consistency soundness (Team Apex post-fix verification, 2026-06
       // A non-empty claimed size-0 root is rejected (TLOG-001), and a non-empty proof is rejected.
       expect(verifyConsistency(0, n, [], merkleRoot(tree(1)), realNew)).toBe(false)
       expect(verifyConsistency(0, n, [emptyRoot()], emptyRoot(), realNew)).toBe(false)
+    }
+  })
+})
+
+describe('TLOG-NONFINITE-001 (AAC cycle-3): a non-finite index fails closed AND terminates', () => {
+  // BLOCKING regression: a gossiped ConsistencyWitness with from = NaN / -Infinity previously reached
+  // trailingZeros(m), which infinite-loops (uncatchable — no throw), permanently wedging the untrusted
+  // split-view/rewrite monitor. A hang here would blow vitest's per-test timeout; a `false` return is
+  // the regression signal that the entry guard rejects it before the bit-twiddling.
+  it('verifyConsistency returns false for NaN / ±Infinity / non-integer m or n', () => {
+    const es = tree(8)
+    const realNew = merkleRoot(es)
+    const proof = consistencyProof(es, 4, 8)
+    const oldRoot = merkleRoot(es.slice(0, 4))
+    // Positive control: the genuine link still verifies.
+    expect(verifyConsistency(4, 8, proof, oldRoot, realNew)).toBe(true)
+    for (const bad of [Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, 2.5, -1]) {
+      expect(verifyConsistency(bad, 8, proof, oldRoot, realNew)).toBe(false)
+      expect(verifyConsistency(4, bad, proof, oldRoot, realNew)).toBe(false)
+    }
+  })
+
+  it('verifyInclusion returns false for a non-finite / non-integer index or size', () => {
+    const es = tree(8)
+    const root = merkleRoot(es)
+    const proof = inclusionProof(es, 3)
+    expect(verifyInclusion(3, 8, es[3]!, proof, root)).toBe(true) // positive control
+    for (const bad of [Number.NaN, Number.POSITIVE_INFINITY, -1, 3.5]) {
+      expect(verifyInclusion(bad, 8, es[3]!, proof, root)).toBe(false)
+      expect(verifyInclusion(3, bad, es[3]!, proof, root)).toBe(false)
     }
   })
 })

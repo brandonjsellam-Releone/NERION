@@ -56,7 +56,10 @@ const popcount = (x: number): number => {
   return c
 }
 const trailingZeros = (x: number): number => {
-  if (x === 0) return 0
+  // TLOG-NONFINITE-001 (AAC cycle-3): a non-integer / non-finite / non-positive x must NOT enter the
+  // loop — `NaN & 1` is 0 and `NaN >> 1` is 0, so `while ((x & 1) === 0)` would spin forever (an
+  // uncatchable infinite loop, not a throw). Guard defensively in addition to the entry-point checks.
+  if (!Number.isInteger(x) || x <= 0) return 0
   let n = 0
   while ((x & 1) === 0) {
     n++
@@ -117,6 +120,12 @@ export function rootFromInclusion(
   leaf: Bytes,
   proof: readonly Bytes[],
 ): Bytes {
+  // TLOG-NONFINITE-001 (AAC cycle-3): reject a non-finite / non-integer / negative index or size
+  // BEFORE the 32-bit bit-twiddling below (where NaN silently aliases to index 0). verifyInclusion
+  // wraps this in try/catch, so a malformed witness fails CLOSED instead of being mis-decomposed.
+  if (!Number.isInteger(m) || !Number.isInteger(n) || m < 0 || n < 0) {
+    throw new RangeError('non-integer or negative index/size')
+  }
   if (m >= n) throw new RangeError('index >= size')
   if (n > MAX_TREE_SIZE) throw new RangeError('tree size exceeds 32-bit-safe bound (TLOG-002)')
   const inner = bitLength(m ^ (n - 1))
@@ -167,6 +176,12 @@ export function verifyConsistency(
   root2: Bytes,
 ): boolean {
   try {
+    // TLOG-NONFINITE-001 (AAC cycle-3, BLOCKING): reject a non-finite / non-integer / negative m or n
+    // FIRST. Otherwise m=NaN/-Infinity passes `m > n` (false), `m === n`, and `m === 0`, then reaches
+    // `trailingZeros(m)` which infinite-loops — an UNCATCHABLE hang (no throw) that permanently wedges
+    // the untrusted-gossip split-view/rewrite monitor (checkConsistency), so a real rewrite would go
+    // undetected. This entry guard is the load-bearing fix; trailingZeros is also hardened defensively.
+    if (!Number.isInteger(m) || !Number.isInteger(n) || m < 0 || n < 0) return false
     if (m > n) return false
     if (n > MAX_TREE_SIZE) return false // 32-bit-safe verification bound (TLOG-002)
     if (m === n) return proof.length === 0 && bytesEqual(root1, root2)
