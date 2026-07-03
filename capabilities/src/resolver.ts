@@ -47,21 +47,30 @@ export function resolve(
   }
 
   for (const cap of candidates) {
-    if (!verifyChain(cap, trustedRoots)) continue
+    // CAP-RESOLVE-ROBUST-001 (AAC cycle-2): a single malformed candidate must not abort the whole
+    // admission. Any throw while evaluating one capability (e.g. malformed hex / unexpected shape)
+    // is caught and that candidate is skipped, so one poisoned capability bundled with a valid one
+    // cannot deny a request the valid capability authorizes (collateral availability DoS). Still
+    // fail-closed: a throwing candidate simply does not authorize.
+    try {
+      if (!verifyChain(cap, trustedRoots)) continue
 
-    // A revoked capability never authorizes — checked at EVERY chain link, not just
-    // the tail, so revoking a ROOT id also denies every chain delegated from it (and
-    // a holder cannot re-delegate to a fresh subject to outrun revocation). Governance
-    // revocation enters as the explicit `revoked` input (REVOKE-ENFORCE-001 / -CHILD-002).
-    if (cap.chain.some((link) => revoked.has(link.grant.id))) continue
+      // A revoked capability never authorizes — checked at EVERY chain link, not just
+      // the tail, so revoking a ROOT id also denies every chain delegated from it (and
+      // a holder cannot re-delegate to a fresh subject to outrun revocation). Governance
+      // revocation enters as the explicit `revoked` input (REVOKE-ENFORCE-001 / -CHILD-002).
+      if (cap.chain.some((link) => revoked.has(link.grant.id))) continue
 
-    // The requester must be the subject the capability was ultimately granted to.
-    if (effectiveGrant(cap).subject !== ctx.holder) continue
+      // The requester must be the subject the capability was ultimately granted to.
+      if (effectiveGrant(cap).subject !== ctx.holder) continue
 
-    // Defense in depth: every grant in the chain must authorize the intent
-    // (the tail is most-restrictive, but we check all).
-    if (cap.chain.every((link) => authorizesIntent(link.grant, intent, ctx))) {
-      return { authorized: true, capability: cap, reason: 'authorized by capability' }
+      // Defense in depth: every grant in the chain must authorize the intent
+      // (the tail is most-restrictive, but we check all).
+      if (cap.chain.every((link) => authorizesIntent(link.grant, intent, ctx))) {
+        return { authorized: true, capability: cap, reason: 'authorized by capability' }
+      }
+    } catch {
+      continue
     }
   }
   return DENY('no capability authorizes this action (default-deny)')

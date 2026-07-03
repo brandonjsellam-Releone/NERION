@@ -14,6 +14,7 @@
 
 import { bytesToHex } from '@noble/hashes/utils.js'
 import {
+  activeSuiteIds,
   encodeCanonical,
   SHA3_SHAKE256,
   signerFor,
@@ -131,11 +132,24 @@ const MAX_CHAIN_LINKS = 32
 export function verifyChain(cap: Capability, trustedRoots: readonly Bytes[]): boolean {
   if (cap.chain.length === 0 || cap.chain.length > MAX_CHAIN_LINKS) return false
   const trusted = new Set(trustedRoots.map((k) => bytesToHex(k)))
+  const activeSuites = new Set(activeSuiteIds())
+  const chainSuite = cap.chain[0]?.suite
 
   for (let i = 0; i < cap.chain.length; i++) {
     const link = cap.chain[i]
     if (link === undefined) return false
     const signerHex = bytesToHex(link.signerPublicKey)
+
+    // Suite hygiene (CAP-SUITE-PIN-001, AAC cycle-2): the per-link suite is otherwise unauthenticated
+    // relative to the chain (kernel NOTE-1 + capabilities ADV-002 converged). (1) Reject an unknown /
+    // non-active suite BEFORE signerFor(link.suite) — which would otherwise THROW (UnknownSuiteError /
+    // NotImplementedError) and, since resolve() does not catch, abort the whole admission on one
+    // poisoned candidate (a collateral availability DoS). (2) Pin the whole chain to the SINGLE active
+    // suite of its root, so a delegation cannot silently switch to a weaker-signature scheme (not
+    // exploitable today — every active suite is ML-DSA-87 — but a latent downgrade if a weaker suite
+    // is ever activated). Fail-closed on both.
+    if (!activeSuites.has(link.suite)) return false
+    if (link.suite !== chainSuite) return false
 
     // The grant's issuer must be the key that signed this link.
     if (link.grant.issuer !== signerHex) return false

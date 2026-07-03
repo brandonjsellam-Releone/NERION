@@ -61,6 +61,30 @@ describe('capability issuance & verification', () => {
     const tampered: Capability = { chain: [{ ...link0, sig: badSig }] }
     expect(verifyChain(tampered, trustedRoots)).toBe(false)
   })
+
+  it('CAP-SUITE-PIN-001: an unknown/inactive suite fails closed WITHOUT throwing', () => {
+    // A link whose suite is not an active suite must be rejected before signerFor() (which would
+    // throw UnknownSuiteError) — so a poisoned candidate can not abort admission by exception.
+    const bogus: Capability = { chain: [{ ...root.chain[0]!, suite: 'PS-BOGUS' }] }
+    expect(() => verifyChain(bogus, trustedRoots)).not.toThrow()
+    expect(verifyChain(bogus, trustedRoots)).toBe(false)
+  })
+
+  it('CAP-RESOLVE-ROBUST-001: a poisoned candidate does not deny a request a valid one authorizes', () => {
+    const bogus: Capability = { chain: [{ ...root.chain[0]!, suite: 'PS-BOGUS' }] }
+    // bogus first, valid root second — resolve() must skip the bad one and authorize via root.
+    expect(resolve(pay(500), [bogus, root], trustedRoots, baseCtx()).authorized).toBe(true)
+  })
+
+  it('CAP-SUITE-PIN-001: a chain that switches to a different active suite between links is rejected', () => {
+    const child = attenuate(root, { perActionCeiling: 200 }, delegateeHex, holder)
+    // Re-label the delegation link with a DIFFERENT active suite than the root; the pin check runs
+    // before the signature check, so the chain is rejected on the suite switch itself.
+    const mixed: Capability = {
+      chain: [child.chain[0]!, { ...child.chain[1]!, suite: SUITE_IDS.PS_1 }],
+    }
+    expect(verifyChain(mixed, trustedRoots)).toBe(false)
+  })
 })
 
 describe('default-deny resolver', () => {
