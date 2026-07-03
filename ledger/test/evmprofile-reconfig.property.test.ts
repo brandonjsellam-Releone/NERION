@@ -16,12 +16,18 @@ import { describe, it, expect } from 'vitest'
 import fc from 'fast-check'
 import { bytesToHex } from '@noble/hashes/utils.js'
 import { signerFor, SUITE_IDS } from '../../crypto/src/index.js'
-import { evmSetId, signEvmAttestation, verifyEvmFinality } from '../src/evmprofile.js'
+import {
+  evmSetId,
+  signEvmAttestation,
+  verifyEvmFinality,
+  type EvmTarget,
+} from '../src/evmprofile.js'
 import type { ValidatorSet } from '../src/index.js'
 
 const suite = SUITE_IDS.PS_5
 const HEIGHT = 11
 const HASH = 'ab'.repeat(32)
+const TARGET: EvmTarget = { chainId: 8888n, verifier: 'c0'.repeat(20) }
 const signer = signerFor(suite)
 
 // Deterministic keys by seed byte (kept in a cache so property runs don't re-keygen the same seed).
@@ -53,10 +59,10 @@ describe('EVM-profile — cross-epoch / set-substitution resistance (property)',
             epoch: epochS,
           }
           // Every member co-signs the EVM profile for this block under S.
-          const atts = keys.map((k) => signEvmAttestation(k, S, suite, HEIGHT, HASH))
+          const atts = keys.map((k) => signEvmAttestation(k, S, suite, HEIGHT, HASH, TARGET))
 
           // Positive control: the quorum finalizes under its own set.
-          if (!verifyEvmFinality(S, atts, suite, HEIGHT, HASH).finalized) return false
+          if (!verifyEvmFinality(S, atts, suite, HEIGHT, HASH, TARGET).finalized) return false
 
           // Build S' by a reconfiguration that changes the set identity.
           let SpVals = S.validators.map((v) => ({ ...v }))
@@ -83,7 +89,7 @@ describe('EVM-profile — cross-epoch / set-substitution resistance (property)',
           if (setIdHex(Sp) === setIdHex(S)) return true
 
           // The invariant: signatures bound to S's setId cannot manufacture finality under S'.
-          return verifyEvmFinality(Sp, atts, suite, HEIGHT, HASH).finalized === false
+          return verifyEvmFinality(Sp, atts, suite, HEIGHT, HASH, TARGET).finalized === false
         },
       ),
       { numRuns: 25 },

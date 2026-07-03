@@ -57,9 +57,17 @@ contract NerionFinalityVerifierTest is Test {
         bytes32 blockHash = bytes32(
             0xcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd
         );
+        // Destination-bound: chainId 8888, verifier 0xc0..c0 (synthetic, matches the golden vector).
         assertEq(
-            v.evmMessage("PS-5", 7, blockHash, setId),
-            bytes32(0xbc5a622754c371fbba0b674c31110bc8ccff816dce790e0082056a015e4b392e)
+            v.evmMessage(
+                "PS-5",
+                8888,
+                address(0xc0C0c0C0C0c0c0C0C0C0c0c0c0c0C0c0c0C0C0c0),
+                7,
+                blockHash,
+                setId
+            ),
+            bytes32(0x7f52021806c7ea8153ed2785a506d345830019e4db5ebecc274fe677c9d90f7c)
         );
     }
 

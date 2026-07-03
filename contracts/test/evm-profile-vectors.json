@@ -1,5 +1,5 @@
 {
-  "_comment": "Cross-implementation golden vectors for the Nerion EVM-native attestation profile (ledger/src/evmprofile.ts). The Hyperion/Solidity NerionFinalityVerifier MUST reproduce evmSetId() and evmMessage() byte-for-byte. Pubkeys are SYNTHETIC byte strings (the keccak256 fold is independent of ML-DSA validity, so small inputs suffice to pin the encoding). All hex is without 0x prefix; stake is a decimal string (uint256).",
+  "_comment": "Cross-implementation golden vectors for the Nerion EVM-native attestation profile (ledger/src/evmprofile.ts). The Hyperion/Solidity NerionFinalityVerifier MUST reproduce evmSetId() and evmMessage() byte-for-byte. Pubkeys are SYNTHETIC byte strings (the keccak256 fold is independent of ML-DSA validity, so small inputs suffice to pin the encoding). The message case binds a SYNTHETIC destination (chainId + verifier address = Solidity block.chainid + address(this)); on-chain these are read from the EVM, not calldata. All hex is lowercase without 0x prefix; stake and chainId are decimal strings (uint256); verifier is 20 bytes.",
   "_generatedFrom": "ledger/src/evmprofile.ts via ledger/test/evmprofile-vectors.test.ts (the TS lock test asserts these stay current)",
   "setIdCases": [
     {
@@ -34,12 +34,14 @@
   ],
   "messageCases": [
     {
-      "name": "msg_PS5_h7_cd",
+      "name": "msg_PS5_h7_cd_chain8888",
       "suite": "PS-5",
+      "chainId": "8888",
+      "verifier": "c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0",
       "height": 7,
       "blockHash": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
       "setId": "f36be9d1442b4257844332f3b3fc593ebb6cbed5e529ef87ef8dc9e811480e9a",
-      "expectedMessage": "bc5a622754c371fbba0b674c31110bc8ccff816dce790e0082056a015e4b392e"
+      "expectedMessage": "7f52021806c7ea8153ed2785a506d345830019e4db5ebecc274fe677c9d90f7c"
     }
   ]
 }

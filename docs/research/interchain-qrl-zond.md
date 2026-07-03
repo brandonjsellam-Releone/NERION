@@ -40,25 +40,35 @@ block, verified by the destination chain itself** — not a custodial committee.
 
 ## What is built here
 
-The **soundness gap is now closed (option B implemented)**: an EVM-native, keccak256-only
-attestation profile the contract recomputes on-chain.
+The **relayer-substitution gap is closed (option B implemented)** and the profile is hardened against
+cross-chain replay + malformed-input divergence: an EVM-native, keccak256-only attestation profile the
+contract recomputes on-chain, with the destination bound into the signed message.
 
-- **`ledger/src/evmprofile.ts`** (TESTED, `ledger/test/evmprofile.test.ts`, 7 tests) — the EVM-native
-  profile + the **canonical TS reference verifier**:
+- **`ledger/src/evmprofile.ts`** (TESTED — `evmprofile.test.ts` 16 cases + `evmprofile-reconfig.property.test.ts`
+  + `evmprofile-vectors.test.ts`) — the EVM-native profile + the **canonical TS reference verifier**:
   - `evmSetId(set)` / `evmAttestMessage(...)` — a keccak256 fold (no SHAKE, no CBOR) an EVM
     reproduces cheaply: `evmSetId = keccak(fold over keccak(pubkey)‖uint256(stake)‖keccak(vrf))`,
-    `evmMessage = keccak(keccak(tag)‖keccak(suite)‖uint256(height)‖blockHash‖setId)`.
+    `evmMessage = keccak(keccak(tag)‖keccak(suite)‖uint256(chainId)‖verifier(20)‖uint256(height)‖blockHash(32)‖setId(32))`.
+    The message binds the **destination `chainId` + `verifier` address** (= Solidity `block.chainid` +
+    `address(this)`), so a proof for one chain/deployment can not be replayed on another.
   - `signEvmAttestation(...)` — a validator's ML-DSA-87 signature over the profile message (opt-in,
     co-signed alongside consensus; the native dCBOR/SHAKE256 path is untouched).
   - `verifyEvmFinality(...)` — **recomputes setId + message from the trusted set** (NOT from a
-    relayer), verifies each ML-DSA-87 signature, dedups distinct members, and finalizes iff a >2/3
-    stake quorum signed. This is the byte-for-byte spec the contract must match. Fully tested:
-    finalizes a real quorum; fails closed on sub-quorum, tampered sig, duplicated signer, a different
-    set, and an epoch change.
-- **`contracts/NerionFinalityVerifier.sol`** (REFERENCE, uncompiled here): now **sound** — it
-  recomputes `evmSetId` (keccak fold, sorted-pubkey check) and `evmMessage` ON-CHAIN and verifies
-  each ML-DSA-87 signature over the recomputed message via the QRVM precompile, so a relayer cannot
-  substitute the message or the set. The keccak fold is byte-identical to `evmprofile.ts`.
+    relayer), verifies each ML-DSA-87 signature, dedups distinct members, and finalizes iff a ≥2/3
+    stake quorum signed. This is the byte-for-byte spec the contract must match. It **never throws** —
+    every malformed input fails closed to `{finalized:false}`: sub-quorum, tampered sig, duplicated
+    signer, a different set, an epoch change, a **different chainId/verifier** (replay), a non-32-byte
+    blockHash, a non-integer/out-of-range height, a malformed member pubkey, a `u256` overflow, a
+    duplicate-pubkey set (denominator-inflation), and an over-cap attestation flood. Integers are
+    width-checked (no mod-2²⁵⁶ aliasing → no cross-height/epoch replay), the set is canonicalized
+    (sorted by decoded pubkey bytes, duplicates rejected) to match the contract's fold order.
+- **`contracts/NerionFinalityVerifier.sol`** (REFERENCE, uncompiled here): recomputes `evmSetId`
+  (keccak fold, ascending-pubkey + duplicate-reject) and `evmMessage` ON-CHAIN, enforces the
+  destination binding (`require(chainId == block.chainid)`, `require(verifier == address(this))`),
+  caps `validators.length` / `attestations.length`, and verifies each ML-DSA-87 signature over the
+  recomputed message via the QRVM precompile — so a relayer cannot substitute the message or the set,
+  and the proof cannot cross chains. The keccak fold is byte-identical to `evmprofile.ts`, pinned by
+  the golden vectors in `contracts/test/evm-profile-vectors.json`.
 - **`ledger/src/evm.ts` — `finalityProofToEvmInput(...)`** (TESTED): the dCBOR-view packer (option-A
   reference / relayer convenience), retained.
 
@@ -71,8 +81,22 @@ attestation profile the contract recomputes on-chain.
    validator's per-block flow (so the evm-profile signature is collected alongside the native
    attestation) is a small, opt-in deployment step — deliberately NOT wired into the consensus hot
    path here.
-3. **Input caps** on `validators.length` / `attestations.length` on-chain (decode-side DoS),
-   mirroring the off-chain `verifyFinalized` caps.
+3. **Pin the ML-DSA-87 precompile message framing.** `evmMessage` produces a bare 32-byte keccak
+   digest; the TS reference signs it with **pure** ML-DSA (FIPS 204 §5.2), which internally frames the
+   message as `0x00 ‖ len(ctx)=0x00 ‖ msg`. Before deploy, confirm whether the QRVM / EIP-8051
+   `verify` precompile expects the bare digest (and applies the domain prefix itself) or a pre-framed
+   input, and lock a cross-impl KAT. A mismatch fails **closed** (all attestations rejected), not
+   open, but must be reconciled for the profile to verify at all. (Decode-side input caps are now
+   enforced in-contract and in `evmprofile.ts`; the earlier open item is closed.)
+
+## Soundness scope (precise)
+
+The profile is **sound against relayer message/set substitution** (on-chain recomputation) **and
+against cross-chain / cross-deployment replay** (chainId + verifier binding) **and against the
+malformed-input and integer-aliasing classes** enumerated above (fail-closed + width-checked +
+canonicalized). It is **not** yet end-to-end verified on QRVM: items 1–3 above (compile, co-signing
+rollout, precompile-framing pin) remain. "Sound" here means those specific properties, not a
+completed audit.
 
 ## Not a claim
 

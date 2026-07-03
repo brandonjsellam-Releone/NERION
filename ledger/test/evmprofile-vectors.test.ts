@@ -28,6 +28,8 @@ interface Vectors {
   messageCases: {
     name: string
     suite: string
+    chainId: string
+    verifier: string
     height: number
     blockHash: string
     setId: string
@@ -57,7 +59,12 @@ describe('EVM-profile cross-implementation golden vectors', () => {
 
   it('evmAttestMessage reproduces every committed message vector', () => {
     for (const c of vectors.messageCases) {
-      const got = bytesToHex(evmAttestMessage(c.suite, c.height, c.blockHash, hexToBytes(c.setId)))
+      const got = bytesToHex(
+        evmAttestMessage(c.suite, c.height, c.blockHash, hexToBytes(c.setId), {
+          chainId: BigInt(c.chainId),
+          verifier: c.verifier,
+        }),
+      )
       expect(got).toBe(c.expectedMessage)
     }
   })

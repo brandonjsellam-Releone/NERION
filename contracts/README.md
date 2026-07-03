@@ -13,9 +13,12 @@ rationale: [`docs/research/interchain-qrl-zond.md`](../docs/research/interchain-
 > + the cross-implementation conformance harness.
 
 ## Files
-- **`NerionFinalityVerifier.sol`** — verifies a >2/3 ML-DSA-87 stake quorum over the block, by
+- **`NerionFinalityVerifier.sol`** — verifies a ≥2/3 ML-DSA-87 stake quorum over the block, by
   **recomputing** the validator-set id + signed message on-chain (keccak256 fold) so a relayer can
-  substitute neither. The post-quantum alternative to trusted-multisig bridges.
+  substitute neither, and **binding the destination** (`require(chainId == block.chainid)`,
+  `require(verifier == address(this))`) so a finality proof can not be replayed on another chain or
+  deployment. Caps `validators.length` / `attestations.length` (decode-side DoS). The post-quantum
+  alternative to trusted-multisig bridges.
 - **`test/NerionFinalityVerifier.t.sol`** — Foundry test asserting the on-chain encoding matches the
   golden vectors.
 - **`test/evm-profile-vectors.json`** — golden cross-implementation vectors.
