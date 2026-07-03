@@ -51,7 +51,29 @@ export function guardTool<A, R>(
   handler: (toolName: string, args: A) => R | Promise<R>,
 ): (toolName: string, args: A, ctx: GuardContext) => Promise<GuardedResult<R>> {
   return async (toolName, args, ctx) => {
-    const intent = mapIntent(toolName, args)
+    // MCP-GUARD-THROW-001 (AAC cycle-5): `mapIntent` is the integrator's arg-validation boundary, and
+    // its type `(toolName, args) => ActionIntent` gives it NO error channel — the only way it can
+    // reject a malformed tool call is to THROW. An uncaught throw here would reject the returned
+    // Promise instead of yielding `GuardedResult{allowed:false}`, violating this adapter's
+    // "fails closed on malformed tool calls" contract and delegating the closed-vs-open decision to an
+    // uncontrolled caller (a permissive dispatch-loop catch would turn it into a governance bypass).
+    // Convert any mapping/validation throw into a structured tier-3 deny. The real `handler` (below) is
+    // deliberately NOT wrapped — a genuine tool failure must propagate, not masquerade as a deny.
+    let intent: ActionIntent
+    try {
+      intent = mapIntent(toolName, args)
+    } catch (e) {
+      const reasons = [
+        `intent mapping / arg validation failed: ${e instanceof Error ? e.message : 'error'}`,
+      ]
+      return {
+        allowed: false,
+        result: null,
+        decision: { effect: 'deny', tier: 3, reasons, obligations: [], evaluatorVersion: '' },
+        receipt: null,
+        reasons,
+      }
+    }
     const outcome = client.guard(intent, ctx)
     const receipt = outcome.receipt
 

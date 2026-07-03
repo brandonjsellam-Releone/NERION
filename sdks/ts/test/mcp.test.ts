@@ -146,4 +146,24 @@ describe('MCP tool-call adapter', () => {
     expect(r.allowed).toBe(false)
     expect(calls).toBe(1) // only the first (non-revoked) call ran
   })
+
+  it('MCP-GUARD-THROW-001: a throwing mapIntent fails CLOSED as a deny, never rejecting or running the handler', async () => {
+    // mapIntent is the integrator's arg-validation boundary and can only reject a malformed call by
+    // throwing. The guard must convert that throw into a structured deny — not a rejected Promise that
+    // a permissive dispatch loop could mishandle into a bypass.
+    let calls = 0
+    const throwingMap = (): ActionIntent => {
+      throw new Error('malformed args')
+    }
+    const guarded = guardTool(client, throwingMap, async () => {
+      calls++
+      return { ok: true }
+    })
+    const r = await guarded('pay', { to: 'vendor-acme', amount: 500 }, ctx)
+    expect(r.allowed).toBe(false)
+    expect(r.result).toBeNull()
+    expect(r.decision.effect).toBe('deny')
+    expect(r.reasons.length).toBeGreaterThan(0)
+    expect(calls).toBe(0) // the handler never ran
+  })
 })
