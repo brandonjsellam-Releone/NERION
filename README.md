@@ -5,7 +5,7 @@ concept and FTO design‑around unchanged._
 
 [![CI](https://github.com/brandonjsellam-Releone/NERION/actions/workflows/ci.yml/badge.svg)](https://github.com/brandonjsellam-Releone/NERION/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-&nbsp;462 tests · 23/23 conformance · UNAUDITED (see [ASSURANCE.md](docs/ASSURANCE.md))
+&nbsp;741 tests · 23/23 conformance · UNAUDITED (see [ASSURANCE.md](docs/ASSURANCE.md))
 
 **An open, post-quantum-native, decentralized execution-governance protocol for
 AI/agent _actions_.** Nerion lets agents act — but only within provable,
@@ -36,7 +36,7 @@ Risk tiers **T0–T3** select how much assurance runs synchronously.
 ## Status — P0–P4 complete + hardened ✅ (Local/Private dev-deployable)
 
 All planes are implemented in TypeScript over audited `@noble` libraries
-(ADR-0002), with **462 passing tests** and a **23/23 conformance report**.
+(ADR-0002), with **741 passing tests** and a **23/23 conformance report**.
 `crypto/`, `capabilities/`, `kernel/`, `receipts/`, `translog/`, `attest/`,
 `planes/`, `ledger/` (pure-PoS + VRF private sortition), `governance/`,
 `disclosure/` (zero-knowledge), `settlement/`, `keystore/`, and `conformance/` are
@@ -51,7 +51,7 @@ Deployment maturity is **Local/Private dev** — four external launch gates rema
 
 ```bash
 npm ci
-npm run gate          # clean-room lint + prettier + tsc + 462 tests
+npm run gate          # clean-room lint + prettier + tsc + 741 tests
 npm run conformance   # certification report → 23/23 CONFORMANT
 npm run demo          # end-to-end T2 governed-payment trace
 npm run build && npm run bundle && npm run verify:cli   # independent receipt verification
