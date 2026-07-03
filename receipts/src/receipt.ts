@@ -22,6 +22,7 @@
 
 import {
   activeSuiteIds,
+  DOMAIN_TAGS,
   encodeCanonical,
   signerFor,
   randomBytes,
@@ -142,7 +143,16 @@ export function buildReceipt(p: BuildReceiptParams): Receipt {
       decisionHash: commitField(p.decisionHash, intentSalt),
     },
   }
-  const sig = signerFor(p.suite).sign(encodeCanonical(body), p.issuerSecretKey)
+  // RCPT-DS-002 (AAC cycle-8 domain-separation audit): the SIGNED message carries an explicit domain
+  // tag, matching every sibling signed message (capability/governance/attest/STH/credits/…). Previously
+  // the receipt was the ONLY signed message with no tag — disjoint from the others only because it was
+  // the sole bare-CBOR-map preimage (a structural coincidence, not an explicit discriminant). The
+  // PUBLISHED leaf (receiptLeaf) stays `encodeCanonical(body)` untagged — it is the log entry, not the
+  // signed message. The tag is sourced from the central DS-REGISTRY-001 registry.
+  const sig = signerFor(p.suite).sign(
+    encodeCanonical([DOMAIN_TAGS.RECEIPT, body]),
+    p.issuerSecretKey,
+  )
   return { body, sig, signerPublicKey: p.issuerPublicKey, intentSalt }
 }
 
@@ -165,7 +175,12 @@ export function receiptLeaf(r: Receipt): Bytes {
 export function verifyReceipt(r: Receipt): boolean {
   if (!activeSuiteIds().includes(r.body.suite)) return false
   try {
-    return signerFor(r.body.suite).verify(r.sig, encodeCanonical(r.body), r.signerPublicKey)
+    // Verify over the DOMAIN-TAGGED signed message (RCPT-DS-002), matching buildReceipt.
+    return signerFor(r.body.suite).verify(
+      r.sig,
+      encodeCanonical([DOMAIN_TAGS.RECEIPT, r.body]),
+      r.signerPublicKey,
+    )
   } catch {
     return false
   }

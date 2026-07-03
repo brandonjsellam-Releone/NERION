@@ -47,6 +47,8 @@ export {
   EAT_CLAIM,
 } from './cose.js'
 export type { CoseSign1 } from './cose.js'
+export { DOMAIN_TAGS, allDomainTags } from './domains.js'
+export type { DomainTag } from './domains.js'
 export {
   SUITE_IDS,
   getSuite,
