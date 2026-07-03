@@ -194,4 +194,23 @@ describe('attestation hardening (ATTEST-TIME-001 / ATTEST-NOFM-001)', () => {
       appraiseNofM([evidenceA, hostile, tdxEvidence(B)], basePolicy(), 2, verifiers).valid,
     ).toBe(true)
   })
+
+  it('ATTEST-SHAPE-001: malformed evidence (null claims / null attester key) fails CLOSED, never throwing or aborting a quorum', () => {
+    // evidence.claims (deref for .format) and evidence.attesterPublicKey (deref via constantTimeEqual)
+    // are attacker-controlled wire fields read BEFORE the suite try/catch; a null must fail closed, not
+    // TypeError-crash appraise() and abort an entire appraiseNofM quorum from one hostile item.
+    const nullClaims = { ...evidenceA, claims: null } as unknown as Evidence
+    const nullKey = { ...evidenceA, attesterPublicKey: null } as unknown as Evidence
+    for (const bad of [nullClaims, nullKey]) {
+      expect(() => appraise(bad, basePolicy())).not.toThrow()
+      expect(appraise(bad, basePolicy()).valid).toBe(false)
+    }
+    // A single malformed evidence must NOT abort an otherwise-valid n-of-m quorum (it is discarded).
+    expect(() =>
+      appraiseNofM([evidenceA, nullClaims, tdxEvidence(B)], basePolicy(), 2, verifiers),
+    ).not.toThrow()
+    expect(
+      appraiseNofM([evidenceA, nullClaims, tdxEvidence(B)], basePolicy(), 2, verifiers).valid,
+    ).toBe(true)
+  })
 })

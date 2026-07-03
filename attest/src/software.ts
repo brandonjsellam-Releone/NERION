@@ -24,6 +24,8 @@ import type { AppraisalPolicy, AppraisalResult, AttestationClaims, Evidence } fr
 import type { QuoteVerifierRegistry } from './verifiers.js'
 
 const HARDWARE_FORMATS = new Set(['tdx', 'sev-snp', 'cca', 'tpm'])
+/** Decode-side cap on an n-of-m evidence array before per-item ML-DSA-87 verification (AAC cycle-4). */
+const MAX_EVIDENCES = 256
 
 // Domain-separated signing message that BINDS the suite into the evidence signature
 // (algorithm-downgrade / cross-suite confusion — ATTEST-SUITE-001, Team Apex 2026-06-21) and
@@ -78,6 +80,31 @@ export function appraise(
   verifiers?: QuoteVerifierRegistry,
 ): AppraisalResult {
   const reasons: string[] = []
+
+  // ATTEST-SHAPE-001 (AAC cycle-4): `evidence` and its sub-fields are attacker-controlled wire values
+  // (TS types them, but a wire decoder can hand us anything). Guard their runtime shape BEFORE any
+  // dereference below — `evidence.claims.format` (:89) and `constantTimeEqual(k, evidence.attesterPublicKey)`
+  // (:109) otherwise throw a TypeError on null/missing fields that ESCAPES appraise(), aborting an
+  // entire appraiseNofM() quorum from a single hostile item and crashing establishSession(). The
+  // ATTEST-SUITE-THROW fix only wrapped the signer; these two earlier derefs were unguarded. Fail closed.
+  const ev = evidence as unknown as {
+    claims?: unknown
+    attesterPublicKey?: unknown
+    suite?: unknown
+  }
+  if (
+    ev == null ||
+    ev.claims == null ||
+    typeof ev.claims !== 'object' ||
+    !(ev.attesterPublicKey instanceof Uint8Array) ||
+    typeof ev.suite !== 'string'
+  ) {
+    return {
+      valid: false,
+      reasons: ['evidence is malformed (missing/invalid claims, attester key, or suite)'],
+      claims: null,
+    }
+  }
 
   // The signature binds ONLY evidence.claims (see produce()/the verify below);
   // the top-level evidence.format is an UNSIGNED wire field. Gating policy
@@ -188,6 +215,15 @@ export function appraiseNofM(
   // (size >= 0) and index an empty `valid` array — fail closed (ATTEST-NOFM-002, Team Apex).
   if (!Number.isSafeInteger(n) || n < 1) {
     return { valid: false, reasons: ['n-of-m threshold must be a positive integer'], claims: null }
+  }
+  // Decode-side DoS cap (AAC cycle-4): each evidence costs an ML-DSA-87 verify in appraise(); bound the
+  // attacker-supplied array before iterating (at most a few distinct roots of trust are ever needed).
+  if (evidences.length > MAX_EVIDENCES) {
+    return {
+      valid: false,
+      reasons: [`evidence count ${evidences.length} exceeds bound ${MAX_EVIDENCES}`],
+      claims: null,
+    }
   }
   const valid = evidences
     .map((e) => ({ e, r: appraise(e, policy, verifiers) }))
