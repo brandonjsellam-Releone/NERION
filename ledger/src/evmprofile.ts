@@ -277,3 +277,117 @@ export function verifyEvmFinality(
     totalStake: total,
   }
 }
+
+// ─── Interchain accountability: EVM-profile equivocation (LEDGER-EVM-ACCT-001) ────────────────────
+// The native consensus path slashes a validator that double-signs two conflicting blocks at the SAME
+// height (ledger/src/equivocation.ts). This is the interchain analogue over the keccak256 EVM-profile
+// message, so a validator that co-signs conflicting EVM-profile attestations for interchain export is
+// ALSO caught + slashable — extending accountable safety to the exported finality surface (AAC cycle-7).
+// Nerion attestations are one-per-height BY DESIGN (no round), so same-height double-signing is the
+// offense and honest one-block-per-height behavior ACROSS heights is NOT (each proof pins one height) —
+// exactly the native LEDGER-EQUIV-001 semantics, so no `round` binding is needed.
+
+/** A slashable proof that a validator co-signed EVM-profile attestations for TWO distinct blocks at
+ *  the SAME height. Verify with {@link verifyEvmEquivocationProof} against the trusted set. */
+export interface EvmEquivocationProof {
+  readonly validator: string
+  readonly height: number
+  readonly blockHashA: string
+  readonly blockHashB: string
+  readonly sigA: Bytes
+  readonly sigB: Bytes
+}
+
+function safeEvmVerify(
+  sig: Bytes,
+  msg: Bytes,
+  validatorHex: string,
+  verifier: ReturnType<typeof signerFor>,
+): boolean {
+  try {
+    return verifier.verify(sig, msg, hexToBytes(validatorHex))
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Detect validators who co-signed VALID EVM-profile attestations for BOTH of two distinct blocks at
+ * the same height (interchain equivocation). Recomputes both messages from the trusted set + target
+ * (never trusts a relayer), one proof per offending validator. Fail-closed: a malformed set/target
+ * yields no proofs (never throws).
+ */
+export function detectEvmEquivocations(
+  set: ValidatorSet,
+  suite: string,
+  height: number,
+  target: EvmTarget,
+  blockHashA: string,
+  attsA: readonly EvmSignedAttestation[],
+  blockHashB: string,
+  attsB: readonly EvmSignedAttestation[],
+): EvmEquivocationProof[] {
+  if (blockHashA === blockHashB) return []
+  if (attsA.length > MAX_ATTESTATIONS || attsB.length > MAX_ATTESTATIONS) return []
+  let stakeOf: Map<string, bigint>
+  let msgA: Bytes
+  let msgB: Bytes
+  try {
+    const members = canonicalMembers(set)
+    stakeOf = new Map(members.map((m) => [m.pubkey, m.stake]))
+    const setId = evmSetId(set)
+    msgA = evmAttestMessage(suite, height, blockHashA, setId, target)
+    msgB = evmAttestMessage(suite, height, blockHashB, setId, target)
+  } catch {
+    return []
+  }
+  const verifier = signerFor(suite)
+  const validA = new Map<string, Bytes>()
+  for (const a of attsA) {
+    if (validA.has(a.validator)) continue
+    if ((stakeOf.get(a.validator) ?? 0n) <= 0n) continue // non-member / zero stake
+    if (safeEvmVerify(a.evmSig, msgA, a.validator, verifier)) validA.set(a.validator, a.evmSig)
+  }
+  const out: EvmEquivocationProof[] = []
+  const seen = new Set<string>()
+  for (const b of attsB) {
+    if (seen.has(b.validator)) continue
+    const sigA = validA.get(b.validator)
+    if (sigA === undefined) continue
+    if (!safeEvmVerify(b.evmSig, msgB, b.validator, verifier)) continue
+    seen.add(b.validator)
+    out.push({ validator: b.validator, height, blockHashA, blockHashB, sigA, sigB: b.evmSig })
+  }
+  return out
+}
+
+/**
+ * Verify a slashable EVM-profile equivocation proof against the trusted set: distinct blocks, a member
+ * with stake, and BOTH signatures verify under the set's RECOMPUTED setId + target. Fail-closed (never
+ * throws). A stale cross-epoch proof fails because evmSetId (which folds epoch) differs — slashing is
+ * scoped to the epoch the double-sign occurred in, matching the native path.
+ */
+export function verifyEvmEquivocationProof(
+  proof: EvmEquivocationProof,
+  set: ValidatorSet,
+  suite: string,
+  target: EvmTarget,
+): boolean {
+  if (proof.blockHashA === proof.blockHashB) return false
+  let msgA: Bytes
+  let msgB: Bytes
+  try {
+    const stakeOf = new Map(canonicalMembers(set).map((m) => [m.pubkey, m.stake]))
+    if ((stakeOf.get(proof.validator) ?? 0n) <= 0n) return false
+    const setId = evmSetId(set)
+    msgA = evmAttestMessage(suite, proof.height, proof.blockHashA, setId, target)
+    msgB = evmAttestMessage(suite, proof.height, proof.blockHashB, setId, target)
+  } catch {
+    return false
+  }
+  const verifier = signerFor(suite)
+  return (
+    safeEvmVerify(proof.sigA, msgA, proof.validator, verifier) &&
+    safeEvmVerify(proof.sigB, msgB, proof.validator, verifier)
+  )
+}

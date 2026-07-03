@@ -98,17 +98,20 @@ canonicalized). It is **not** yet end-to-end verified on QRVM: items 1–3 above
 rollout, precompile-framing pin) remain. "Sound" here means those specific properties, not a
 completed audit.
 
-**Accountability scope (LEDGER-EVM-ACCT-001).** This EVM-native profile provides a **finality
-quorum** (a ≥2/3 ML-DSA-87 stake attestation over the block) — it does **NOT** provide **accountable
-slashing** on the interchain surface. The `evmAttestMessage` does not bind `round`, and there is no
-EVM-profile equivocation detector (Nerion's slashing — `equivocation.ts` — operates only on the
-NATIVE `Attestation` type / `polarseek-attest` preimage). So a validator that double-signs conflicting
-EVM-profile attestations at the same height produces **no slashable native evidence** through the
-shipped code. This is not a live break (forging conflicting finality requires ≥2/3 of stake to
-actually co-sign, which already breaks the honest-majority assumption), but the accountability
-guarantee is scoped to the **native consensus path**. Extending it (bind `round` into
-`evmAttestMessage`; add a same-height distinct-hash EVM-attestation equivocation detector) is a named
-follow-up, not part of this reference profile.
+**Accountability (LEDGER-EVM-ACCT-001 — now implemented).** Beyond the **finality quorum** (≥2/3
+ML-DSA-87 stake attestation over the block), the profile now also provides **accountable slashing** on
+the interchain surface: `evmprofile.ts` exports `detectEvmEquivocations` + `verifyEvmEquivocationProof`,
+the interchain analogue of the native `equivocation.ts`. A validator that co-signs conflicting
+EVM-profile attestations for two distinct blocks at the **same height** produces a slashable
+`EvmEquivocationProof`; the verifier recomputes both messages from the trusted set + target (never
+trusts a relayer) and rejects same-block, non-member, forged-sig, and stale cross-epoch proofs. No
+`round` is bound because Nerion attestations are **one-per-height by design** — so same-height
+double-signing is the offense and honest one-block-per-height behavior across DIFFERENT heights is not
+(LEDGER-EQUIV-001 parity), exactly matching the native path. Not a live threat regardless (forging
+conflicting finality needs ≥2/3 of stake to co-sign, already breaking honest-majority), but the
+accountability guarantee now extends to the exported finality surface, not only native consensus.
+On-chain, the QRVM contract would expose the same equivocation check when the interchain profile is
+deployed (tracked with the compile/precompile-pin items above).
 
 ## Not a claim
 
