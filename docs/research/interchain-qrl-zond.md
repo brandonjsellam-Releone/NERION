@@ -98,6 +98,18 @@ canonicalized). It is **not** yet end-to-end verified on QRVM: items 1–3 above
 rollout, precompile-framing pin) remain. "Sound" here means those specific properties, not a
 completed audit.
 
+**Accountability scope (LEDGER-EVM-ACCT-001).** This EVM-native profile provides a **finality
+quorum** (a ≥2/3 ML-DSA-87 stake attestation over the block) — it does **NOT** provide **accountable
+slashing** on the interchain surface. The `evmAttestMessage` does not bind `round`, and there is no
+EVM-profile equivocation detector (Nerion's slashing — `equivocation.ts` — operates only on the
+NATIVE `Attestation` type / `polarseek-attest` preimage). So a validator that double-signs conflicting
+EVM-profile attestations at the same height produces **no slashable native evidence** through the
+shipped code. This is not a live break (forging conflicting finality requires ≥2/3 of stake to
+actually co-sign, which already breaks the honest-majority assumption), but the accountability
+guarantee is scoped to the **native consensus path**. Extending it (bind `round` into
+`evmAttestMessage`; add a same-height distinct-hash EVM-attestation equivocation detector) is a named
+follow-up, not part of this reference profile.
+
 ## Not a claim
 
 This does not assert Nerion interoperates with QRL Zond today, that the contract is audited or

@@ -126,7 +126,12 @@ describe('pure-PoS ledger', () => {
     badSig[0] = (badSig[0] as number) ^ 0xff
     const tampered = { ...block, proposerSig: badSig }
     const atts = keys.map((k) => ledger.attest(block, k))
-    expect(verifyFinalized(tampered, atts, set, GENESIS_PREV).ok).toBe(false)
+    const verdict = verifyFinalized(tampered, atts, set, GENESIS_PREV)
+    expect(verdict.ok).toBe(false)
+    // LEDGER-FINAL-DECOUPLE-001 (AAC cycle-6): a genuine 2/3 quorum must NOT make `finalized` true when
+    // an AUTHORITY check (here the proposer signature) fails — else a bridge/light-client gating on the
+    // field named `finalized` would accept an unauthorized block. `finalized` must imply `ok`.
+    expect(verdict.finalized).toBe(false)
   })
 
   it('light client rejects attestations for the wrong head', () => {
@@ -134,7 +139,9 @@ describe('pure-PoS ledger', () => {
     const proposer = leaderKey(GENESIS_PREV, 0)
     const block = ledger.propose('ab'.repeat(32), 0, 1000, proposer)
     const atts = keys.map((k) => ledger.attest(block, k))
-    expect(verifyFinalized(block, atts, set, 'cd'.repeat(32)).ok).toBe(false)
+    const verdict = verifyFinalized(block, atts, set, 'cd'.repeat(32))
+    expect(verdict.ok).toBe(false)
+    expect(verdict.finalized).toBe(false) // LEDGER-FINAL-DECOUPLE-001: wrong-head ⇒ not finalized
   })
 
   it('does not throw on a hostile/bogus suite and returns false (LEDGER-003)', () => {

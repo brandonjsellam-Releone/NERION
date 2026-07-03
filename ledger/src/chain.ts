@@ -456,7 +456,7 @@ export function verifyFinalized(
     finalityNum >= 1 &&
     finalityDen >= 1 &&
     finalityNum <= finalityDen
-  const finalized =
+  const stakeMet =
     validThreshold &&
     wellFormedSet &&
     totalBig > 0n &&
@@ -465,11 +465,19 @@ export function verifyFinalized(
     reasons.push('finality threshold is degenerate (require 1 <= finalityNum <= finalityDen)')
   } else if (!wellFormedSet) {
     reasons.push('validator set is malformed (negative stake or duplicate pubkeys)')
-  } else if (!finalized) {
+  } else if (!stakeMet) {
     reasons.push(
       `attesting stake ${attestingStake}/${total} below finality ${finalityNum}/${finalityDen}`,
     )
   }
+  // LEDGER-FINAL-DECOUPLE-001 (AAC cycle-6 consensus review, empirically confirmed): `finalized` MUST
+  // imply FULL validity, not the stake quorum in isolation. Previously it was the stake test alone —
+  // decoupled from the proposer-signature / VRF / leader-eligibility / round / downgrade checks, which
+  // only cleared `ok`. So `ok=false, finalized=true` was reachable for a block with a corrupted VRF
+  // proof, and a bridge / light client gating on the field NAMED `finalized` (the natural reading of
+  // "did this block finalize") would accept a block that had no valid leader. A block is finalized IFF
+  // it met the stake quorum AND every authority check passed (finalized ⟹ ok).
+  const finalized = stakeMet && reasons.length === 0
   return {
     ok: reasons.length === 0,
     finalized,
