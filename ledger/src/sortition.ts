@@ -14,7 +14,7 @@
  * in docs/STATUS.md.
  */
 
-import { encodeCanonical, SHA3_SHAKE256 } from '../../crypto/src/index.js'
+import { DOMAIN_TAGS, encodeCanonical, SHA3_SHAKE256 } from '../../crypto/src/index.js'
 import { bytesToHex } from '@noble/hashes/utils.js'
 import type { ValidatorSet } from './types.js'
 
@@ -95,7 +95,9 @@ export function consensusSetId(set: ValidatorSet): string {
     .slice()
     .sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
   return bytesToHex(
-    SHA3_SHAKE256.digest(encodeCanonical(['polarseek-consensus-set/v1', sorted, set.epoch ?? 0])),
+    SHA3_SHAKE256.digest(
+      encodeCanonical([DOMAIN_TAGS.NATIVE_CONSENSUS_SET, sorted, set.epoch ?? 0]),
+    ),
   )
 }
 
@@ -103,7 +105,7 @@ export function consensusSetId(set: ValidatorSet): string {
 export function selectLeader(set: ValidatorSet, prevHash: string, round: number): string {
   const total = totalStake(set)
   if (total <= 0n) throw new Error('validator set has no stake')
-  const seed = SHA3_SHAKE256.digest(encodeCanonical(['polarseek-sortition-v1', prevHash, round]))
+  const seed = SHA3_SHAKE256.digest(encodeCanonical([DOMAIN_TAGS.SORTITION, prevHash, round]))
   // Exact BigInt cumulative walk: both the modulo base (total) and the running `acc` are bigint, so
   // leader selection stays exact for unbounded PoS stake weights (LEDGER-PRECISION-001/-004/-005).
   const x = BigInt('0x' + bytesToHex(seed)) % total

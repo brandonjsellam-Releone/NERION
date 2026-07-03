@@ -16,7 +16,7 @@
  * the private β. Empty rounds (0 eligible) are resolved by the view-change.
  */
 
-import { encodeCanonical, signerFor } from '../../crypto/src/index.js'
+import { DOMAIN_TAGS, encodeCanonical, signerFor } from '../../crypto/src/index.js'
 import type { Bytes } from '../../crypto/src/index.js'
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils.js'
 import {
@@ -31,7 +31,7 @@ import type { ValidatorSet, ViewChangeCert } from './types.js'
 
 /** The VRF input α for a draw. Mirrors the old sortition seed preimage. */
 export function vrfAlpha(prevHash: string, round: number): Bytes {
-  return encodeCanonical(['polarseek-vrf-v1', prevHash, round])
+  return encodeCanonical([DOMAIN_TAGS.VRF, prevHash, round])
 }
 
 /**
@@ -70,7 +70,7 @@ export function viewChangeMessage(
 ): Bytes {
   // ADR-0020/B5: bind the validator-set id (members+stake+epoch) so a timeout vote made under one
   // set/epoch cannot be re-counted by a verifier holding a different set. v2 tag marks the change.
-  return encodeCanonical(['polarseek-timeout-v2', suite, height, prevHash, round, setId])
+  return encodeCanonical([DOMAIN_TAGS.TIMEOUT, suite, height, prevHash, round, setId])
 }
 
 function safeVerifyTimeout(suite: string, sig: Bytes, msg: Bytes, pub: Bytes): boolean {

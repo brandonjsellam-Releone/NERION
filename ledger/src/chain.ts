@@ -12,6 +12,7 @@
  */
 
 import {
+  DOMAIN_TAGS,
   encodeCanonical,
   SHA3_SHAKE256,
   signerFor,
@@ -51,7 +52,7 @@ export class LedgerError extends Error {
 
 function headerBytes(h: BlockHeader): Bytes {
   return encodeCanonical([
-    'polarseek-block-v1',
+    DOMAIN_TAGS.BLOCK_HASH,
     h.height,
     h.prevHash,
     h.round,
@@ -72,7 +73,7 @@ export function blockHash(h: BlockHeader): string {
  * PS-1 and PS-5 share ML-DSA-87). Distinct domain tag from the hash preimage.
  */
 function blockSignMessage(suite: string, hash: string): Bytes {
-  return encodeCanonical(['polarseek-block-sig-v1', suite, hash])
+  return encodeCanonical([DOMAIN_TAGS.BLOCK_SIG, suite, hash])
 }
 
 /**
@@ -86,7 +87,7 @@ export function attestMessage(suite: string, height: number, hash: string, setId
   // ADR-0020/B5: bind the validator-set id (members+stake+epoch) so an attestation made under
   // set S(epoch e) is not re-counted by a verifier holding a different set (cross-epoch
   // consent-transfer / set-substitution). v2 tag marks the format change.
-  return encodeCanonical(['polarseek-attest-v2', suite, height, hash, setId])
+  return encodeCanonical([DOMAIN_TAGS.ATTESTATION, suite, height, hash, setId])
 }
 
 export class Ledger {
