@@ -85,6 +85,11 @@ export class PolarSeekClient {
       audience: ctx.audience,
       intent,
       now: ctx.now,
+      // MCP-SESSION-BIND-001 (AAC cycle-7): assert the permit was minted for THIS session, not only
+      // that the audience MAC matches. The MAC already binds the session secret (a cross-session forgery
+      // fails), so this is defense-in-depth — but it makes the resource's session binding explicit as
+      // documented, rather than relying solely on the key derivation.
+      sessionId: ctx.session.sessionId,
     }).ok
   }
 }

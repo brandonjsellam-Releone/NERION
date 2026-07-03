@@ -49,7 +49,14 @@ export function guardTool<A, R>(
   client: PolarSeekClient,
   mapIntent: IntentMapper<A>,
   handler: (toolName: string, args: A) => R | Promise<R>,
+  opts?: {
+    /** Obligations the integrator has verifiably discharged OUT-OF-BAND (a dual-control approval, an
+     *  n-of-m attestation quorum, a P3 co-sign). The guard fails closed on any obligation NOT in this
+     *  set that it cannot itself evidence (see MCP-OBLIGATION-001 below). */
+    readonly discharged?: readonly string[]
+  },
 ): (toolName: string, args: A, ctx: GuardContext) => Promise<GuardedResult<R>> {
+  const discharged = new Set(opts?.discharged ?? [])
   return async (toolName, args, ctx) => {
     // MCP-GUARD-THROW-001 (AAC cycle-5): `mapIntent` is the integrator's arg-validation boundary, and
     // its type `(toolName, args) => ActionIntent` gives it NO error channel — the only way it can
@@ -112,6 +119,30 @@ export function guardTool<A, R>(
         decision: outcome.decision,
         receipt,
         reasons: ['permit failed resource-side verification'],
+      }
+    }
+    // MCP-OBLIGATION-001 (AAC cycle-7 compound-failure review): the kernel decides per-tier obligations
+    // (T2: 'step-up-approval'; T3: 'n-of-m-attestation' / 'dual-control' / 'all-planes') that
+    // THREAT_MODEL M-P2-1 requires be discharged BEFORE the resource executes. The node self-fulfils
+    // 'nearline-receipt' (evidenced by `receipt`) and 'session-attestation' is covered by the (attested)
+    // session flow; every OTHER obligation needs an external discharge (dual control, n-of-m quorum, P3
+    // co-sign) this reference adapter has no mechanism for. Running the handler anyway would over-
+    // authorize a high-tier action with NONE of its controls (a fail-open seam: the obligations were
+    // decided upstream but enforced by no downstream stage). So — exactly like the transform refusal
+    // above — FAIL CLOSED; an integrator that discharged an obligation out-of-band passes it in
+    // `opts.discharged`.
+    const isDischarged = (o: string): boolean =>
+      o === 'nearline-receipt' ? receipt != null : o === 'session-attestation' || discharged.has(o)
+    const undischarged = outcome.decision.obligations.filter((o) => !isDischarged(o))
+    if (undischarged.length > 0) {
+      return {
+        allowed: false,
+        result: null,
+        decision: outcome.decision,
+        receipt,
+        reasons: [
+          `decision requires obligation(s) [${undischarged.join(', ')}] to be discharged before execution (THREAT_MODEL M-P2-1); the reference guard has no discharge mechanism, so the handler was NOT run`,
+        ],
       }
     }
 

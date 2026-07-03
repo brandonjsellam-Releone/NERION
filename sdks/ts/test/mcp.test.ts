@@ -74,15 +74,40 @@ const ctx: GuardContext = {
 describe('MCP tool-call adapter', () => {
   it('executes an allowed tool call and returns its receipt', async () => {
     let calls = 0
-    const guarded = guardTool(client, mapIntent, async (_t, a: PayArgs) => {
-      calls++
-      return { ok: true, paid: a.amount }
-    })
+    // payment.transfer at this amount is a T2 action → the kernel decides obligations
+    // ['nearline-receipt','step-up-approval']. The node self-fulfils nearline-receipt; the integrator
+    // discharges step-up-approval OUT-OF-BAND (MCP-OBLIGATION-001), so the handler runs.
+    const guarded = guardTool(
+      client,
+      mapIntent,
+      async (_t, a: PayArgs) => {
+        calls++
+        return { ok: true, paid: a.amount }
+      },
+      { discharged: ['step-up-approval'] },
+    )
     const r = await guarded('pay', { to: 'vendor-acme', amount: 500 }, ctx)
     expect(r.allowed).toBe(true)
     expect(r.result).toEqual({ ok: true, paid: 500 })
     expect(r.receipt).not.toBeNull()
     expect(calls).toBe(1)
+  })
+
+  it('MCP-OBLIGATION-001: refuses to run a T2/T3 action with an UNdischarged obligation (fail-closed)', async () => {
+    let calls = 0
+    // Same T2 action, but WITHOUT discharging step-up-approval: the reference guard cannot discharge
+    // it, so per THREAT_MODEL M-P2-1 it must fail closed BEFORE running the handler — not silently
+    // over-authorize a high-tier action with none of its controls.
+    const guarded = guardTool(client, mapIntent, async (_t, a: PayArgs) => {
+      calls++
+      return { ok: true, paid: a.amount }
+    })
+    const r = await guarded('pay', { to: 'vendor-acme', amount: 500 }, ctx)
+    expect(r.allowed).toBe(false)
+    expect(r.result).toBeNull()
+    expect(calls).toBe(0) // the high-tier action never ran
+    expect(r.reasons.join(' ')).toMatch(/discharged before execution/)
+    expect(r.decision.obligations).toContain('step-up-approval')
   })
 
   it('blocks a denied tool call WITHOUT executing the handler', async () => {
@@ -134,10 +159,15 @@ describe('MCP tool-call adapter', () => {
 
   it('enforces governance revocation through the guard (SDK-REVOKE-001)', async () => {
     let calls = 0
-    const guarded = guardTool(client, mapIntent, async () => {
-      calls++
-      return { ok: true }
-    })
+    const guarded = guardTool(
+      client,
+      mapIntent,
+      async () => {
+        calls++
+        return { ok: true }
+      },
+      { discharged: ['step-up-approval'] }, // T2 action; step-up discharged so revocation is what gates
+    )
     // Without revocation: allowed (sanity).
     expect((await guarded('pay', { to: 'vendor-acme', amount: 500 }, ctx)).allowed).toBe(true)
     // Revoke the capability's root id and pass it via the guard context.
