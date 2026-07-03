@@ -1,9 +1,9 @@
 {
-  "name": "polarseek",
+  "name": "nerion",
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Post-Quant PolarSeek — open, post-quantum-native execution-governance protocol for AI/agent actions. P0 reference crypto (TypeScript).",
+  "description": "Nerion — open, post-quantum-native execution-governance protocol for AI/agent actions. P0 reference crypto (TypeScript).",
   "license": "Apache-2.0",
   "engines": {
     "node": ">=20"
