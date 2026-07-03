@@ -12,7 +12,13 @@
  * the build spec. Costs scale with the action's risk tier.
  */
 
-import { encodeCanonical, signerFor, type Bytes, type KeyPair } from '../../crypto/src/index.js'
+import {
+  activeSuiteIds,
+  encodeCanonical,
+  signerFor,
+  type Bytes,
+  type KeyPair,
+} from '../../crypto/src/index.js'
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils.js'
 
 export class SettlementError extends Error {
@@ -46,6 +52,17 @@ export function tierCost(tier: number): number {
 
 const GRANT_CONTEXT = 'polarseek-credit-grant-v1'
 
+/**
+ * In-memory metering ledger for ONE issuer (`this.issuer`).
+ *
+ * SCOPE (SETTLE-REPLAY-SCOPE-001, AAC cycle-3): the replay defenses (`consumedNonces`,
+ * `meteredRefs`) and `balances` are PROCESS-LOCAL and non-durable — they dedup within a single live
+ * instance only. A signed `CreditGrant` replayed to a SEPARATE instance (a replica, a restarted
+ * process, or a re-instantiated ledger) is NOT caught here. Any multi-instance or persistent
+ * deployment MUST back grant-nonce and meter-ref dedup with a durable, shared store keyed by
+ * (issuer, account, nonce) / (issuer, account, ref). Dedup is issuer-scoped by construction (one
+ * ledger binds one issuer), so the in-key issuer is implicit; a shared store must make it explicit.
+ */
 export class MeteringLedger {
   private readonly balances = new Map<string, number>()
   /**
@@ -90,8 +107,14 @@ export class MeteringLedger {
     }
     this.consumedNonces.add(nonceKey)
     this.balances.set(account, this.balance(account) + amount)
+    // SETTLE-SUITE-BIND-001 (AAC cycle-3): bind `suite` INTO the signed message. Previously the
+    // signature covered only [context, account, amount, nonce] while verifyGrant dispatched on the
+    // attacker-transportable `g.suite` field — an algorithm-substitution gap (a swapped suite label
+    // was signature-preserving among suites sharing a sigId, and would become load-bearing the moment
+    // a suite with a different/weaker sigId is activated). Binding the suite makes any swap break the
+    // signature. (Same class as CAP-SUITE-PIN-001.)
     const sig = signerFor(this.suite).sign(
-      encodeCanonical([GRANT_CONTEXT, account, amount, nonce]),
+      encodeCanonical([GRANT_CONTEXT, this.suite, account, amount, nonce]),
       this.issuer.secretKey,
     )
     return {
@@ -137,10 +160,20 @@ export class MeteringLedger {
    */
   verifyGrant(g: CreditGrant, trustedIssuer?: string): boolean {
     if (trustedIssuer !== undefined && g.issuer !== trustedIssuer) return false
+    // SETTLE-VERIFY-DOMAIN-001 (AAC cycle-3): re-validate the amount at USE time. The F8 safe-integer
+    // guard lived only in grant() (the issue path); a CreditGrant is a signed, transportable credential
+    // (its whole purpose), so a foreign grant crossing this trust boundary must be re-checked here — or
+    // a downstream consumer could credit an amount in the lossy >= 2^53 range this ledger cannot
+    // represent (ADR-0018's canonical u64 domain exceeds JS-number safety; a JS-number ledger must
+    // reject what it cannot represent). Fail-closed.
+    if (!Number.isSafeInteger(g.amount) || g.amount <= 0) return false
+    // Reject a grant whose advertised suite is not currently active (defense-in-depth beyond the suite
+    // now being bound into the signature by grant() — SETTLE-SUITE-BIND-001).
+    if (!activeSuiteIds().includes(g.suite)) return false
     try {
       return signerFor(g.suite).verify(
         g.sig,
-        encodeCanonical([GRANT_CONTEXT, g.account, g.amount, g.nonce]),
+        encodeCanonical([GRANT_CONTEXT, g.suite, g.account, g.amount, g.nonce]),
         hexToBytes(g.issuer),
       )
     } catch {

@@ -4,8 +4,12 @@
 
 import { describe, it, expect } from 'vitest'
 import { bytesToHex } from '@noble/hashes/utils.js'
-import { signerFor, SUITE_IDS } from '../../crypto/src/index.js'
+import { signerFor, SUITE_IDS, encodeCanonical } from '../../crypto/src/index.js'
 import { MeteringLedger, SettlementError } from '../src/index.js'
+
+// Mirrors the (unexported) domain tag in settlement/src/credits.ts — a regression lock: if the tag
+// or the signed-tuple layout changes, the forge-a-grant tests below break loudly (the intended signal).
+const GRANT_CONTEXT = 'polarseek-credit-grant-v1'
 
 /**
  * Settlement hardening — Team Apex (2026-06-21), unanimous 3-seat findings:
@@ -107,5 +111,40 @@ describe('settlement hardening (SETTLE-001 / SETTLE-002)', () => {
     ledger.grant(ACCT, 10, 'n2')
     ledger.meter(ACCT, 5, 'decision-z')
     expect(ledger.balance(ACCT)).toBe(8) // 3 + 10 - 5
+  })
+
+  // --- AAC cycle-3 (2026-07-03) ---
+
+  it('SETTLE-SUITE-BIND-001: a grant with a swapped suite label does not verify (suite is bound)', () => {
+    const ledger = new MeteringLedger(suite, issuer)
+    const g = ledger.grant(ACCT, 100, 'n1')
+    expect(ledger.verifyGrant(g)).toBe(true)
+    // Swap to ANOTHER active suite (also ML-DSA-87): pre-fix this verified true (suite was not in the
+    // signed message and the signer was identical); now the suite is bound so the recomputed message
+    // differs and verification fails.
+    expect(ledger.verifyGrant({ ...g, suite: SUITE_IDS.PS_1 })).toBe(false)
+  })
+
+  it('SETTLE-SUITE-BIND-001: a grant advertising a non-active suite is rejected, not thrown', () => {
+    const ledger = new MeteringLedger(suite, issuer)
+    const g = ledger.grant(ACCT, 100, 'n2')
+    expect(() => ledger.verifyGrant({ ...g, suite: 'PS-BOGUS' })).not.toThrow()
+    expect(ledger.verifyGrant({ ...g, suite: 'PS-BOGUS' })).toBe(false)
+  })
+
+  it('SETTLE-VERIFY-DOMAIN-001: a VALIDLY-signed grant with an unsafe amount is rejected at verify time', () => {
+    const ledger = new MeteringLedger(suite, issuer)
+    const account = ACCT
+    const nonce = 'u64-amount'
+    const amount = 2 ** 53 // = MAX_SAFE_INTEGER + 1 — protocol-valid u64, but lossy as a JS number.
+    // Hand-sign a genuine grant over the big amount (grant() itself would reject it at issue), so the
+    // signature is VALID and only the use-time domain guard in verifyGrant can reject it.
+    const sig = signerFor(suite).sign(
+      encodeCanonical([GRANT_CONTEXT, suite, account, amount, nonce]),
+      issuer.secretKey,
+    )
+    const forged = { account, amount, issuer: issuerHex, nonce, suite, sig }
+    expect(ledger.verifyGrant(forged)).toBe(false)
+    expect(ledger.verifyGrant(forged, issuerHex)).toBe(false)
   })
 })
