@@ -26,6 +26,7 @@
  */
 
 import {
+  DOMAIN_TAGS,
   encodeCanonical,
   signerFor,
   SHA3_SHAKE256,
@@ -36,7 +37,7 @@ import { bytesToHex, hexToBytes } from '@noble/hashes/utils.js'
 import type { ReceiptBody } from './receipt.js'
 import type { ValidatorSet } from '../../ledger/src/index.js'
 
-const QUORUM_CONTEXT = 'polarseek-quorum-receipt-v1'
+const QUORUM_CONTEXT = DOMAIN_TAGS.QUORUM_RECEIPT
 
 /** One validator's independent ML-DSA-87 attestation over the bound body. */
 export interface QuorumAttestation {

@@ -13,6 +13,7 @@
  */
 
 import {
+  DOMAIN_TAGS,
   encodeCanonical,
   signerFor,
   SHA3_SHAKE256,
@@ -22,7 +23,7 @@ import {
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils.js'
 import type { Approval, EnactmentResult, Proposal, Quorum } from './types.js'
 
-const GOV_CONTEXT = 'polarseek-gov-v1'
+const GOV_CONTEXT = DOMAIN_TAGS.GOVERNANCE_PROPOSAL
 
 /**
  * Stable identity of a quorum CONFIGURATION = SHA3 over its sorted members +

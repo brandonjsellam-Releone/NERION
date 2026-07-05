@@ -15,6 +15,7 @@
 import { bytesToHex } from '@noble/hashes/utils.js'
 import {
   activeSuiteIds,
+  DOMAIN_TAGS,
   encodeCanonical,
   SHA3_SHAKE256,
   signerFor,
@@ -43,7 +44,7 @@ function deriveId(body: GrantBody): string {
 // grant signed under one suite cannot be re-presented under another (algorithm
 // downgrade / cross-suite confusion) — Team Apex audit 2026-06-21 (CAP-001). The
 // tag also separates capability signatures from any other ML-DSA use of the key.
-const CAP_CONTEXT = 'polarseek/capability/grant/v2'
+const CAP_CONTEXT = DOMAIN_TAGS.CAPABILITY_GRANT
 function grantSigningMessage(suite: string, grant: CapabilityGrant): Bytes {
   return encodeCanonical([CAP_CONTEXT, suite, grant])
 }

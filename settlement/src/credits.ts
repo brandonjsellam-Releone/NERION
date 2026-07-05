@@ -14,6 +14,7 @@
 
 import {
   activeSuiteIds,
+  DOMAIN_TAGS,
   encodeCanonical,
   signerFor,
   type Bytes,
@@ -50,7 +51,7 @@ export function tierCost(tier: number): number {
   return COSTS[tier] ?? 20
 }
 
-const GRANT_CONTEXT = 'polarseek-credit-grant-v1'
+const GRANT_CONTEXT = DOMAIN_TAGS.CREDIT_GRANT
 
 /**
  * In-memory metering ledger for ONE issuer (`this.issuer`).

@@ -12,6 +12,7 @@
  */
 
 import {
+  DOMAIN_TAGS,
   encodeCanonical,
   signerFor,
   getSuite,
@@ -31,7 +32,7 @@ const MAX_EVIDENCES = 256
 // (algorithm-downgrade / cross-suite confusion — ATTEST-SUITE-001, Team Apex 2026-06-21) and
 // separates attestation signatures from any other ML-DSA use of the attester key. Changing the
 // unsigned envelope `suite` now breaks verification rather than silently re-routing the verifier.
-const ATTEST_CONTEXT = 'polarseek/attest/evidence/v1'
+const ATTEST_CONTEXT = DOMAIN_TAGS.ATTEST_EVIDENCE
 function attestSigningMessage(suite: string, claims: AttestationClaims): Bytes {
   return encodeCanonical([ATTEST_CONTEXT, suite, claims])
 }

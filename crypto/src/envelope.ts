@@ -20,12 +20,14 @@
 
 import type { Bytes } from './types.js'
 import { encodeCanonical, decodeCbor } from './cbor.js'
+// Crypto-internal: import the registry directly (not via './index.js') to avoid a cycle.
+import { DOMAIN_TAGS } from './domains.js'
 import { signerFor } from './suites.js'
 import { HMAC_SHA384, HKDF_SHA384 } from './symmetric.js'
 
-const SIGNED_CONTEXT = 'PolarSeek-Signed-v1'
-const PERMIT_CONTEXT = 'PolarSeek-Permit-v1'
-const AUDIENCE_KDF_CONTEXT = 'PolarSeek-Permit-AudienceKDF-v1'
+const SIGNED_CONTEXT = DOMAIN_TAGS.ENVELOPE_SIGNED
+const PERMIT_CONTEXT = DOMAIN_TAGS.PERMIT_MAC
+const AUDIENCE_KDF_CONTEXT = DOMAIN_TAGS.PERMIT_AUDIENCE_KDF
 
 /** HMAC-SHA-384 key width (matches the PermitToken MAC tag width). */
 const PERMIT_MAC_KEY_BYTES = 48

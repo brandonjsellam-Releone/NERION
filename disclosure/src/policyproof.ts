@@ -57,7 +57,7 @@ import {
   type Pt,
   type RangeProof,
 } from './zkrange.js'
-import { encodeCanonical, SHA3_SHAKE256 } from '../../crypto/src/index.js'
+import { DOMAIN_TAGS, encodeCanonical, SHA3_SHAKE256 } from '../../crypto/src/index.js'
 import { bytesToHex } from '@noble/hashes/utils.js'
 
 /** Public policy bounds the amount must satisfy (drawn from the capability/policy). */
@@ -173,7 +173,7 @@ export function policyProofDigest(
   policyBinding: string,
 ): string {
   const serialized = encodeCanonical([
-    'polarseek-psp-v1',
+    DOMAIN_TAGS.POLICY_PROOF,
     policyBinding,
     bytesToHex(commitment.toBytes()),
     proof.n,

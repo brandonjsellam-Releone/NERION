@@ -17,6 +17,7 @@
 
 import {
   activeSuiteIds,
+  DOMAIN_TAGS,
   encodeCanonical,
   signerFor,
   type Bytes,
@@ -25,7 +26,7 @@ import {
 import { bytesToHex } from '@noble/hashes/utils.js'
 import { verifyConsistency } from './merkle.js'
 
-const STH_CONTEXT = 'polarseek-sth-v1'
+const STH_CONTEXT = DOMAIN_TAGS.STH
 
 export interface SignedTreeHead {
   /** hex of the operator public key. */

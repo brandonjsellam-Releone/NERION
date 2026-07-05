@@ -30,9 +30,9 @@
 import { shake256 } from '@noble/hashes/sha3.js'
 import { concatBytes, utf8ToBytes, bytesToHex } from '@noble/hashes/utils.js'
 import { G, H, L, mul, sub, scalarFromBytes, commit, randomScalar, type Pt } from './zkrange.js'
-import { encodeCanonical, SHA3_SHAKE256, type Bytes } from '../../crypto/src/index.js'
+import { DOMAIN_TAGS, encodeCanonical, SHA3_SHAKE256, type Bytes } from '../../crypto/src/index.js'
 
-const DOMAIN = 'Nerion/disclosure/set-membership/v1'
+const DOMAIN = DOMAIN_TAGS.SET_MEMBERSHIP
 
 /** Bound the public set size before the O(k) point work (decode-side DoS on the verifier). Honest
  *  allow-lists (action-type / counterparty sets) are small; reject larger sets fail-closed. */

@@ -27,14 +27,14 @@
 import { ristretto255, ristretto255_hasher } from '@noble/curves/ed25519.js'
 import { shake256 } from '@noble/hashes/sha3.js'
 import { bytesToHex, concatBytes, utf8ToBytes } from '@noble/hashes/utils.js'
-import { randomBytes, type Bytes } from '../../crypto/src/index.js'
+import { DOMAIN_TAGS, randomBytes, type Bytes } from '../../crypto/src/index.js'
 
 const Point = ristretto255.Point
 export type Pt = InstanceType<typeof Point>
 const L: bigint = Point.Fn.ORDER
 const G: Pt = Point.BASE
 // Second generator with unknown discrete log w.r.t. G (nothing-up-my-sleeve).
-const H: Pt = ristretto255_hasher.hashToCurve(utf8ToBytes('PolarSeek/disclosure/generator-H/v1'))
+const H: Pt = ristretto255_hasher.hashToCurve(utf8ToBytes(DOMAIN_TAGS.ZK_GENERATOR_H))
 
 export class RangeProofError extends Error {
   constructor(m: string) {

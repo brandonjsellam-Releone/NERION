@@ -40,6 +40,7 @@
 import { commit, type Pt } from './zkrange.js'
 import { commitAmount } from './policyproof.js'
 import {
+  DOMAIN_TAGS,
   encodeCanonical,
   SHA3_SHAKE256,
   constantTimeEqual,
@@ -48,7 +49,7 @@ import {
 import { bytesToHex } from '@noble/hashes/utils.js'
 import type { ActionIntent } from '../../capabilities/src/index.js'
 
-const DOMAIN = 'PolarSeek/disclosure/commit-bind/v2'
+const DOMAIN = DOMAIN_TAGS.COMMIT_BIND
 
 export class CommitBindError extends Error {
   constructor(m: string) {

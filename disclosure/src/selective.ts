@@ -21,11 +21,11 @@
  * as CB‑001 in ./commitbind.
  */
 
-import { encodeCanonical, SHA3_SHAKE256, type Bytes } from '../../crypto/src/index.js'
+import { DOMAIN_TAGS, encodeCanonical, SHA3_SHAKE256, type Bytes } from '../../crypto/src/index.js'
 import { bytesToHex } from '@noble/hashes/utils.js'
 
 /** Domain tag for salted commitments — separates them from any other SHA3 use. */
-const SALT_DOMAIN = 'Nerion/disclosure/salted-commit/v1'
+const SALT_DOMAIN = DOMAIN_TAGS.SALTED_COMMIT
 
 /**
  * The commitment used in receipts: SHA3‑256 over the canonical encoding.
