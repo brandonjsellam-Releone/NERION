@@ -89,7 +89,21 @@ export function verifyApproval(p: Proposal, a: Approval, quorum: Quorum): boolea
   }
 }
 
-/** Count distinct valid member approvals; enact iff >= threshold and in-window. */
+/**
+ * Count distinct valid member approvals; enact iff >= threshold and in-window.
+ *
+ * STATELESS — ANTI-REPLAY IS THE CALLER'S RESPONSIBILITY (GOV-REPLAY-001, AAC council review:
+ * DeepSeek + Grok seats converged). `enact` is a PURE predicate: given the same in-window proposal
+ * and a valid approval set it returns `enacted:true` EVERY time it is called. The proposal's `nonce`
+ * is bound into each signature (so it cannot be mutated without invalidating the approvals) but
+ * nothing HERE consumes it as a one-time token. A caller that EXECUTES a proposal's side effect
+ * (rotate / config change / payout / any non-idempotent action) MUST record enacted proposal
+ * ids/nonces in a durable seen-set — the ledger/translog is the natural home — and refuse a second
+ * enactment of the same id; otherwise one quorum decision can be replayed within its validity window
+ * (and, by re-presentation of the same signed approvals, across windows). `RevocationRegistry` below
+ * is replay-SAFE only incidentally: re-adding an already-revoked target to a Set is idempotent. Do
+ * NOT generalize that safety to a non-idempotent enactment.
+ */
 export function enact(
   p: Proposal,
   approvals: readonly Approval[],

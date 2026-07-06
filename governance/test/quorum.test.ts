@@ -220,6 +220,20 @@ describe('M-of-N quorum', () => {
     const ok = mk(0, NOW + 1000)
     expect(enact(ok, both(ok), quorum, NOW).enacted).toBe(true)
   })
+
+  it('GOV-REPLAY-001: enact is stateless — the same in-window quorum re-enacts (anti-replay is the caller job)', () => {
+    // enact() is a PURE predicate holding no seen-set of nonces/ids, so the SAME proposal with the
+    // SAME valid approvals enacts EVERY time it is called. This pins (characterizes) the documented
+    // boundary: a caller executing a non-idempotent side effect MUST dedupe on proposal id/nonce
+    // against a durable seen-set (the ledger/translog). If a future change makes enact stateful,
+    // this test breaks and forces a deliberate ADR rather than a silent behavior shift.
+    const aps = [approve(p, suite, m1, quorum), approve(p, suite, m2, quorum)]
+    expect(enact(p, aps, quorum, NOW).enacted).toBe(true)
+    // Replayed with the identical proposal + approvals — enact does NOT remember the first enactment.
+    expect(enact(p, aps, quorum, NOW).enacted).toBe(true)
+    // The nonce is bound into the signed bytes but is never consumed here as a one-time token.
+    expect(p.nonce).toBe('n1')
+  })
 })
 
 describe('revocation registry & kill switch', () => {
