@@ -1,6 +1,6 @@
-# PolarSeek — STATUS
+# Nerion — STATUS
 
-**Phase: P0–P4 software build complete; conformance ✔; Rust foundation compiles.** Updated 2026-06-20.
+**Phase: P0–P4 software build complete; conformance ✔; Rust foundation compiles.** Updated 2026-07-07.
 **752 tests pass** (`npm run gate`). **`npm run conformance` → 23/23 CONFORMANT.**
 
 ## Modules — all implemented, tested, and conformance-checked
@@ -52,7 +52,7 @@ P0 council PASS with corrections ([council/P0-verdicts.md](./council/P0-verdicts
 
 ## "Above the apex" roadmap (vs SIGA)
 
-Apex upgrades that make PolarSeek categorically superior to SIGA's centralized, classical, patent-closed, perception-owning model — ranked by (superiority × buildability):
+Apex upgrades that make Nerion categorically superior to SIGA's centralized, classical, patent-closed, perception-owning model — ranked by (superiority × buildability):
 
 1. ✅ **Decentralized k-of-n quorum receipts** (ADR-0005) — no single host can mint a receipt; attacks SIGA's #1 weakness (single Sovereign Host). Done.
 2. ◐ **ZK Policy-Satisfaction Receipts** (ADR-0006, subset shipped) — prove the kernel's numeric policy was satisfied revealing none of the amount. Structurally impossible for SIGA, whose billing/attestation requires seeing every payload. **Conservative subset SHIPPED** (`disclosure/policyproof.ts`): hidden-amount `amount ≤ ceiling` + `aggregate+amount ≤ cap` over the audited-group range proof; **unaudited** composition; amount confidentiality is information-theoretic (PQ), proof soundness is classical. **Deferred:** the set-membership OR-proof (new primitive), the v:2 receipt schema + node wiring (commitment-to-intent linkage), and external ZK audit.
@@ -66,7 +66,7 @@ All three "above the apex" upgrades are now implemented + conformance-checked.
 
 ## US-gov public-standards track (CNSA 2.0 / NIST / SCITT / Zero-Trust)
 
-Grounding PolarSeek in the authoritative PUBLIC/declassified corpus (no classified material) for gov credibility:
+Grounding Nerion in the authoritative PUBLIC/declassified corpus (no classified material) for gov credibility:
 
 1. ✅ **CNSA 2.0 conformance oracle** (ADR-0008, C15) — machine-checkable NSA CNSA 2.0 classification. PS-5 conformant (transitional); PS-1 not; SLH-DSA/FN-DSA flagged excluded.
    1b. ✅ **Signed CNSA 2.0 verdict** (`conformance/cnsa-oracle.ts`, C16) — the gov-grade artifact: an ML-DSA-87-signed, deterministic, transparency-log-anchored, externally-verifiable CNSA verdict (`assertCnsa`/`signCnsaVerdict`/`verifyCnsaVerdict`/`cnsaVerdictLeaf`); deny-by-default allow-set, HARD vs WARN findings, level pure/transitional/non-conformant. (Team-ranked #1 of the gov track.)
@@ -82,7 +82,7 @@ See **[LAUNCH_READINESS.md](./LAUNCH_READINESS.md)** + the counsel/auditor/vendo
 [DEPLOY_HARDWARE.md](./DEPLOY_HARDWARE.md)). Four external gates stand between code-complete and launch —
 **none closable by code**: (1) **FTO** patent opinion (counsel), (2) **external crypto/ZK audit**
 (audit firm), (3) **FIPS 140-3 L3+ HSM/TEE hardware** (vendor + operator), (4) **FIPS CMVP validation**
-(accredited lab). PolarSeek has _prepared_ each to accelerate the external party; it has _closed_ none,
+(accredited lab). Nerion has _prepared_ each to accelerate the external party; it has _closed_ none,
 and must never imply otherwise. Conformant ≠ validated; built ≠ audited; provisioned ≠ in-use;
 design-around ≠ legal opinion.
 
