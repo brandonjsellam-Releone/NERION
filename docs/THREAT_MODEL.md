@@ -1,9 +1,9 @@
-# Post-Quant PolarSeek — Threat Model
+# Post-Quant Nerion — Threat Model
 
-> **Status: P0–P4 complete; all listed modules built and tested.** As of 2026-06-20 the full
+> **Status: P0–P4 complete; all listed modules built and tested.** As of 2026-07-06 the full
 > protocol stack is implemented in TypeScript: `crypto/`, `kernel/`, `attest/`, `capabilities/`,
 > `planes/`, `receipts/`, `translog/`, `ledger/`, `settlement/`, `governance/`, `conformance/`,
-> `sdks/`, `disclosure/`, `keystore/`, plus a Rust hot-path foundation. **469 tests pass**
+> `sdks/`, `disclosure/`, `keystore/`, plus a Rust hot-path foundation. **752 tests pass**
 > (`npm run gate`) and **23/23 conformance checks pass** (`npm run conformance`). See
 > [docs/STATUS.md](./STATUS.md) for the full module inventory and
 > [docs/ASSURANCE.md](./ASSURANCE.md) for the evidence-tier matrix. The threat model's §5
@@ -16,13 +16,13 @@
 > This is a security engineering document. It is **not** a legal opinion and does **not** make
 > any patent non-infringement claim — see `FTO_TODO.md`, which governs all public claims.
 
-## 0. Scope, method, and what PolarSeek is
+## 0. Scope, method, and what Nerion is
 
-PolarSeek is a 3-plane execution-governance protocol for **AI/agent ACTIONS** ("govern the verb,
+Nerion is a 3-plane execution-governance protocol for **AI/agent ACTIONS** ("govern the verb,
 never the eye"). It governs whether an action is _admitted_ and produces durable, auditable
 evidence about admitted actions. It does **not** govern perception, model weights, or content
 moderation, and it is **not** a sandbox: an admitted action still executes in some downstream
-system (the _resource_), which PolarSeek does not itself confine.
+system (the _resource_), which Nerion does not itself confine.
 
 - **Plane 1 — Hot Admission.** Synchronous, stateless, deterministic kernel. On each action it
   evaluates policy and, if admitted, issues a short-lived **PermitToken** authenticated with a
@@ -48,7 +48,7 @@ signs receipts (`receipts/`), ML-KEM-1024 is used in the hybrid KEM (`crypto/`),
 HMAC-SHA-384 authenticates PermitTokens (`kernel/`, `planes/`), and SLH-DSA is available
 for long-lived signatures. A Rust hot-path implements HMAC-SHA-384 + AES-256-GCM +
 ML-DSA-87 + ML-KEM-1024 independently (`rust/`). All crypto paths are covered by KATs
-(`crypto/vectors/`) and the 469-test gate. See [ASSURANCE.md](./ASSURANCE.md) for the
+(`crypto/vectors/`) and the 752-test gate. See [ASSURANCE.md](./ASSURANCE.md) for the
 evidence-tier matrix; primitives are **algorithm-compatible, NOT FIPS-validated** and the
 implementation is **UNAUDITED**.
 
@@ -75,7 +75,7 @@ implementation is **UNAUDITED**.
 | A15 | **Identity/provenance binding** (which agent/principal acted)                            | Without it, receipts attribute nothing                                              | all           |
 
 Explicitly **out of scope as protected assets**: model weights, prompt content, "intent," and the
-correctness of the downstream resource's own execution. PolarSeek attests _that an action was
+correctness of the downstream resource's own execution. Nerion attests _that an action was
 admitted under policy_; it does not guarantee the action's real-world outcome.
 
 ---
@@ -199,7 +199,7 @@ audit item, not a closed guarantee.
 
 ---
 
-## 5. Mitigations (REQUIREMENTS — none implemented yet)
+## 5. Mitigations (REQUIREMENTS — the majority now implemented and gate-tested; UNAUDITED)
 
 **Plane 1**
 
@@ -257,6 +257,14 @@ audit item, not a closed guarantee.
   `conformance/`.
 - **M-ID:** Strong principal authentication feeding attestation; no receipt without an
   authenticated principal.
+- **M-REPLAY-DEPLOY (deployer obligation):** Several verifiers are **stateless by design** and do
+  not track a nonce/seen-set — governance `enact()` (GOV-REPLAY-001) is a pure predicate that
+  re-enacts the same in-window quorum on every call, and the settlement metering ledger's replay
+  sets are **process-local / non-durable** (SETTLE-REPLAY-SCOPE-001). Any multi-instance or
+  persistent deployment MUST back one-shot semantics with a **durable, shared seen-set** — keyed by
+  proposal id/nonce (governance) and by (issuer, account, nonce) / (issuer, account, ref)
+  (settlement). The pure library cannot enforce this; a caller that executes a non-idempotent side
+  effect without such a store can replay a single authorization within (or across) its window.
 
 ---
 
@@ -300,24 +308,28 @@ authorization on its own):**
 
 ## 7. Residual risks we are NOT mitigating yet (and why)
 
-> Honesty clause: the single largest residual risk is that **nothing in §5 is implemented.** The
-> codebase is empty scaffolding plus an introspection script. The list below assumes the intended
-> design were built; on top of it sits the meta-risk that it currently is not.
+> Honesty clause: as of 2026-07-06 the §5 mitigations are largely **implemented and gate-tested**
+> (752 tests, 23/23 conformance), so the single largest residual is no longer that the code is
+> unbuilt — it is that the built stack is **UNAUDITED, not FIPS-validated, and pre-FTO**. The list
+> below is the residual set _on top of_ a built implementation; R1 now records that audit gap, not an
+> empty repository.
 
-| #   | Residual risk                                                                   | Why not mitigated yet / accepted                                                                                                                                                                                                                                                                                                             |
-| --- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| R1  | **Entire protocol is unbuilt (stubbed).**                                       | P0 stage. No kernel, crypto wiring, receipts, log, ledger, SDKs, or conformance vectors exist. Until built, PolarSeek provides **zero** real assurance. Highest-priority residual risk by far.                                                                                                                                               |
-| R2  | **In-window PermitToken replay against the bound audience.**                    | A deliberate design trade: statelessness + no round-trip + no sequence tracking means we _cannot_ prevent replay within the validity window server-side. Pushed to short lifetimes, audience/action binding, and resource-side idempotency — but for non-idempotent resources that don't cooperate, a bounded replay window is **accepted**. |
-| R3  | **Nearline gap (action executes before durable receipt).**                      | Inherent to async batching for latency. Mitigated only by bounding the window and forcing high tiers off the nearline path; for T0/T1 a small unrecorded-action window is accepted.                                                                                                                                                          |
-| R4  | **Insider kernel operator (ADV-4) within a single deployment.**                 | A single honest-but-curious or malicious operator holding the HMAC key can mint/permit during their window before P2/P3 detect divergence. Cross-plane detection is _detective, not preventive_; we accept detection-after-the-fact for P1 operator abuse.                                                                                   |
-| R5  | **HNDL on any classical-only transport that ships before hybrid KEM is wired.** | If a deployment carries tokens over plain x25519/TLS prior to M-CR landing, today's transcripts are harvestable. Accepted only until hybrid (x25519+ML-KEM-1024) transport is mandatory; flagged as must-fix-before-prod.                                                                                                                    |
-| R6  | **Downstream resource behavior.**                                               | PolarSeek governs admission, not execution. A resource that ignores token scope, fails to verify the MAC, or mis-executes an admitted action is outside our control. We provide the proof; the resource must honor it. Not mitigated by design scope.                                                                                        |
-| R7  | **Quantum break of the symmetric MAC.**                                         | Accepted as negligible: Grover leaves SHA-384 > 128-bit PQ security. We are _not_ spending effort hardening P1's MAC against quantum.                                                                                                                                                                                                        |
-| R8  | **Governance liveness (sub-threshold griefing).**                               | A fallback path to keep revocation live under share-withholding is designed-but-unbuilt; until then, denial-of-governance is an accepted residual.                                                                                                                                                                                           |
-| R9  | **Side channels in crypto primitives.**                                         | We rely on `@noble/*` constant-time properties; we are not independently auditing them at P0. Accepted with intent to review before prod.                                                                                                                                                                                                    |
-| R10 | **Supply chain beyond pinning.**                                                | Reproducible builds, SBOM, and signed releases are planned, not done. Until then a dependency/CI compromise (ADV-7) is an accepted, monitored residual.                                                                                                                                                                                      |
-| R11 | **Legal / FTO and export-control.**                                             | Out of scope for _this_ document and explicitly gated by `FTO_TODO.md`. No public non-infringement or "post-quantum-safe" claim may be made until counsel/classification work is on file. Tracked, not resolved here.                                                                                                                        |
+| #   | Residual risk                                                                       | Why not mitigated yet / accepted                                                                                                                                                                                                                                                                                                              |
+| --- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R1  | **Built but UNAUDITED (no external crypto/ZK audit; not FIPS-validated; pre-FTO).** | P0–P4 are implemented and gate-tested (752 tests, 23/23 conformance), but no external cryptographic/ZK audit, FIPS CMVP validation, or FTO clearance is on file. Assurance is bounded by "tested, not audited": the four launch gates (FTO, crypto/ZK audit, HSM/TEE hardware, FIPS CMVP) remain open. Highest-priority residual risk by far. |
+| R2  | **In-window PermitToken replay against the bound audience.**                        | A deliberate design trade: statelessness + no round-trip + no sequence tracking means we _cannot_ prevent replay within the validity window server-side. Pushed to short lifetimes, audience/action binding, and resource-side idempotency — but for non-idempotent resources that don't cooperate, a bounded replay window is **accepted**.  |
+| R3  | **Nearline gap (action executes before durable receipt).**                          | Inherent to async batching for latency. Mitigated only by bounding the window and forcing high tiers off the nearline path; for T0/T1 a small unrecorded-action window is accepted.                                                                                                                                                           |
+| R4  | **Insider kernel operator (ADV-4) within a single deployment.**                     | A single honest-but-curious or malicious operator holding the HMAC key can mint/permit during their window before P2/P3 detect divergence. Cross-plane detection is _detective, not preventive_; we accept detection-after-the-fact for P1 operator abuse.                                                                                    |
+| R5  | **HNDL on any classical-only transport that ships before hybrid KEM is wired.**     | If a deployment carries tokens over plain x25519/TLS prior to M-CR landing, today's transcripts are harvestable. Accepted only until hybrid (x25519+ML-KEM-1024) transport is mandatory; flagged as must-fix-before-prod.                                                                                                                     |
+| R6  | **Downstream resource behavior.**                                                   | Nerion governs admission, not execution. A resource that ignores token scope, fails to verify the MAC, or mis-executes an admitted action is outside our control. We provide the proof; the resource must honor it. Not mitigated by design scope.                                                                                            |
+| R7  | **Quantum break of the symmetric MAC.**                                             | Accepted as negligible: Grover leaves SHA-384 > 128-bit PQ security. We are _not_ spending effort hardening P1's MAC against quantum.                                                                                                                                                                                                         |
+| R8  | **Governance liveness (sub-threshold griefing).**                                   | A fallback path to keep revocation live under share-withholding is designed-but-unbuilt; until then, denial-of-governance is an accepted residual.                                                                                                                                                                                            |
+| R9  | **Side channels in crypto primitives.**                                             | We rely on `@noble/*` constant-time properties; we are not independently auditing them at P0. Accepted with intent to review before prod.                                                                                                                                                                                                     |
+| R10 | **Supply chain beyond pinning.**                                                    | Reproducible builds, SBOM, and signed releases are planned, not done. Until then a dependency/CI compromise (ADV-7) is an accepted, monitored residual.                                                                                                                                                                                       |
+| R11 | **Legal / FTO and export-control.**                                                 | Out of scope for _this_ document and explicitly gated by `FTO_TODO.md`. No public non-infringement or "post-quantum-safe" claim may be made until counsel/classification work is on file. Tracked, not resolved here.                                                                                                                         |
 
-**Bottom line:** treat this threat model as a build checklist. The protocol's eventual security
-depends on §5 being implemented and on §6 being enforced without exception; today its real-world
-assurance is that of an empty repository, and this document says so on purpose.
+**Bottom line:** the §5 mitigations are now largely built and gate-tested, so this is no longer a
+build checklist — it is an **audit checklist**. The protocol's real-world assurance now depends on
+§6 being enforced without exception and on the open external gates (crypto/ZK audit, FIPS CMVP,
+HSM/TEE, FTO) being closed; until they are, the honest ceiling is **built-and-tested, UNAUDITED**,
+and this document says so on purpose.
