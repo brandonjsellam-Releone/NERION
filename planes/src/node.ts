@@ -116,6 +116,16 @@ export interface AdmissionRequest {
 
 export interface AdmissionOutcome {
   readonly decision: Decision
+  /**
+   * The bound PermitToken on allow/transform, else null. CONTRACT (ADMIT-OBLIGATION-001, AAC
+   * council review — DeepSeek + Grok seats converged): a non-null permit proves Plane-1 admission
+   * succeeded AND the Plane-2 `nearline-receipt` obligation was discharged when the tier required
+   * it — it does NOT prove the remaining tier-2/3 obligations (`step-up-approval`, `dual-control`,
+   * `n-of-m-attestation`, `all-planes`) were satisfied. Those ride on `decision.obligations` and
+   * MUST be enforced by the caller BEFORE the resource executes (the sdks `guardTool` fails closed
+   * on any undischarged obligation, keyed on tier — MCP-OBLIGATION-001). Treating `permit !== null`
+   * as full authorization for a tier-2/3 action would bypass dual-control.
+   */
   readonly permit: PermitToken | null
   readonly receipt: Receipt | null
   readonly inclusion: InclusionWitness | null
@@ -176,6 +186,12 @@ export class PolarSeekNode {
     }
     const permit = issueBoundPermit(claims, this.cfg.suite, req.session.sessionKey)
 
+    // ADMIT-OBLIGATION-001 (AAC council review): admit() discharges ONLY the Plane-2
+    // `nearline-receipt` obligation (below). The remaining tier-2/3 obligations
+    // (`step-up-approval`, `dual-control`, `n-of-m-attestation`, `all-planes`) are returned on
+    // `decision.obligations` for the CALLER to enforce (e.g. via the sdks `guardTool`, which fails
+    // closed on any undischarged one) BEFORE the resource executes. A non-null `permit` is not, by
+    // itself, authorization to run a tier-2/3 action — see AdmissionOutcome.permit.
     // Nearline assurance: tiers requiring a receipt get one anchored now.
     let receipt: Receipt | null = null
     let inclusion: InclusionWitness | null = null
