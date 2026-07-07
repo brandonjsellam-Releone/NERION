@@ -61,13 +61,13 @@ The FIPS 204 security proof uses **two distinct models**:
 
 ### 2.2 What this means for Nerion
 
-| Question | Answer |
-|---|---|
-| Is ML-DSA-87 quantum-resistant in the ROM? | Yes — provably EUF-CMA-secure under MLWE + MSIS, assuming the random oracle. |
-| Is the QROM reduction tight? | No — there is a O(log Q) security loss; the reduction is not tight. See residual gap below. |
-| Does the non-tight QROM reduction affect Nerion today? | No practical impact at current adversary budgets; it is a theoretical gap, not a known attack. |
-| Is the hiding of Nerion's ZK proofs PQ-secure? | Yes — Pedersen commitments are perfectly hiding (information-theoretic), independent of ML-DSA. |
-| Is the soundness of Nerion's ZK proofs PQ-secure? | **No** — ZK soundness rests on discrete-log hardness (classical assumption). A quantum adversary that can compute discrete logs on ristretto255 could forge range proofs. This is labeled throughout the codebase and docs as a known classical leg. |
+| Question                                               | Answer                                                                                                                                                                                                                                               |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Is ML-DSA-87 quantum-resistant in the ROM?             | Yes — provably EUF-CMA-secure under MLWE + MSIS, assuming the random oracle.                                                                                                                                                                         |
+| Is the QROM reduction tight?                           | No — there is a O(log Q) security loss; the reduction is not tight. See residual gap below.                                                                                                                                                          |
+| Does the non-tight QROM reduction affect Nerion today? | No practical impact at current adversary budgets; it is a theoretical gap, not a known attack.                                                                                                                                                       |
+| Is the hiding of Nerion's ZK proofs PQ-secure?         | Yes — Pedersen commitments are perfectly hiding (information-theoretic), independent of ML-DSA.                                                                                                                                                      |
+| Is the soundness of Nerion's ZK proofs PQ-secure?      | **No** — ZK soundness rests on discrete-log hardness (classical assumption). A quantum adversary that can compute discrete logs on ristretto255 could forge range proofs. This is labeled throughout the codebase and docs as a known classical leg. |
 
 ### 2.3 Residual formal analysis gaps
 
@@ -76,6 +76,7 @@ The Measure-and-Reprogram technique used in the Fiat-Shamir-with-aborts QROM pro
 Lyubashevsky, Schaffner 2018; Liu, Zhandry 2019) introduces a reduction factor of
 O(Q_S · Q_H / 2^λ) where λ is the claimed security level. For ML-DSA-87 (λ = 256), this factor
 is negligible for any practical Q_S, Q_H. **However:**
+
 - The exact tightness constant from the FIPS 204 proof is not published with sufficient detail
   to permit independent re-verification without reconstructing the full security argument.
 - Nerion's use of ML-DSA-87 in composition with SHAKE256 (random oracle) and the HKDF-SHA-384
@@ -128,15 +129,15 @@ Art. 9 requires high-risk AI system operators to maintain a documented risk mana
 including identification, estimation, and mitigation of risks. For an operator using Nerion to
 govern AI action outputs:
 
-| Art. 9 requirement | How Nerion supports (not satisfies) it |
-|---|---|
-| Identification of risks from the AI system | Nerion's transparency log (RFC 6962/SCITT-style) provides an append-only, tamper-evident record of every admission decision, supporting post-hoc risk identification. |
-| Risk mitigation measures | Nerion's kernel enforces fail-closed default-deny admission; ML-DSA-87 signatures provide PQ-resistant evidence of authorization decisions. |
-| Residual risks documentation | The ASSURANCE.md matrix and this memo document residual gaps (QROM non-tightness, classical ZK soundness, no FIPS validation). Operators must supplement with their own residual-risk documentation. |
-| Lifecycle monitoring | The transparency log enables audit trails but does **not** automatically satisfy ongoing monitoring obligations. |
+| Art. 9 requirement                         | How Nerion supports (not satisfies) it                                                                                                                                                               |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Identification of risks from the AI system | Nerion's transparency log (RFC 6962/SCITT-style) provides an append-only, tamper-evident record of every admission decision, supporting post-hoc risk identification.                                |
+| Risk mitigation measures                   | Nerion's kernel enforces fail-closed default-deny admission; ML-DSA-87 signatures provide PQ-resistant evidence of authorization decisions.                                                          |
+| Residual risks documentation               | The ASSURANCE.md matrix and this memo document residual gaps (QROM non-tightness, classical ZK soundness, no FIPS validation). Operators must supplement with their own residual-risk documentation. |
+| Lifecycle monitoring                       | The transparency log enables audit trails but does **not** automatically satisfy ongoing monitoring obligations.                                                                                     |
 
 **Gap:** Nerion does not itself perform risk assessment on AI system outputs. It governs whether
-an *action* was authorized; it does not assess whether the underlying AI decision was safe or
+an _action_ was authorized; it does not assess whether the underlying AI decision was safe or
 appropriate. The Art. 9 risk management obligation for the AI system's outputs rests with the
 operator.
 
@@ -145,11 +146,11 @@ operator.
 Art. 15 requires high-risk AI systems to achieve appropriate levels of accuracy and to be robust
 against adversarial attacks, errors, and inconsistencies.
 
-| Art. 15 aspect | Nerion's contribution |
-|---|---|
-| Robustness of authorization decisions | Fail-closed kernel (C8), equivocation slashing (ledger), quorum threshold (C12). |
-| Cybersecurity (quantum-resistant signing) | ML-DSA-87 (FIPS 204 Cat. 5) for all authorization signatures; ML-KEM-1024 for key encapsulation. |
-| Accuracy | Not applicable — Nerion is a governance layer, not an inference system. Admission decisions are deterministic given inputs. |
+| Art. 15 aspect                                 | Nerion's contribution                                                                                                                              |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Robustness of authorization decisions          | Fail-closed kernel (C8), equivocation slashing (ledger), quorum threshold (C12).                                                                   |
+| Cybersecurity (quantum-resistant signing)      | ML-DSA-87 (FIPS 204 Cat. 5) for all authorization signatures; ML-KEM-1024 for key encapsulation.                                                   |
+| Accuracy                                       | Not applicable — Nerion is a governance layer, not an inference system. Admission decisions are deterministic given inputs.                        |
 | Adversarial robustness of the governance layer | The govern-the-verb negative oracle (C14) tests injection resistance. UNAUDITED ZK proofs (ADR-0006/0016/0017) are not yet independently verified. |
 
 **Gap:** The FIPS 204 implementation used in Nerion has not been evaluated by an accredited
@@ -168,58 +169,58 @@ properties to the RMF framework.
 
 GOVERN establishes organizational practices for accountability and risk culture.
 
-| GOVERN aspect | Nerion property |
-|---|---|
-| G1 — Policies and accountability | Apache-2.0 open-source; CONTRIBUTING.md, SECURITY.md, and disclosure policy documented. |
-| G2 — Transparency | Every admission decision is logged (transparency log, C10); ASSURANCE.md provides radical honesty about what is and is not proven. |
-| G6 — Responsible deployment | LAUNCH_READINESS.md documents four external gates before production use; repo explicitly labeled pre-production / Local maturity. |
-| **Gap** | No organizational AI governance policy exists for Nerion as a component of a deployed system. Operators must establish their own. |
+| GOVERN aspect                    | Nerion property                                                                                                                    |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| G1 — Policies and accountability | Apache-2.0 open-source; CONTRIBUTING.md, SECURITY.md, and disclosure policy documented.                                            |
+| G2 — Transparency                | Every admission decision is logged (transparency log, C10); ASSURANCE.md provides radical honesty about what is and is not proven. |
+| G6 — Responsible deployment      | LAUNCH_READINESS.md documents four external gates before production use; repo explicitly labeled pre-production / Local maturity.  |
+| **Gap**                          | No organizational AI governance policy exists for Nerion as a component of a deployed system. Operators must establish their own.  |
 
 ### 4.2 MAP
 
 MAP identifies and characterizes AI risks in context.
 
-| MAP aspect | Nerion property |
-|---|---|
-| M1 — Context / impact characterization | THREAT_MODEL.md documents adversary classes, trust boundaries, and out-of-scope threats. DESIGN_AROUND.md documents the FTO engineering intent. |
-| M3 — Risk tolerance | ASSURANCE.md explicitly documents residual risks and evidence tiers. No audit exists yet. |
-| **Gap** | Third-party / supply-chain AI risk (e.g., AI systems that produce intents Nerion governs) is not mapped in Nerion's own documentation; this is the deploying operator's responsibility. |
+| MAP aspect                             | Nerion property                                                                                                                                                                         |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M1 — Context / impact characterization | THREAT_MODEL.md documents adversary classes, trust boundaries, and out-of-scope threats. DESIGN_AROUND.md documents the FTO engineering intent.                                         |
+| M3 — Risk tolerance                    | ASSURANCE.md explicitly documents residual risks and evidence tiers. No audit exists yet.                                                                                               |
+| **Gap**                                | Third-party / supply-chain AI risk (e.g., AI systems that produce intents Nerion governs) is not mapped in Nerion's own documentation; this is the deploying operator's responsibility. |
 
 ### 4.3 MEASURE
 
 MEASURE uses quantitative and qualitative methods to analyze AI risks.
 
-| MEASURE aspect | Nerion property |
-|---|---|
-| M2 — Quantitative testing | 469 automated tests (npm run gate), 23/23 conformance checks. Property-based testing for capability attenuation and quorum receipts. |
-| M2.5 — Bias / fairness | Not applicable to a cryptographic governance protocol. |
-| M4 — Residual risk tracking | SECURITY_FINDINGS.md, APEX_SPRINT_LOG.md, APEX_SPRINT_BACKLOG.md track known issues and their resolution status. |
-| **Gap** | No fuzzing, formal verification, or differential testing against an independent implementation. The ASSURANCE.md "conformance-checked" tier explicitly states it is not external security validation. |
+| MEASURE aspect              | Nerion property                                                                                                                                                                                       |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M2 — Quantitative testing   | 752 automated tests (npm run gate), 23/23 conformance checks. Property-based testing for capability attenuation and quorum receipts.                                                                  |
+| M2.5 — Bias / fairness      | Not applicable to a cryptographic governance protocol.                                                                                                                                                |
+| M4 — Residual risk tracking | SECURITY_FINDINGS.md, APEX_SPRINT_LOG.md, APEX_SPRINT_BACKLOG.md track known issues and their resolution status.                                                                                      |
+| **Gap**                     | No fuzzing, formal verification, or differential testing against an independent implementation. The ASSURANCE.md "conformance-checked" tier explicitly states it is not external security validation. |
 
 ### 4.4 MANAGE
 
 MANAGE treats, monitors, and responds to AI risks.
 
-| MANAGE aspect | Nerion property |
-|---|---|
-| MN1 — Response plan | SECURITY.md responsible-disclosure policy; CONTRIBUTING.md patch process. |
-| MN2 — Incident tracking | APEX_SPRINT_LOG.md tracks findings and fixes (e.g., ZKRANGE-002, RCPT-001, CB-001, PERMIT-001). |
-| MN4 — Metrics | Conformance count (23/23) and test count (469) provide basic metrics; no SLO or MTTR defined. |
-| **Gap** | No automated vulnerability scanning, no supply-chain SBOM beyond the CBOM (ADR-0009), no incident response SLA. These are pre-production gaps appropriate to the current maturity level. |
+| MANAGE aspect           | Nerion property                                                                                                                                                                          |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| MN1 — Response plan     | SECURITY.md responsible-disclosure policy; CONTRIBUTING.md patch process.                                                                                                                |
+| MN2 — Incident tracking | APEX_SPRINT_LOG.md tracks findings and fixes (e.g., ZKRANGE-002, RCPT-001, CB-001, PERMIT-001).                                                                                          |
+| MN4 — Metrics           | Conformance count (23/23) and test count (752) provide basic metrics; no SLO or MTTR defined.                                                                                            |
+| **Gap**                 | No automated vulnerability scanning, no supply-chain SBOM beyond the CBOM (ADR-0009), no incident response SLA. These are pre-production gaps appropriate to the current maturity level. |
 
 ---
 
 ## 5. Consolidated Residual Gap Table
 
-| Gap ID | Description | Severity | Status |
-|---|---|---|---|
-| FSG-001 | QROM reduction for ML-DSA-87 is non-tight (O(log Q) loss); composed QROM analysis of ML-DSA + SHAKE256 + HKDF-SHA-384 does not exist. | Low (no known attack) | Open — to be addressed in external audit |
-| FSG-002 | ZK range proof soundness (ADR-0017) is proven classical/ROM only; QROM lift not analyzed; a quantum discrete-log adversary could forge proofs. | Medium (known architectural classical leg) | Open — roadmap: PQ commitment migration |
-| FSG-003 | Composition of PQ signature (ML-DSA-87) over classical ZK proof digest is not proven as a composed system; overall guarantee is only as strong as the classical ZK leg. | Medium (disclosed; architectural) | Open — resolved by PQ commitment migration |
-| FSG-004 | Side-channel / fault-injection analysis of ML-DSA-87 implementation (@noble/post-quantum, Rust crate) not performed. | High for production | Open — pre-production; required before any regulated deployment |
-| FSG-005 | No FIPS 140-3 CMVP validation of the ML-DSA-87 implementation; operators in regulated environments may require it. | Deployment-dependent | Open — not planned until production milestone |
-| FSG-006 | H provenance in Pedersen commitments (ADR-0016): dlog_G(H) unknownness is a ROM heuristic, not a QROM proof; quantum discrete-log breaks binding. | Medium (same as classical ZK leg) | Open — inherent to the current commitment scheme |
-| FSG-007 | EU AI Act Art. 9/15 compliance rests with operators of AI systems that use Nerion; Nerion provides supporting tooling but is not itself compliant or regulated. | N/A for Nerion directly | Documented — operator obligation |
+| Gap ID  | Description                                                                                                                                                             | Severity                                   | Status                                                          |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ | --------------------------------------------------------------- |
+| FSG-001 | QROM reduction for ML-DSA-87 is non-tight (O(log Q) loss); composed QROM analysis of ML-DSA + SHAKE256 + HKDF-SHA-384 does not exist.                                   | Low (no known attack)                      | Open — to be addressed in external audit                        |
+| FSG-002 | ZK range proof soundness (ADR-0017) is proven classical/ROM only; QROM lift not analyzed; a quantum discrete-log adversary could forge proofs.                          | Medium (known architectural classical leg) | Open — roadmap: PQ commitment migration                         |
+| FSG-003 | Composition of PQ signature (ML-DSA-87) over classical ZK proof digest is not proven as a composed system; overall guarantee is only as strong as the classical ZK leg. | Medium (disclosed; architectural)          | Open — resolved by PQ commitment migration                      |
+| FSG-004 | Side-channel / fault-injection analysis of ML-DSA-87 implementation (@noble/post-quantum, Rust crate) not performed.                                                    | High for production                        | Open — pre-production; required before any regulated deployment |
+| FSG-005 | No FIPS 140-3 CMVP validation of the ML-DSA-87 implementation; operators in regulated environments may require it.                                                      | Deployment-dependent                       | Open — not planned until production milestone                   |
+| FSG-006 | H provenance in Pedersen commitments (ADR-0016): dlog_G(H) unknownness is a ROM heuristic, not a QROM proof; quantum discrete-log breaks binding.                       | Medium (same as classical ZK leg)          | Open — inherent to the current commitment scheme                |
+| FSG-007 | EU AI Act Art. 9/15 compliance rests with operators of AI systems that use Nerion; Nerion provides supporting tooling but is not itself compliant or regulated.         | N/A for Nerion directly                    | Documented — operator obligation                                |
 
 ---
 
