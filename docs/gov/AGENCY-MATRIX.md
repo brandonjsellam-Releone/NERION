@@ -8,11 +8,11 @@
 
 ## 1. NIST / NCCoE — PQC Migration Consortium
 
-| Dimension | Detail |
-|---|---|
-| **Urgency** | ★★★★★ |
-| **Fit** | ★★★★★ |
-| **Access** | ★★★★☆ |
+| Dimension   | Detail           |
+| ----------- | ---------------- |
+| **Urgency** | ★★★★★            |
+| **Fit**     | ★★★★★            |
+| **Access**  | ★★★★☆            |
 | **Overall** | **TOP PRIORITY** |
 
 **Their specific PQC need:** The NCCoE is actively running a PQC Migration Consortium with 50+ industry collaborators to develop practical migration guidance. They need diverse technical inputs — especially for AI-related system categories (AI agent infrastructure is not yet well-represented). The June 2026 EOs give them mandate to accelerate.
@@ -29,18 +29,19 @@
 
 ## 2. CISA / DHS — PQC Product Procurement Guidance
 
-| Dimension | Detail |
-|---|---|
-| **Urgency** | ★★★★★ |
-| **Fit** | ★★★★☆ |
-| **Access** | ★★★☆☆ |
+| Dimension   | Detail            |
+| ----------- | ----------------- |
+| **Urgency** | ★★★★★             |
+| **Fit**     | ★★★★☆             |
+| **Access**  | ★★★☆☆             |
 | **Overall** | **HIGH PRIORITY** |
 
 **Their specific PQC need:** CISA's January 2026 procurement guidance mandates that federal agencies buy only PQC-capable products. CISA is developing and maintaining the PQC Product List — a catalog of products that implement FIPS 203/204/205. They also need guidance for AI systems specifically, which current PQC product lists don't address well.
 
 **How Nerion fits:** Nerion can serve as a reference implementation showing how AI agent systems can be made PQC-capable. The "govern the verb" design principle directly addresses CISA's concern about AI systems acting outside authorized boundaries. CISA's Binding Operational Directives (BODs) for Federal Civilian Executive Branch (FCEB) agencies create a procurement mandate that Nerion can address.
 
-**Best entry point:** 
+**Best entry point:**
+
 1. Engage via the NCCoE pathway first (NIST/CISA have overlapping working groups)
 2. Contact CISA's PQC Migration Working Group directly after NCCoE introduction
 3. Review CISA's PQC Migration Playbook and submit Nerion as a potential reference implementation
@@ -53,16 +54,17 @@
 
 ## 3. AFWERX / DoD — SBIR for Autonomous AI Systems
 
-| Dimension | Detail |
-|---|---|
-| **Urgency** | ★★★★☆ |
-| **Fit** | ★★★★★ |
-| **Access** | ★★★★☆ |
+| Dimension   | Detail            |
+| ----------- | ----------------- |
+| **Urgency** | ★★★★☆             |
+| **Fit**     | ★★★★★             |
+| **Access**  | ★★★★☆             |
 | **Overall** | **HIGH PRIORITY** |
 
 **Their specific PQC need:** DoD AFWERX runs SBIR/STTR programs specifically for innovative dual-use technologies. The combination of autonomous AI agent governance + PQC is a near-perfect topic for AFWERX's "Quantum + Cyber" solicitations. AFWERX specifically values open-source, non-traditional vendors and small teams.
 
 **How Nerion fits:** The NVIDIA Nemotron analysis identified the exact DoD programs:
+
 - **CDAO ADA (Advancing Data & AI):** Needs "zero-trust AI agent mesh" — Nerion is the policy fabric
 - **DARPA AIE / ANCE:** Autonomous agents requiring verifiable execution chains
 - **AFRL Vanguard "Skyborg" / CCA (Collaborative Combat Aircraft):** Loyal wingman agents need PQC-signed Rules of Engagement compliance
@@ -79,11 +81,11 @@
 
 ## 4. DIU — Commercial Solutions Opening (CSO)
 
-| Dimension | Detail |
-|---|---|
-| **Urgency** | ★★★☆☆ |
-| **Fit** | ★★★★☆ |
-| **Access** | ★★★★☆ |
+| Dimension   | Detail          |
+| ----------- | --------------- |
+| **Urgency** | ★★★☆☆           |
+| **Fit**     | ★★★★☆           |
+| **Access**  | ★★★★☆           |
 | **Overall** | **MEDIUM-HIGH** |
 
 **Their specific PQC need:** Defense Innovation Unit (DIU) accepts technology proposals via Commercial Solutions Opening (CSO) process — designed specifically for non-traditional vendors (including small companies and open-source projects) with technologies DoD can adapt for defense use. DIU's AI/ML portfolio includes autonomous systems governance.
@@ -98,11 +100,11 @@
 
 ## 5. NSA — National Security Systems PQC Migration
 
-| Dimension | Detail |
-|---|---|
-| **Urgency** | ★★★★★ |
-| **Fit** | ★★★★☆ |
-| **Access** | ★★☆☆☆ |
+| Dimension   | Detail                    |
+| ----------- | ------------------------- |
+| **Urgency** | ★★★★★                     |
+| **Fit**     | ★★★★☆                     |
+| **Access**  | ★★☆☆☆                     |
 | **Overall** | **STRATEGIC / LONG-TERM** |
 
 **Their specific PQC need:** NSA's CNSA 2.0 suite mandates PQC for all national security systems by 2030. NSA also governs Commercial Solutions for Classified (CSfC) — a framework allowing commercial products to protect classified data when layered appropriately. AI governance at the PQC level is directly relevant.
@@ -119,11 +121,11 @@
 
 ## 6. NASA / GSA — EO-Named Agencies
 
-| Dimension | Detail |
-|---|---|
-| **Urgency** | ★★★☆☆ |
-| **Fit** | ★★☆☆☆ |
-| **Access** | ★★★☆☆ |
+| Dimension   | Detail              |
+| ----------- | ------------------- |
+| **Urgency** | ★★★☆☆               |
+| **Fit**     | ★★☆☆☆               |
+| **Access**  | ★★★☆☆               |
 | **Overall** | **MEDIUM / YEAR 2** |
 
 **Their specific PQC need:** NASA and GSA were explicitly named in the June 2026 EO for PQC cost-saving coordination. NASA has autonomous systems (space robotics, mission control AI) that could benefit from Nerion's governance approach. GSA provides the procurement vehicles (GSA Schedules) that many agencies use.
@@ -138,11 +140,11 @@
 
 ## Quick Reference Matrix
 
-| Agency | 30-Day Action | Primary Contact | Blocker |
-|---|---|---|---|
-| **NIST NCCoE** | Send inquiry email | applied-crypto-pqc@nist.gov | None — very accessible |
-| **CISA** | Engage post-NCCoE | Via NCCoE referral | UNAUDITED status |
-| **AFWERX/DoD** | Draft SBIR Phase I | afwerx.com SBIR portal | US entity structure (SBIR eligibility) |
-| **DIU** | Submit CSO | diu.mil | Production readiness |
-| **NSA** | Queue for Year 2 | Via prime teaming | FIPS 140-3 + clearances |
-| **NASA/GSA** | Queue for Year 2 | Via QED-C | Past performance |
+| Agency         | 30-Day Action      | Primary Contact             | Blocker                                |
+| -------------- | ------------------ | --------------------------- | -------------------------------------- |
+| **NIST NCCoE** | Send inquiry email | applied-crypto-pqc@nist.gov | None — very accessible                 |
+| **CISA**       | Engage post-NCCoE  | Via NCCoE referral          | UNAUDITED status                       |
+| **AFWERX/DoD** | Draft SBIR Phase I | afwerx.com SBIR portal      | US entity structure (SBIR eligibility) |
+| **DIU**        | Submit CSO         | diu.mil                     | Production readiness                   |
+| **NSA**        | Queue for Year 2   | Via prime teaming           | FIPS 140-3 + clearances                |
+| **NASA/GSA**   | Queue for Year 2   | Via QED-C                   | Past performance                       |

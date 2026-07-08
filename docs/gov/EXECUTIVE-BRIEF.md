@@ -11,7 +11,7 @@ Two things are happening simultaneously that most vendors address separately:
 
 1. **Quantum computers threaten existing cryptography.** "Harvest now, decrypt later" attacks are already underway — adversaries are capturing encrypted data today to decrypt when quantum computers mature. Federal agencies must migrate to post-quantum cryptography.
 
-2. **AI agents are executing consequential actions without cryptographic accountability.** Autonomous AI systems are making decisions — allocating resources, controlling infrastructure, authorizing transactions — but their *execution authority* is governed by classical cryptography that a quantum computer could forge.
+2. **AI agents are executing consequential actions without cryptographic accountability.** Autonomous AI systems are making decisions — allocating resources, controlling infrastructure, authorizing transactions — but their _execution authority_ is governed by classical cryptography that a quantum computer could forge.
 
 Every existing PQC solution addresses the first problem. **Nerion addresses both simultaneously, at the execution layer.**
 
@@ -24,12 +24,14 @@ Nerion is an open-source **post-quantum execution governance protocol**. It cryp
 **The analogy:** Two-person integrity rules govern nuclear weapon release authority — no single individual can authorize a launch. Nerion applies the same concept to AI agent actions, enforced by post-quantum signatures that no quantum computer can forge.
 
 **In technical terms:**
+
 - Every AI agent action flows through a stateless deterministic `decide()` function
 - `decide()` returns `deny` unless a verifiable post-quantum capability signature authorizes the specific action
 - Any exception, unexpected input, or missing capability results in `deny` — fail-closed by design
 - Every decision is logged to a tamper-evident Merkle log with inclusion proofs
 
 **What this means for federal systems:**
+
 - An adversary who compromises an AI agent's runtime cannot forge new authorizations — the signatures are PQC (ML-DSA-87, FIPS 204)
 - A rogue or hallucinating AI agent cannot exceed its signed authority, even if it controls its own runtime
 - Every AI decision is cryptographically attributable, auditable, and tamper-evident
@@ -40,16 +42,16 @@ Nerion is an open-source **post-quantum execution governance protocol**. It cryp
 
 Nerion aligns to both active federal mandates:
 
-| Mandate | Alignment |
-|---|---|
-| NIST FIPS 203 (ML-KEM-1024) | Key encapsulation for agent session establishment |
-| NIST FIPS 204 (ML-DSA-87) | Action authorization signatures |
-| NIST FIPS 205 (SLH-DSA) | Long-term root signing |
-| CNSA 2.0 symmetric suite | HMAC-SHA-384 + AES-256-GCM |
-| NIST AI RMF | Cryptographic enforcement of AI risk controls |
-| E.O. 14110 AI Accountability | Non-repudiable audit trail for AI decisions |
+| Mandate                      | Alignment                                         |
+| ---------------------------- | ------------------------------------------------- |
+| NIST FIPS 203 (ML-KEM-1024)  | Key encapsulation for agent session establishment |
+| NIST FIPS 204 (ML-DSA-87)    | Action authorization signatures                   |
+| NIST FIPS 205 (SLH-DSA)      | Long-term root signing                            |
+| CNSA 2.0 symmetric suite     | HMAC-SHA-384 + AES-256-GCM                        |
+| NIST AI RMF                  | Cryptographic enforcement of AI risk controls     |
+| E.O. 14110 AI Accountability | Non-repudiable audit trail for AI decisions       |
 
-**Current state:** 469 automated tests + 23/23 conformance checks. CNSA 2.0 aligned — **not yet FIPS 140-3 certified** (CMVP process to be initiated as federal engagement deepens). Externally **unaudited** — independent audit in procurement. Apache-2.0 open source.
+**Current state:** 756 automated tests + 23/23 conformance checks. CNSA 2.0 aligned — **not yet FIPS 140-3 certified** (CMVP process to be initiated as federal engagement deepens). Externally **unaudited** — independent audit in procurement. Apache-2.0 open source.
 
 ---
 
@@ -81,4 +83,4 @@ We are in the research and consortium-engagement phase. We are not seeking a pro
 
 ---
 
-*Nerion is UNAUDITED and pre-FTO. These materials are for research and evaluation purposes. TRELYAN makes no claim of FIPS certification, government approval, or non-infringement.*
+_Nerion is UNAUDITED and pre-FTO. These materials are for research and evaluation purposes. TRELYAN makes no claim of FIPS certification, government approval, or non-infringement._

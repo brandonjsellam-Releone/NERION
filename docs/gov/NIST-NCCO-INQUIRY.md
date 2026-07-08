@@ -19,9 +19,9 @@ I am writing to inquire about industry partnership with the NCCoE PQC Migration 
 
 **What Nerion is:**
 
-Nerion is a protocol — not a cryptographic library — that governs *how* autonomous AI agents exercise their authority. It applies ML-KEM-1024 (FIPS 203), ML-DSA-87 (FIPS 204), and SLH-DSA (FIPS 205) to the *execution governance* layer: every AI agent action is bound to a verifiable post-quantum signature before execution, creating a cryptographic chain of custody from policy issuance to execution. Symmetric operations use HMAC-SHA-384 and AES-256-GCM per the CNSA 2.0 suite.
+Nerion is a protocol — not a cryptographic library — that governs _how_ autonomous AI agents exercise their authority. It applies ML-KEM-1024 (FIPS 203), ML-DSA-87 (FIPS 204), and SLH-DSA (FIPS 205) to the _execution governance_ layer: every AI agent action is bound to a verifiable post-quantum signature before execution, creating a cryptographic chain of custody from policy issuance to execution. Symmetric operations use HMAC-SHA-384 and AES-256-GCM per the CNSA 2.0 suite.
 
-The project currently passes **469 automated tests** across 72 test files, with **23/23 conformance checks** against the published specification. A Rust hot-path implementation passes 13 tests including byte-exact KAT comparisons against NIST vectors.
+The project currently passes **756 automated tests** across 102 test files, with **23/23 conformance checks** against the published specification. A Rust hot-path implementation passes 13 tests including byte-exact KAT comparisons against NIST vectors.
 
 **Why we believe this is relevant to the Consortium:**
 

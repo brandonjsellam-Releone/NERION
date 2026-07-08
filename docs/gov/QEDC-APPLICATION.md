@@ -26,7 +26,7 @@ TRELYAN develops **Nerion**, an open-source post-quantum execution governance pr
 
 **Why this matters for quantum:** AI systems operating today are making decisions authorized by classical cryptographic credentials. A "harvest now, decrypt later" adversary capturing those credentials today can forge AI agent authorizations when quantum computers mature. Nerion eliminates this vulnerability by applying ML-KEM-1024 (FIPS 203), ML-DSA-87 (FIPS 204), and SLH-DSA (FIPS 205) to the execution governance layer — not just communications.
 
-**Technical status:** 469 automated tests + 23/23 conformance checks against the published specification. Rust hot-path with 13 tests including byte-exact KAT comparisons against NIST vectors. Apache-2.0 open-source. CNSA 2.0 algorithm aligned (not FIPS 140-3 certified — CMVP process not yet initiated). External audit inquiries submitted to OSTIF and OTF Security Lab.
+**Technical status:** 756 automated tests + 23/23 conformance checks against the published specification. Rust hot-path with 13 tests including byte-exact KAT comparisons against NIST vectors. Apache-2.0 open-source. CNSA 2.0 algorithm aligned (not FIPS 140-3 certified — CMVP process not yet initiated). External audit inquiries submitted to OSTIF and OTF Security Lab.
 
 **Federal alignment:** Aligned to June 2026 quantum executive orders (PQC migration by 2030–2031). Addresses both the PQC cryptographic migration mandate and the parallel AI governance mandate simultaneously.
 
@@ -43,12 +43,12 @@ TRELYAN develops **Nerion**, an open-source post-quantum execution governance pr
 
 ## Relevant Working Group Interests
 
-| Working Group | Relevance to Nerion |
-|---|---|
-| PQC Implementation | Core: FIPS 203/204/205 implementation and conformance |
-| AI and Quantum | Dual mandate: PQC + AI governance intersection |
-| Government Relations | Federal procurement and consortium engagement |
-| Cybersecurity | CNSA 2.0 alignment; supply chain security (Apache-2.0) |
+| Working Group        | Relevance to Nerion                                    |
+| -------------------- | ------------------------------------------------------ |
+| PQC Implementation   | Core: FIPS 203/204/205 implementation and conformance  |
+| AI and Quantum       | Dual mandate: PQC + AI governance intersection         |
+| Government Relations | Federal procurement and consortium engagement          |
+| Cybersecurity        | CNSA 2.0 alignment; supply chain security (Apache-2.0) |
 
 ---
 
@@ -61,6 +61,7 @@ Nerion occupies a unique position in the quantum ecosystem that complements rath
 - **Fills a gap:** post-quantum governance of the AI execution layer — the action authorization path that existing PQC vendors don't address
 
 The framing within QED-C:
+
 > "Nerion is the policy enforcement layer that makes AI-driven federal systems quantum-resistant — not at the communication layer, but at the decision layer."
 
 ---
@@ -81,7 +82,7 @@ When meeting other QED-C members for the first time:
 
 ## NLnet Grant Disclosure
 
-*Include this proactively if asked about funding or international affiliations:*
+_Include this proactively if asked about funding or international affiliations:_
 
 "TRELYAN is applying to the NLnet NGI Restack research grant program (European, call opens approximately September 2026). We are not yet funded — the application is pending. NLnet is an independent Dutch foundation that funds open-source research; it does not direct product development or security decisions. All Nerion code is Apache-2.0 with no EU-specific licensing restrictions. We view the potential NLnet grant as a transatlantic force multiplier for USG priorities — European research funding accelerating US-standard PQC implementation that federal agencies can then evaluate and adopt."
 
@@ -89,14 +90,14 @@ When meeting other QED-C members for the first time:
 
 ## Follow-up Plan Post-Membership
 
-| Month | Action |
-|---|---|
-| 1 | Attend first available member meeting or working group call |
-| 1 | Connect with MITRE, Leidos, or Booz Allen Hamilton representatives |
-| 2 | Request to present Nerion at a working group technical session |
-| 3 | Identify specific SBIR or OTA topics to co-develop with a prime |
-| 6 | Leverage QED-C membership as reference in AFWERX SBIR proposal |
+| Month | Action                                                             |
+| ----- | ------------------------------------------------------------------ |
+| 1     | Attend first available member meeting or working group call        |
+| 1     | Connect with MITRE, Leidos, or Booz Allen Hamilton representatives |
+| 2     | Request to present Nerion at a working group technical session     |
+| 3     | Identify specific SBIR or OTA topics to co-develop with a prime    |
+| 6     | Leverage QED-C membership as reference in AFWERX SBIR proposal     |
 
 ---
 
-*QED-C membership gives TRELYAN direct visibility with government decision-makers shaping quantum policy and procurement. The 250+ member network is the fastest path to building the federal relationships needed for SBIR and prime teaming, without requiring past performance.*
+_QED-C membership gives TRELYAN direct visibility with government decision-makers shaping quantum policy and procurement. The 250+ member network is the fastest path to building the federal relationships needed for SBIR and prime teaming, without requiring past performance._
