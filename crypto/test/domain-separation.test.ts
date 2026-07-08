@@ -66,7 +66,12 @@ describe('ADR-0042 — v2/v3 tag generations', () => {
   it('every MIGRATED v3 tag is Nerion-branded and DIFFERS from its v2 predecessor', () => {
     // The two pinned exceptions (frozen suites.ts literal; ADR-0016 generator-H provenance) are the
     // only spaces allowed to stay polarseek/PolarSeek-branded in v3.
-    const PINNED = new Set(['SUITE_NEGOTIATION', 'ZK_GENERATOR_H'])
+    const PINNED = new Set([
+      'SUITE_NEGOTIATION',
+      'ZK_GENERATOR_H',
+      'ZK_STMT_PREFIX',
+      'ZK_BIT_PREFIX',
+    ])
     for (const [key, v3] of Object.entries(DOMAIN_TAGS_V3)) {
       const v2 = (DOMAIN_TAGS_V2 as Record<string, string>)[key]!
       if (PINNED.has(key)) {

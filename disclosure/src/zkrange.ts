@@ -102,7 +102,7 @@ export interface RangeProof {
 
 /** Full-statement Fiat–Shamir binding (strong FS). */
 function statementHash(threshold: bigint, n: number, cAmt: Pt, amountC: Pt[], diffC: Pt[]): Bytes {
-  const tag = utf8ToBytes(`PolarSeek/disclosure/stmt/v2|n=${n}|thr=${threshold}`)
+  const tag = utf8ToBytes(`${DOMAIN_TAGS.ZK_STMT_PREFIX}|n=${n}|thr=${threshold}`)
   const parts = [
     tag,
     cAmt.toBytes(),
@@ -193,7 +193,7 @@ function proveSub(
   prefix: string,
 ): SubProof {
   const bits = built.commitments.map((ci, i) =>
-    proveBit(ci, built.bits[i]!, built.r[i]!, stmt, `PolarSeek/disclosure/bit/${prefix}/${i}`),
+    proveBit(ci, built.bits[i]!, built.r[i]!, stmt, `${DOMAIN_TAGS.ZK_BIT_PREFIX}/${prefix}/${i}`),
   )
   return { commitments: built.commitments, bits }
 }
@@ -205,7 +205,12 @@ function verifySub(target: Pt, sub: SubProof, n: number, stmt: Bytes, prefix: st
   if (!combined.equals(target)) return false
   for (let i = 0; i < n; i++) {
     if (
-      !verifyBit(sub.commitments[i]!, sub.bits[i]!, stmt, `PolarSeek/disclosure/bit/${prefix}/${i}`)
+      !verifyBit(
+        sub.commitments[i]!,
+        sub.bits[i]!,
+        stmt,
+        `${DOMAIN_TAGS.ZK_BIT_PREFIX}/${prefix}/${i}`,
+      )
     ) {
       return false
     }

@@ -119,6 +119,10 @@ export const DOMAIN_TAGS_V2 = {
   POLICY_PROOF: 'polarseek-psp-v1',
   /** disclosure/zkrange.ts — NUMS generator-H derivation (nothing-up-my-sleeve; ADR-0016 pins it). */
   ZK_GENERATOR_H: 'PolarSeek/disclosure/generator-H/v1',
+  /** disclosure/zkrange.ts — range-proof STATEMENT Fiat-Shamir prefix (suffixed |n=..|thr=..). */
+  ZK_STMT_PREFIX: 'PolarSeek/disclosure/stmt/v2',
+  /** disclosure/zkrange.ts — per-BIT Fiat-Shamir prefix (suffixed /{amount|diff}/{i}). */
+  ZK_BIT_PREFIX: 'PolarSeek/disclosure/bit',
   /** ledger/chain.ts — native block hash. */
   BLOCK_HASH: 'polarseek-block-v1',
   /** ledger/leader.ts — VRF alpha / seed. */
@@ -183,6 +187,8 @@ export const DOMAIN_TAGS_V3 = {
   SET_MEMBERSHIP_DIGEST: 'nerion-setmembership-v1', // already Nerion — unchanged
   POLICY_PROOF: 'Nerion/disclosure/psp/v2',
   ZK_GENERATOR_H: 'PolarSeek/disclosure/generator-H/v1', // PINNED — ADR-0016 generator provenance
+  ZK_STMT_PREFIX: 'PolarSeek/disclosure/stmt/v2', // PINNED — ZK layer migrates with ADR-0022, not here
+  ZK_BIT_PREFIX: 'PolarSeek/disclosure/bit', // PINNED — ZK layer migrates with ADR-0022, not here
   BLOCK_HASH: 'Nerion/ledger/block/v2',
   VRF: 'Nerion/ledger/vrf/v2',
   NATIVE_CONSENSUS_SET: 'Nerion/consensus/set/v2',
