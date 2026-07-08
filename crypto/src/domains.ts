@@ -3,25 +3,56 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
- * Central message-space registry (DS-REGISTRY-001 — AAC cycle-8 domain-separation audit).
+ * Central message-space registry (DS-REGISTRY-001 — AAC cycle-8 domain-separation audit) +
+ * versioned tag GENERATIONS (ADR-0042).
  *
  * Single source of truth for the domain-separation TAG of every signed / MAC'd / sealed / committed
- * message space in Nerion. The cross-cutting audit confirmed no two message spaces currently collide,
- * but for a few surfaces disjointness held by STRUCTURAL COINCIDENCE (CBOR major-type, message length,
- * key-role) rather than by an explicit tag both sides check. This registry makes the property
- * machine-checkable: `crypto/test/domain-separation.test.ts` asserts every registered tag is globally
- * UNIQUE, so a new signed message can not silently reuse (collide with) an existing space.
+ * message space in Nerion. `crypto/test/domain-separation.test.ts` asserts every registered tag is
+ * UNIQUE within its generation, so a new signed message can not silently reuse (collide with) an
+ * existing space. RULE: adding any new signed/MAC'd/sealed/committed message REQUIRES adding its tag
+ * here first (to BOTH generations).
  *
- * MIGRATION (incremental): consumers SHOULD import their tag from here rather than hard-coding a
- * literal. `receipts/src/receipt.ts` is the first migrated consumer (it also CLOSES RCPT-DS-002 — the
- * receipt was previously the ONLY signed message with no domain tag). The remaining literals below are
- * the AUTHORITATIVE INVENTORY of the existing tags; migrating each module to import from here is a
- * tracked follow-up. RULE: adding any new signed/MAC'd/sealed/committed message REQUIRES adding its tag
- * here first (the uniqueness test then guarantees no collision with an existing space).
+ * GENERATIONS (ADR-0042 — the polarseek->Nerion tag-VALUE migration as a versioned v2->v3 bump):
+ *  - `DOMAIN_TAGS_V2` is the FROZEN pre-rename tag set — the source of the frozen KAT vectors
+ *    (`conformance/vectors/ps-kat.json`, `crypto/vectors/deterministic-kat.json`). No value in it
+ *    ever changes.
+ *  - `DOMAIN_TAGS_V3` is the Nerion/* generation: every migrated tag adopts the Nerion naming AND
+ *    bumps its embedded version suffix, so a v3 tag is a DIFFERENT string from its v2 predecessor
+ *    (mutually unverifiable by construction — domain separation working as designed). Tags that were
+ *    already Nerion-branded keep their value (same message space, no bump needed).
+ *  - `PROTOCOL_TAG_GENERATION` selects the ACTIVE generation consumers resolve through
+ *    `DOMAIN_TAGS`. It is 'v2' (the wire-compatible default): flipping it to 'v3' is a PROTOCOL
+ *    BREAK — it rehashes every migrated signed message, requires the additive v3 KAT/conformance
+ *    vectors (ADR-0042 §c, not yet generated) and generation negotiation (ADR-0029; never
+ *    dual-accept). Do NOT flip it outside that gated migration.
+ *
+ * PINNED-IN-V3 EXCEPTIONS (kept at their v2 value in BOTH generations, deliberately):
+ *  - `SUITE_NEGOTIATION`: the live literal is hard-coded in crypto/src/suites.ts, which is FROZEN
+ *    (suiteid-lock). Renaming it here without unfreezing suites.ts would silently desync the
+ *    registry from the code. Migrates only with a deliberate suites.ts change.
+ *  - `ZK_GENERATOR_H`: ADR-0016 pins the NUMS generator-H PROVENANCE. This string is hashed to
+ *    derive the Pedersen generator H itself — changing it mints a DIFFERENT generator (a
+ *    commitment-scheme migration invalidating every existing commitment), not a rename.
+ *  - The zkrange dynamic Fiat-Shamir prefixes ('PolarSeek/disclosure/stmt/v2',
+ *    'PolarSeek/disclosure/bit/{amount|diff}/{i}') remain hard-coded in zkrange.ts with dynamic
+ *    suffixes; they migrate with the ZK layer (same audit surface as ADR-0022), not here.
+ *  - kernel/policy.ts 'polarseek-kernel/0.1.0' is an evaluator VERSION label riding inside signed
+ *    decisions/receipts — a version string, not a domain-separation tag; it is versioned by the
+ *    kernel's own scheme.
  */
 
-/** Every domain-separation tag, keyed by message space. Values MUST be globally unique. */
-export const DOMAIN_TAGS = {
+/** Which tag generation consumers resolve through `DOMAIN_TAGS`. */
+export type TagGeneration = 'v2' | 'v3'
+
+/**
+ * The ACTIVE generation. 'v2' = byte-identical to the frozen KATs. Flipping to 'v3' is a gated
+ * protocol migration (ADR-0042) — see the module docblock. Not a runtime knob: it is a build-time
+ * constant so the emitted bytes of a given build are deterministic.
+ */
+export const PROTOCOL_TAG_GENERATION: TagGeneration = 'v2'
+
+/** The FROZEN v2 (pre-rename) tag set — source of the frozen KAT vectors. Never edit a value. */
+export const DOMAIN_TAGS_V2 = {
   // ── ML-DSA-87 signatures ───────────────────────────────────────────────────────────────────────
   /** crypto/envelope.ts — generic signed envelope. */
   ENVELOPE_SIGNED: 'PolarSeek-Signed-v1',
@@ -29,7 +60,7 @@ export const DOMAIN_TAGS = {
   CAPABILITY_GRANT: 'polarseek/capability/grant/v2',
   /** governance/quorum.ts — governance proposal. */
   GOVERNANCE_PROPOSAL: 'polarseek-gov-v1',
-  /** receipts/receipt.ts — the transparency-log receipt (MIGRATED; was previously UNTAGGED). */
+  /** receipts/receipt.ts — the transparency-log receipt (was previously UNTAGGED; RCPT-DS-002). */
   RECEIPT: 'nerion-receipt-v1',
   /** receipts/quorum.ts — decentralized quorum receipt. */
   QUORUM_RECEIPT: 'polarseek-quorum-receipt-v1',
@@ -65,7 +96,7 @@ export const DOMAIN_TAGS = {
   COSE_SLSA: 'polarseek/cose/slsa-provenance/v1',
 
   // ── HKDF / negotiation labels ────────────────────────────────────────────────────────────────────
-  /** crypto/suites.ts — suite-negotiation transcript. */
+  /** crypto/suites.ts — suite-negotiation transcript (literal lives in the FROZEN suites.ts). */
   SUITE_NEGOTIATION: 'polarseek/suite-negotiation',
   /** planes/node.ts — attested-session key HKDF. */
   SESSION_KDF: 'polarseek/session-key/v1',
@@ -86,7 +117,7 @@ export const DOMAIN_TAGS = {
   SET_MEMBERSHIP_DIGEST: 'nerion-setmembership-v1',
   /** disclosure/policyproof.ts — policy-satisfaction proof digest. */
   POLICY_PROOF: 'polarseek-psp-v1',
-  /** disclosure/zkrange.ts — NUMS generator-H derivation (nothing-up-my-sleeve). */
+  /** disclosure/zkrange.ts — NUMS generator-H derivation (nothing-up-my-sleeve; ADR-0016 pins it). */
   ZK_GENERATOR_H: 'PolarSeek/disclosure/generator-H/v1',
   /** ledger/chain.ts — native block hash. */
   BLOCK_HASH: 'polarseek-block-v1',
@@ -104,16 +135,77 @@ export const DOMAIN_TAGS = {
   CNSA_VERDICT: 'PolarSeek-CNSA-Verdict-v1',
   /** conformance/cbom.ts — signed CBOM statement (ADR-0009). */
   CBOM: 'PolarSeek-CBOM-v1',
-
-  // NOTE: the zkrange statement/bit Fiat-Shamir tags ('PolarSeek/disclosure/stmt/v2',
-  // 'PolarSeek/disclosure/bit/{amount|diff}/{i}') are built with dynamic (n/threshold/bit-index)
-  // suffixes off a static prefix; their prefixes are distinct from every entry above. Migrating them
-  // to a registry-sourced prefix is part of the DS-REGISTRY-001 module-migration follow-up.
 } as const
+
+/**
+ * The v3 (Nerion/*) generation — ADR-0042. Every MIGRATED tag is a NEW string (Nerion naming +
+ * bumped version suffix), so v2 and v3 messages are mutually unverifiable by construction. Tags that
+ * were already Nerion-branded, and the PINNED exceptions (see module docblock), keep their v2 value.
+ * INACTIVE until `PROTOCOL_TAG_GENERATION` flips under the gated ADR-0042 migration (additive v3
+ * KATs + conformance check + ADR-0029 negotiation).
+ */
+export const DOMAIN_TAGS_V3 = {
+  // ── ML-DSA-87 signatures ───────────────────────────────────────────────────────────────────────
+  ENVELOPE_SIGNED: 'Nerion/envelope/signed/v2',
+  CAPABILITY_GRANT: 'Nerion/capability/grant/v3',
+  GOVERNANCE_PROPOSAL: 'Nerion/governance/proposal/v2',
+  RECEIPT: 'nerion-receipt-v1', // already Nerion — unchanged
+  QUORUM_RECEIPT: 'Nerion/receipts/quorum/v2',
+  STH: 'Nerion/translog/sth/v2',
+  ATTEST_EVIDENCE: 'Nerion/attest/evidence/v2',
+  CREDIT_GRANT: 'Nerion/settlement/credit-grant/v2',
+  BLOCK_SIG: 'Nerion/ledger/block-sig/v2',
+  ATTESTATION: 'Nerion/consensus/attest/v3',
+  TIMEOUT: 'Nerion/consensus/timeout/v3',
+  EVM_ATTEST: 'Nerion/evm-attest/v1', // already Nerion — unchanged
+
+  // ── MACs (HMAC-SHA-384) ────────────────────────────────────────────────────────────────────────
+  PERMIT_MAC: 'Nerion/permit/mac/v2',
+  PERMIT_AUDIENCE_KDF: 'Nerion/permit/audience-kdf/v2',
+  PERMIT_CAVEAT: 'Nerion/permit-caveat/v1', // already Nerion — unchanged
+
+  // ── COSE_Sign1 profiles ────────────────────────────────────────────────────────────────────────
+  COSE_EAT: 'Nerion/cose/eat-result/v2',
+  COSE_SBOM: 'Nerion/cose/cyclonedx-sbom/v2',
+  COSE_SLSA: 'Nerion/cose/slsa-provenance/v2',
+
+  // ── HKDF / negotiation labels ──────────────────────────────────────────────────────────────────
+  SUITE_NEGOTIATION: 'polarseek/suite-negotiation', // PINNED — literal lives in FROZEN suites.ts
+  SESSION_KDF: 'Nerion/planes/session-key/v2',
+
+  // ── AEAD seals / KEM ───────────────────────────────────────────────────────────────────────────
+  KEM_SEAL: 'Nerion/crypto/kem-seal/v2',
+
+  // ── hash commitments / set ids ─────────────────────────────────────────────────────────────────
+  SALTED_COMMIT: 'Nerion/disclosure/salted-commit/v1', // already Nerion — unchanged
+  COMMIT_BIND: 'Nerion/disclosure/commit-bind/v3',
+  SET_MEMBERSHIP: 'Nerion/disclosure/set-membership/v1', // already Nerion — unchanged
+  SET_MEMBERSHIP_DIGEST: 'nerion-setmembership-v1', // already Nerion — unchanged
+  POLICY_PROOF: 'Nerion/disclosure/psp/v2',
+  ZK_GENERATOR_H: 'PolarSeek/disclosure/generator-H/v1', // PINNED — ADR-0016 generator provenance
+  BLOCK_HASH: 'Nerion/ledger/block/v2',
+  VRF: 'Nerion/ledger/vrf/v2',
+  NATIVE_CONSENSUS_SET: 'Nerion/consensus/set/v2',
+  SORTITION: 'Nerion/ledger/sortition/v2',
+  EVM_CONSENSUS_SET: 'Nerion/evm-consensus-set/v1', // already Nerion — unchanged
+
+  // ── conformance-layer signed contexts ──────────────────────────────────────────────────────────
+  CNSA_VERDICT: 'Nerion/conformance/cnsa-verdict/v2',
+  CBOM: 'Nerion/conformance/cbom/v2',
+} as const
+
+/** The ACTIVE tag set — what every consumer imports. v2 today (byte-identical to the frozen KATs). */
+export const DOMAIN_TAGS: typeof DOMAIN_TAGS_V2 | typeof DOMAIN_TAGS_V3 =
+  PROTOCOL_TAG_GENERATION === 'v2' ? DOMAIN_TAGS_V2 : DOMAIN_TAGS_V3
 
 export type DomainTag = (typeof DOMAIN_TAGS)[keyof typeof DOMAIN_TAGS]
 
-/** All registered tags (used by the uniqueness gate). */
+/** The tag set of a specific generation (tests / tooling / future negotiation). */
+export function domainTagsFor(gen: TagGeneration): Record<string, string> {
+  return gen === 'v2' ? DOMAIN_TAGS_V2 : DOMAIN_TAGS_V3
+}
+
+/** All tags of the ACTIVE generation (used by the uniqueness gate). */
 export function allDomainTags(): string[] {
   return Object.values(DOMAIN_TAGS)
 }

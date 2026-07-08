@@ -5,14 +5,32 @@ SPDX-License-Identifier: Apache-2.0
 
 # ADR-0042 — `polarseek-*` → `Nerion/*` domain-tag value migration as a versioned v2→v3 protocol bump (proposed, design-only)
 
-**Status: PROPOSED — DESIGN ONLY, UNIMPLEMENTED.** This ADR records a _decision about the shape and
-sequencing_ of renaming the protocol's **domain-separation tag VALUES** (the `polarseek-*` /
-`PolarSeek-*` / `PolarSeek/…` strings embedded inside signed / MAC'd / committed messages) to the
-`Nerion/*` convention, as the final code-level step of the PolarSeek→Nerion rename. It changes **no**
-code, **no** KAT vector, and **no** wire byte in this commit. The number **0042 is provisional**,
-pending cross-branch ADR reconciliation (the ADR range 0001–0041 is collision-managed); renumber on
-merge if it collides. Date: 2026-07-06. Nothing here is a security, audited, production-ready, FIPS,
-or non-infringement claim. UNAUDITED, pre-FTO.
+**Status: ACCEPTED — STAGES 1–2 IMPLEMENTED (2026-07-08); v3 ACTIVATION NOT DONE.** This ADR records
+the _shape and sequencing_ of renaming the protocol's **domain-separation tag VALUES** (the
+`polarseek-*` / `PolarSeek-*` / `PolarSeek/…` strings embedded inside signed / MAC'd / committed
+messages) to the `Nerion/*` convention, as the final code-level step of the PolarSeek→Nerion rename.
+The number **0042 is provisional**, pending cross-branch ADR reconciliation (the ADR range 0001–0041
+is collision-managed); renumber on merge if it collides. Date: 2026-07-06. Nothing here is a
+security, audited, production-ready, FIPS, or non-infringement claim. UNAUDITED, pre-FTO.
+
+**Implementation status (2026-07-08, council-reviewed — DeepSeek seat: SHIP):**
+
+- **Stage 1 DONE** — registry completeness: the remaining 9 hard-coded consumers migrated to import
+  `DOMAIN_TAGS`, and 3 live-but-uninventoried spaces registered (`SET_MEMBERSHIP_DIGEST`,
+  `CNSA_VERDICT`, `CBOM`). Byte-identical (KAT zero-diff).
+- **Stage 2 DONE** — `crypto/src/domains.ts` now carries **both generations**: `DOMAIN_TAGS_V2`
+  (frozen) + `DOMAIN_TAGS_V3` (full Nerion/\* map) + `PROTOCOL_TAG_GENERATION` (build-time selector,
+  **at `'v2'`** — byte-identical, KAT zero-diff, gate green). The uniqueness gate now checks each
+  generation independently plus cross-generation ambiguity (a v3 value may equal only its own key's
+  v2 value). **Two pinned-in-v3 exceptions** discovered at implementation: `SUITE_NEGOTIATION`
+  (literal lives in the FROZEN `suites.ts`) and `ZK_GENERATOR_H` (ADR-0016 pins the generator-H
+  provenance — changing the string mints a NEW Pedersen generator, a crypto migration).
+- **Naming note (council):** the v3 map deliberately distinguishes `Nerion/attest/evidence/v2` (RATS
+  attestation evidence, the `attest/` module) from `Nerion/consensus/attest/v3` (native-consensus
+  block attestation, the ledger) — two unrelated message spaces that shared the confusable
+  "attest" word in v2.
+- **NOT DONE (v3 activation, gated):** flipping the selector, the additive v3 KAT/conformance
+  vectors (§c), and ADR-0029 generation negotiation. The v3 set is INACTIVE and emits no bytes.
 
 ## Context
 
