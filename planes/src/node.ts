@@ -24,6 +24,7 @@ import {
 } from '../../kernel/src/index.js'
 import type { ActionIntent, Capability } from '../../capabilities/src/index.js'
 import {
+  DOMAIN_TAGS,
   randomBytes,
   HKDF_SHA384,
   encodeCanonical,
@@ -47,7 +48,7 @@ import {
 } from '../../attest/src/index.js'
 import { actionHash, issueBoundPermit, type PermitClaims } from './permit.js'
 
-const SESSION_KDF_CONTEXT = 'polarseek/session-key/v1'
+const SESSION_KDF_CONTEXT = DOMAIN_TAGS.SESSION_KDF
 
 /**
  * Derive a session secret from the node's root secret + the VERIFIED attestation

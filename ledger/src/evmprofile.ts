@@ -42,11 +42,11 @@
 
 import { keccak_256 } from '@noble/hashes/sha3.js'
 import { bytesToHex, hexToBytes, utf8ToBytes, concatBytes } from '@noble/hashes/utils.js'
-import { signerFor, type Bytes, type KeyPair } from '../../crypto/src/index.js'
+import { DOMAIN_TAGS, signerFor, type Bytes, type KeyPair } from '../../crypto/src/index.js'
 import type { ValidatorSet } from './types.js'
 
-const SET_TAG = utf8ToBytes('Nerion/evm-consensus-set/v1')
-const ATT_TAG = utf8ToBytes('Nerion/evm-attest/v1')
+const SET_TAG = utf8ToBytes(DOMAIN_TAGS.EVM_CONSENSUS_SET)
+const ATT_TAG = utf8ToBytes(DOMAIN_TAGS.EVM_ATTEST)
 const EMPTY_KECCAK = keccak_256(new Uint8Array(0))
 
 const U256_MAX = (1n << 256n) - 1n

@@ -189,7 +189,7 @@ export function membershipProofDigest(
   return bytesToHex(
     SHA3_SHAKE256.digest(
       encodeCanonical([
-        'nerion-setmembership-v1',
+        DOMAIN_TAGS.SET_MEMBERSHIP_DIGEST,
         policyBinding,
         bytesToHex(commitment.toBytes()),
         set.map((s) => mod(s).toString(16)),

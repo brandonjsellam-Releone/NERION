@@ -43,6 +43,7 @@
  */
 
 import {
+  DOMAIN_TAGS,
   HMAC_SHA384,
   constantTimeEqual,
   encodeCanonical,
@@ -59,7 +60,7 @@ import {
 } from './permit.js'
 
 /** Domain separator for the caveat MAC chain (separates it from the base permit MAC transcript). */
-const CAVEAT_CONTEXT = 'Nerion/permit-caveat/v1'
+const CAVEAT_CONTEXT = DOMAIN_TAGS.PERMIT_CAVEAT
 
 /** Bound the attacker-supplied caveat count before the HMAC chain runs (decode-side DoS guard).
  *  Honest attenuation chains are short (a handful of narrowings); reject beyond this fail-closed. */

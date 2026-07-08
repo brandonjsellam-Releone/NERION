@@ -25,6 +25,7 @@
 
 import {
   allSuites,
+  DOMAIN_TAGS,
   encodeCanonical,
   signEnvelope,
   verifyEnvelope,
@@ -33,7 +34,7 @@ import {
 } from '../../crypto/src/index.js'
 import { assertCnsa } from './cnsa-oracle.js'
 
-const CBOM_CONTEXT = 'PolarSeek-CBOM-v1'
+const CBOM_CONTEXT = DOMAIN_TAGS.CBOM
 
 export type QuantumClass =
   | 'pq-cat5'

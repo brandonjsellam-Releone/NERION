@@ -21,6 +21,7 @@
  */
 
 import { encodeCanonical, decodeCbor } from './cbor.js'
+import { DOMAIN_TAGS } from './domains.js'
 import { signerFor } from './suites.js'
 import { constantTimeEqual } from './symmetric.js'
 import type { Bytes } from './types.js'
@@ -39,9 +40,9 @@ export const COSE_ALG = {
  * external COSE/SCITT/RATS verifier must supply the matching external_aad to verify.
  */
 export const COSE_PROFILE = {
-  EAT_RESULT: 'polarseek/cose/eat-result/v1',
-  CYCLONEDX_SBOM: 'polarseek/cose/cyclonedx-sbom/v1',
-  SLSA_PROVENANCE: 'polarseek/cose/slsa-provenance/v1',
+  EAT_RESULT: DOMAIN_TAGS.COSE_EAT,
+  CYCLONEDX_SBOM: DOMAIN_TAGS.COSE_SBOM,
+  SLSA_PROVENANCE: DOMAIN_TAGS.COSE_SLSA,
 } as const
 
 /** external_aad bytes for a COSE profile domain separator. */

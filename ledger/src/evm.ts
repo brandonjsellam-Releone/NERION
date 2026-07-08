@@ -20,6 +20,7 @@ import { attestMessage } from './chain.js'
 import { consensusSetId } from './sortition.js'
 import type { PortableFinalityProof } from './portable.js'
 import type { ValidatorSet } from './types.js'
+import { DOMAIN_TAGS } from '../../crypto/src/index.js'
 import { bytesToHex } from '@noble/hashes/utils.js'
 
 const hex0x = (h: string): string => (h.startsWith('0x') ? h : `0x${h}`)
@@ -72,7 +73,7 @@ export function finalityProofToEvmInput(
       sig: hex0x(bytesToHex(a.sig)),
     }))
   return {
-    tag: 'polarseek-attest-v2',
+    tag: DOMAIN_TAGS.ATTESTATION,
     suite: proof.block.suite,
     height,
     blockHash: hex0x(h),

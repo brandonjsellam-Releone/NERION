@@ -81,6 +81,9 @@ export const DOMAIN_TAGS = {
   COMMIT_BIND: 'PolarSeek/disclosure/commit-bind/v2',
   /** disclosure/setmembership.ts — set-membership Fiat-Shamir challenge (base; suffixed by k). */
   SET_MEMBERSHIP: 'Nerion/disclosure/set-membership/v1',
+  /** disclosure/setmembership.ts — membership-proof digest (transparency-log-anchored). Registered in
+   *  the ADR-0042 completeness pass: a live committed message space that was missing from the inventory. */
+  SET_MEMBERSHIP_DIGEST: 'nerion-setmembership-v1',
   /** disclosure/policyproof.ts — policy-satisfaction proof digest. */
   POLICY_PROOF: 'polarseek-psp-v1',
   /** disclosure/zkrange.ts — NUMS generator-H derivation (nothing-up-my-sleeve). */
@@ -95,6 +98,12 @@ export const DOMAIN_TAGS = {
   SORTITION: 'polarseek-sortition-v1',
   /** ledger/evmprofile.ts — EVM validator-set id fold. */
   EVM_CONSENSUS_SET: 'Nerion/evm-consensus-set/v1',
+
+  // ── conformance-layer signed contexts (registered in the ADR-0042 completeness pass) ────────────
+  /** conformance/cnsa-oracle.ts — signed CNSA 2.0 verdict envelope (ADR-0008). */
+  CNSA_VERDICT: 'PolarSeek-CNSA-Verdict-v1',
+  /** conformance/cbom.ts — signed CBOM statement (ADR-0009). */
+  CBOM: 'PolarSeek-CBOM-v1',
 
   // NOTE: the zkrange statement/bit Fiat-Shamir tags ('PolarSeek/disclosure/stmt/v2',
   // 'PolarSeek/disclosure/bit/{amount|diff}/{i}') are built with dynamic (n/threshold/bit-index)

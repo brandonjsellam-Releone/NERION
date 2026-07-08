@@ -19,6 +19,7 @@
 
 import {
   assessCnsa20,
+  DOMAIN_TAGS,
   getSuite,
   encodeCanonical,
   signEnvelope,
@@ -29,7 +30,7 @@ import {
   type SignedEnvelope,
 } from '../../crypto/src/index.js'
 
-const CNSA_VERDICT_CONTEXT = 'PolarSeek-CNSA-Verdict-v1'
+const CNSA_VERDICT_CONTEXT = DOMAIN_TAGS.CNSA_VERDICT
 
 export type CnsaLevel = 'CNSA-2.0-Cat5-pure' | 'CNSA-2.0-Cat5-transitional' | 'non-conformant'
 

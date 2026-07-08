@@ -29,9 +29,10 @@
 import { getKem } from './kem.js'
 import { AES_256_GCM, HKDF_SHA384, randomBytes } from './symmetric.js'
 import { encodeCanonical } from './cbor.js'
+import { DOMAIN_TAGS } from './domains.js'
 import type { Bytes } from './types.js'
 
-const SEAL_LABEL = 'polarseek/kem-seal'
+const SEAL_LABEL = DOMAIN_TAGS.KEM_SEAL
 const SEAL_VERSION = 1
 
 export interface SealParams {
