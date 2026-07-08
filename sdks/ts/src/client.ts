@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
- * @polarseek/sdk (TypeScript) — the client agents and resources use.
+ * @nerion/sdk (TypeScript) — the client agents and resources use.
  *
- * In Local/Private mode the client wraps an in-process PolarSeekNode. The same
+ * In Local/Private mode the client wraps an in-process NerionNode. The same
  * surface will later target a remote node over a PQ-hybrid transport; callers
  * do not change.
  */
@@ -13,7 +13,7 @@
 import type { ActionIntent, Capability } from '../../../capabilities/src/index.js'
 import type { Bytes } from '../../../crypto/src/index.js'
 import {
-  PolarSeekNode,
+  NerionNode,
   verifyPermitForAction,
   deriveAudiencePermitKey,
   type AdmissionOutcome,
@@ -55,8 +55,8 @@ export interface GuardContext {
   readonly audienceKey?: Bytes
 }
 
-export class PolarSeekClient {
-  constructor(private readonly node: PolarSeekNode) {}
+export class NerionClient {
+  constructor(private readonly node: NerionNode) {}
 
   /** Run an action intent through admission; returns the full outcome. */
   guard(intent: ActionIntent, ctx: GuardContext): AdmissionOutcome {
@@ -93,3 +93,8 @@ export class PolarSeekClient {
     }).ok
   }
 }
+
+/** @deprecated Renamed to {@link NerionClient} (PolarSeek→Nerion rename, 2026-06-20). Alias kept so existing imports keep working. */
+export const PolarSeekClient = NerionClient
+/** @deprecated Renamed to {@link NerionClient}. */
+export type PolarSeekClient = NerionClient

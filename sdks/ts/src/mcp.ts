@@ -15,7 +15,7 @@
 import type { ActionIntent } from '../../../capabilities/src/index.js'
 import type { AdmissionOutcome } from '../../../planes/src/index.js'
 import type { Receipt } from '../../../receipts/src/index.js'
-import type { PolarSeekClient, GuardContext } from './client.js'
+import type { NerionClient, GuardContext } from './client.js'
 
 /**
  * Map an MCP-style tool call to a typed PolarSeek action intent.
@@ -46,7 +46,7 @@ export interface GuardedResult<R> {
  * obligation for the caller to apply the transform.
  */
 export function guardTool<A, R>(
-  client: PolarSeekClient,
+  client: NerionClient,
   mapIntent: IntentMapper<A>,
   handler: (toolName: string, args: A) => R | Promise<R>,
   opts?: {

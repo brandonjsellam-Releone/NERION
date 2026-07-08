@@ -5,7 +5,7 @@ concept and FTO design‑around unchanged._
 
 [![CI](https://github.com/brandonjsellam-Releone/NERION/actions/workflows/ci.yml/badge.svg)](https://github.com/brandonjsellam-Releone/NERION/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-&nbsp;741 tests · 23/23 conformance · UNAUDITED (see [ASSURANCE.md](docs/ASSURANCE.md))
+&nbsp;756 tests · 23/23 conformance · UNAUDITED (see [ASSURANCE.md](docs/ASSURANCE.md))
 
 **An open, post-quantum-native, decentralized execution-governance protocol for
 AI/agent _actions_.** Nerion lets agents act — but only within provable,
@@ -25,11 +25,11 @@ evidence anyone can verify.
 
 ## Architecture (three planes)
 
-| Plane | Role | Latency | Crypto |
-|---|---|---|---|
-| **1 — Hot Admission** | Stateless deterministic kernel → short-lived **PermitToken** | <1 ms p50 (target) | HMAC-SHA-384 MAC, no per-action PQ signing |
-| **2 — Nearline Assurance** | Batched **ML-DSA-87** receipts → Merkle → SCITT-style transparency log | ~1–10 s | ML-DSA-87, hybrid KEM transport |
-| **3 — Offline Settlement** | Pure-PoS ledger, threshold/MPC governance, long-term roots | s–min | SLH-DSA / LMS / XMSS |
+| Plane                      | Role                                                                   | Latency            | Crypto                                     |
+| -------------------------- | ---------------------------------------------------------------------- | ------------------ | ------------------------------------------ |
+| **1 — Hot Admission**      | Stateless deterministic kernel → short-lived **PermitToken**           | <1 ms p50 (target) | HMAC-SHA-384 MAC, no per-action PQ signing |
+| **2 — Nearline Assurance** | Batched **ML-DSA-87** receipts → Merkle → SCITT-style transparency log | ~1–10 s            | ML-DSA-87, hybrid KEM transport            |
+| **3 — Offline Settlement** | Pure-PoS ledger, threshold/MPC governance, long-term roots             | s–min              | SLH-DSA / LMS / XMSS                       |
 
 Risk tiers **T0–T3** select how much assurance runs synchronously.
 
@@ -42,16 +42,16 @@ All planes are implemented in TypeScript over audited `@noble` libraries
 `disclosure/` (zero-knowledge), `settlement/`, `keystore/`, and `conformance/` are
 all built and tested. The kernel is stateless/deterministic, PermitTokens are
 action-bound, and an external CLI verifies a receipt's signature + transparency-log
-inclusion with no operator trust. The novel cryptographic *compositions* layered on
+inclusion with no operator trust. The novel cryptographic _compositions_ layered on
 `@noble` are **UNAUDITED**, and the ZK layer's **soundness is classical** (discrete‑log — a
-transitional, not‑yet‑PQ leg; the commitment's *hiding* is PQ) — see the claim‑by‑claim
+transitional, not‑yet‑PQ leg; the commitment's _hiding_ is PQ) — see the claim‑by‑claim
 [docs/ASSURANCE.md](docs/ASSURANCE.md) and [docs/AUDIT_PACKAGE.md](docs/AUDIT_PACKAGE.md).
 Deployment maturity is **Local/Private dev** — four external launch gates remain
 ([docs/LAUNCH_READINESS.md](docs/LAUNCH_READINESS.md)).
 
 ```bash
 npm ci
-npm run gate          # clean-room lint + prettier + tsc + 741 tests
+npm run gate          # clean-room lint + prettier + tsc + 756 tests
 npm run conformance   # certification report → 23/23 CONFORMANT
 npm run demo          # end-to-end T2 governed-payment trace
 npm run build && npm run bundle && npm run verify:cli   # independent receipt verification

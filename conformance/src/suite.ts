@@ -59,7 +59,7 @@ import {
 } from '../../receipts/src/index.js'
 import { SoftwareAttester } from '../../attest/src/index.js'
 import {
-  PolarSeekNode,
+  NerionNode,
   verifyPermitForAction,
   deriveAudiencePermitKey,
   actionHash,
@@ -288,7 +288,7 @@ const CHECKS: Array<() => ConformanceResult> = [
         SUITE,
         authority,
       )
-      const node = new PolarSeekNode({
+      const node = new NerionNode({
         suite: SUITE,
         policy: DEFAULT_POLICY,
         trustedRoots: [authority.publicKey],
@@ -686,7 +686,7 @@ const CHECKS: Array<() => ConformanceResult> = [
           SUITE,
           authority,
         )
-        const node = new PolarSeekNode({
+        const node = new NerionNode({
           suite: SUITE,
           policy: DEFAULT_POLICY,
           trustedRoots: [authority.publicKey],

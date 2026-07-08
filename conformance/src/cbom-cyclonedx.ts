@@ -14,7 +14,7 @@
  */
 
 import type { Cbom, CryptoAsset } from './cbom.js'
-import { POLARSEEK_DEPENDENCIES } from './supplychain.js'
+import { NERION_DEPENDENCIES } from './supplychain.js'
 
 /** Nerion primitive -> CycloneDX 1.6 `algorithmProperties.primitive` enum. */
 const PRIMITIVE_MAP: Record<CryptoAsset['primitive'], string> = {
@@ -139,9 +139,7 @@ function assetLibrary(asset: CryptoAsset): string | undefined {
  */
 export function toCycloneDx(cbom: Cbom): CycloneDxBom {
   const cryptoComponents = cbom.assets.map(toComponent)
-  const versionOf = new Map(
-    POLARSEEK_DEPENDENCIES.map((d) => [d.name, d.version] as [string, string]),
-  )
+  const versionOf = new Map(NERION_DEPENDENCIES.map((d) => [d.name, d.version] as [string, string]))
 
   const assetToLib = new Map<string, string>()
   const usedLibs = new Set<string>()

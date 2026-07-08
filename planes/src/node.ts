@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
- * PolarSeekNode — orchestrates the three planes for one admission request.
+ * NerionNode — orchestrates the three planes for one admission request.
  *
  *   Plane 1 (hot):     stateless decide() -> bound PermitToken
  *   Plane 2 (nearline): for tiers that require it, a PQ receipt anchored to the
@@ -133,7 +133,7 @@ export interface AdmissionOutcome {
   readonly logRoot: Bytes | null
 }
 
-export class PolarSeekNode {
+export class NerionNode {
   constructor(private readonly cfg: NodeConfig) {}
 
   admit(req: AdmissionRequest): AdmissionOutcome {
@@ -308,3 +308,8 @@ export class PolarSeekNode {
     }
   }
 }
+
+/** @deprecated Renamed to {@link NerionNode} (PolarSeek→Nerion rename, 2026-06-20). Alias kept so existing imports keep working. */
+export const PolarSeekNode = NerionNode
+/** @deprecated Renamed to {@link NerionNode}. */
+export type PolarSeekNode = NerionNode

@@ -44,7 +44,7 @@ export interface Sbom {
 }
 
 /** PolarSeek's direct runtime dependencies (from package.json). */
-export const POLARSEEK_DEPENDENCIES: readonly SbomComponent[] = [
+export const NERION_DEPENDENCIES: readonly SbomComponent[] = [
   { name: '@noble/ciphers', version: '2.0.0', type: 'library', license: 'MIT' },
   { name: '@noble/curves', version: '2.2.0', type: 'library', license: 'MIT' },
   { name: '@noble/hashes', version: '2.0.0', type: 'library', license: 'MIT' },
@@ -54,7 +54,7 @@ export const POLARSEEK_DEPENDENCIES: readonly SbomComponent[] = [
 
 /** Build a deterministic CycloneDX-style SBOM (components sorted by name). */
 export function buildSbom(
-  components: readonly SbomComponent[] = POLARSEEK_DEPENDENCIES,
+  components: readonly SbomComponent[] = NERION_DEPENDENCIES,
   now = 0,
   subject = 'PolarSeek',
 ): Sbom {
@@ -99,7 +99,7 @@ export function buildSlsaProvenance(opts: {
   readonly dependencies?: readonly SbomComponent[]
   readonly now?: number
 }): SlsaProvenance {
-  const deps = (opts.dependencies ?? POLARSEEK_DEPENDENCIES).map((d) => ({
+  const deps = (opts.dependencies ?? NERION_DEPENDENCIES).map((d) => ({
     name: d.name,
     version: d.version,
   }))
@@ -167,3 +167,6 @@ export function verifySupplyChainStatement(
 export function supplyChainLeaf(msg: CoseSign1): Bytes {
   return encodeCoseSign1(msg)
 }
+
+/** @deprecated Renamed to {@link NERION_DEPENDENCIES} (PolarSeek→Nerion rename). */
+export const POLARSEEK_DEPENDENCIES = NERION_DEPENDENCIES

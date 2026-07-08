@@ -29,6 +29,7 @@ export {
   signSupplyChainStatement,
   verifySupplyChainStatement,
   supplyChainLeaf,
+  NERION_DEPENDENCIES,
   POLARSEEK_DEPENDENCIES,
 } from './supplychain.js'
 export type { Sbom, SbomComponent, SlsaProvenance } from './supplychain.js'
