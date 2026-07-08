@@ -3,7 +3,7 @@ SPDX-FileCopyrightText: 2026 TRELYAN
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# ADR-0042 — `polarseek-*` → `Nerion/*` domain-tag value migration as a versioned v2→v3 protocol bump (proposed, design-only)
+# ADR-0042 — `polarseek-*` → `Nerion/*` domain-tag value migration as a versioned v2→v3 protocol bump (accepted; v3 inactive)
 
 **Status: ACCEPTED — STAGES 1–2 IMPLEMENTED (2026-07-08); v3 ACTIVATION NOT DONE.** This ADR records
 the _shape and sequencing_ of renaming the protocol's **domain-separation tag VALUES** (the
