@@ -180,6 +180,48 @@ describe('attestation hardening (ATTEST-TIME-001 / ATTEST-NOFM-001)', () => {
     expect(appraiseNofM([evidenceA, tdxEvidence(B)], basePolicy(), 2, verifiers).valid).toBe(true)
   })
 
+  it('ATTEST-NOFM-NOTAFTER-001: the n-of-m session inherits the MINIMUM notAfter across the quorum', () => {
+    // Two trusted attesters corroborate the SAME session but with different expiries: A says NOW+300,
+    // a far-future TDX quote says NOW+99999. The quorum session must expire at the CONSERVATIVE min
+    // (NOW+300) — one attester's generous notAfter must not extend what the other vouched for.
+    const farClaims: AttestationClaims = {
+      format: 'tdx',
+      sessionId: 's',
+      sessionPublicKey: sessPub,
+      nonce: NONCE,
+      notAfter: NOW + 99999,
+    }
+    const tdxFar: Evidence = {
+      claims: farClaims,
+      format: 'tdx',
+      attesterPublicKey: B.publicKey,
+      sig: signerFor(suite).sign(attMsg(farClaims), B.secretKey),
+      suite,
+    }
+    const r = appraiseNofM([evidenceA, tdxFar], basePolicy(), 2, verifiers)
+    expect(r.valid).toBe(true)
+    expect(r.claims!.notAfter).toBe(NOW + 300) // the MIN, not tdxFar's NOW+99999
+  })
+
+  it('ATTEST-NOFM-NOTAFTER-001: n-of-m attestations for DIFFERENT session ids do NOT form a quorum', () => {
+    // sessionPublicKey agrees but sessionId differs → reject (parity with the sessionPublicKey pin).
+    const otherId: AttestationClaims = {
+      format: 'tdx',
+      sessionId: 'DIFFERENT',
+      sessionPublicKey: sessPub,
+      nonce: NONCE,
+      notAfter: NOW + 300,
+    }
+    const tdxOtherId: Evidence = {
+      claims: otherId,
+      format: 'tdx',
+      attesterPublicKey: B.publicKey,
+      sig: signerFor(suite).sign(attMsg(otherId), B.secretKey),
+      suite,
+    }
+    expect(appraiseNofM([evidenceA, tdxOtherId], basePolicy(), 2, verifiers).valid).toBe(false)
+  })
+
   it('ATTEST-SUITE-THROW: a bogus evidence.suite fails CLOSED, never throwing or aborting a quorum', () => {
     // evidence.suite is an attacker-controlled wire field; signerFor() throws on an unknown suite, so
     // appraise() must resolve it defensively (return invalid) rather than crash.

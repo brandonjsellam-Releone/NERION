@@ -243,8 +243,24 @@ export function appraiseNofM(
       claims: null,
     }
   }
+  // ATTEST-NOFM-NOTAFTER-001 (AAC council review — DeepSeek + Grok seats converged): also pin the
+  // sessionId (parity with sessionPublicKey above) so the whole tier-3 quorum corroborates ONE
+  // session identity, not just one identity key.
+  const sessionIds = new Set(valid.map((x) => x.r.claims!.sessionId))
+  if (sessionIds.size > 1) {
+    return {
+      valid: false,
+      reasons: ['n-of-m attestations corroborate different session ids (must agree on one)'],
+      claims: null,
+    }
+  }
   if (formats.size >= n && attesters.size >= n) {
-    return { valid: true, reasons: [], claims: valid[0]!.r.claims }
+    // Bind the session lifetime to the MOST CONSERVATIVE (minimum) notAfter across the corroborating
+    // evidences — NOT valid[0]'s. Otherwise one sloppy/compromised trusted attester signing a
+    // far-future notAfter silently extends the whole quorum's session past what the other, more
+    // conservative attesters vouched for. All notAfters are safe integers (appraise() enforced it).
+    const minNotAfter = valid.reduce((m, x) => Math.min(m, x.r.claims!.notAfter), Infinity)
+    return { valid: true, reasons: [], claims: { ...valid[0]!.r.claims!, notAfter: minNotAfter } }
   }
   return {
     valid: false,
