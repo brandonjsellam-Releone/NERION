@@ -15,16 +15,21 @@ post-quantum superset of Solidity) **natively verifies lattice signatures** on i
 fork), in line with the proposed **EIP-8051 ML-DSA verification precompile**.
 
 **Nerion's consensus attestations are also ML-DSA-87.** So there is **no signature translation**: a
-contract on QRL Zond can verify Nerion's *existing* finality attestations **natively and cheaply**.
+contract on QRL Zond can verify Nerion's _existing_ finality attestations **natively and cheaply**.
 That is the concrete substrate the interchain was missing.
 
 ## The end-to-end flow (concrete)
 
+> **Corrected 2026-07-11 (PARITY-002, AAC council review).** This diagram previously routed through
+> `ledger/src/evm.ts`'s `finalityProofToEvmInput()` — that packer emits the NATIVE (dCBOR/SHAKE256)
+> profile, which the contract's independently-recomputed keccak256 message can never verify (every
+> attestation would be rejected, fail-closed). The byte-compatible path is `evmprofile.ts`, as the
+> "What is built here" section below already correctly states; the diagram was out of sync with it.
+
 ```
-Nerion finalizes a block  ──exportFinalityProof()──▶  PortableFinalityProof  (ledger/src/portable.ts)
-                                                          │
-                                   finalityProofToEvmInput()  (ledger/src/evm.ts, TESTED)
-                                                          │  0x-hex calldata
+Nerion co-signs the EVM profile  ──signEvmAttestation()──▶  EVM-profile attestations
+  (opt-in, alongside consensus)      (ledger/src/evmprofile.ts, TESTED)
+                                                          │  keccak256(evmMessage), ML-DSA-87 sig
                                                           ▼
                           NerionFinalityVerifier.verifyFinality(...)  on QRL Zond  (QRVM/Hyperion)
                                                           │  native ML-DSA-87 precompile per attestation
@@ -33,6 +38,9 @@ Nerion finalizes a block  ──exportFinalityProof()──▶  PortableFinality
                                                           │
                             a Zond dApp / bridge acts on a PQ-verified Nerion finality
 ```
+
+(`ledger/src/evm.ts`'s `finalityProofToEvmInput()` remains available as a separate, NATIVE-domain
+0x-hex relayer/inspection view — it is not part of this flow; see "What is built here" below.)
 
 This replaces the trusted-multisig bridge model the interoperability literature shows lost ~$1B
 (Wormhole + Ronin): the trust root is a **>2/3 ML-DSA-87 stake quorum over a transparency-logged
@@ -45,15 +53,15 @@ cross-chain replay + malformed-input divergence: an EVM-native, keccak256-only a
 contract recomputes on-chain, with the destination bound into the signed message.
 
 - **`ledger/src/evmprofile.ts`** (TESTED — `evmprofile.test.ts` 16 cases + `evmprofile-reconfig.property.test.ts`
-  + `evmprofile-vectors.test.ts`) — the EVM-native profile + the **canonical TS reference verifier**:
-  - `evmSetId(set)` / `evmAttestMessage(...)` — a keccak256 fold (no SHAKE, no CBOR) an EVM
+  - `evmprofile-vectors.test.ts`) — the EVM-native profile + the **canonical TS reference verifier**:
+  * `evmSetId(set)` / `evmAttestMessage(...)` — a keccak256 fold (no SHAKE, no CBOR) an EVM
     reproduces cheaply: `evmSetId = keccak(fold over keccak(pubkey)‖uint256(stake)‖keccak(vrf))`,
     `evmMessage = keccak(keccak(tag)‖keccak(suite)‖uint256(chainId)‖verifier(20)‖uint256(height)‖blockHash(32)‖setId(32))`.
     The message binds the **destination `chainId` + `verifier` address** (= Solidity `block.chainid` +
     `address(this)`), so a proof for one chain/deployment can not be replayed on another.
-  - `signEvmAttestation(...)` — a validator's ML-DSA-87 signature over the profile message (opt-in,
+  * `signEvmAttestation(...)` — a validator's ML-DSA-87 signature over the profile message (opt-in,
     co-signed alongside consensus; the native dCBOR/SHAKE256 path is untouched).
-  - `verifyEvmFinality(...)` — **recomputes setId + message from the trusted set** (NOT from a
+  * `verifyEvmFinality(...)` — **recomputes setId + message from the trusted set** (NOT from a
     relayer), verifies each ML-DSA-87 signature, dedups distinct members, and finalizes iff a ≥2/3
     stake quorum signed. This is the byte-for-byte spec the contract must match. It **never throws** —
     every malformed input fails closed to `{finalized:false}`: sub-quorum, tampered sig, duplicated

@@ -3,10 +3,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
- * EVM/QRL-Zond interchain encoder — packages a portable finality proof into the 0x-hex shape an
- * on-chain ML-DSA-87 verifier (QRVM/Hyperion) consumes. Asserts the emitted setId + per-attestation
- * messages are exactly Nerion's own consensusSetId / attestMessage (so the contract that recomputes
- * them independently will agree), all hex is 0x-prefixed, and stray attestations are filtered out.
+ * NATIVE-profile relayer/inspection packer — packages a portable finality proof into a 0x-hex view
+ * under Nerion's NATIVE (dCBOR/SHAKE256) domain. Asserts the emitted setId + per-attestation
+ * messages are exactly Nerion's own consensusSetId / attestMessage, all hex is 0x-prefixed, and
+ * stray attestations are filtered out.
+ *
+ * PARITY-002: this is NOT the encoder for contracts/NerionFinalityVerifier.sol (that contract
+ * recomputes a keccak256 profile via ledger/src/evmprofile.ts, tested separately in
+ * evmprofile.test.ts) — see ledger/src/evm.ts's module docstring for the full explanation.
  */
 
 import { describe, it, expect } from 'vitest'
