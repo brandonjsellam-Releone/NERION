@@ -1,7 +1,7 @@
 # Nerion — STATUS
 
 **Phase: P0–P4 software build complete; conformance ✔; Rust foundation compiles.** Updated 2026-07-07.
-**752 tests pass** (`npm run gate`). **`npm run conformance` → 23/23 CONFORMANT.**
+**752 tests pass** (`npm run gate`). **`npm run conformance` → 24/24 CONFORMANT.**
 
 ## Modules — all implemented, tested, and conformance-checked
 
@@ -20,7 +20,7 @@
 | `ledger/`       | **Pure-PoS** ledger: **VRF private sortition + view-change liveness** ([ADR-0004](./adr/ADR-0004-vrf-sortition.md)) over the deprecated canonical-round mode, ≥2/3 stake finality with **equivocation detection + slashing (accountable safety)**, PQ light-client verification       |
 | `settlement/`   | **Non-transferable metering credits** (issuer-signed; meter-down; no transfer op; token deferred)                                                                                                                                                                                     |
 | `keystore/`     | **Key-custody abstraction**: `KeyProvider` + working software backend + **HSM/KMS provider stubs** (PKCS#11, cloud KMS); keys never leave the provider                                                                                                                                |
-| `conformance/`  | The certification suite — **23 checks** across every guarantee, incl. **C14 govern-the-verb negative oracle** (decision invariant to perception-shaped inputs — [ADR-0007](./adr/ADR-0007-govern-the-verb-oracle.md))                                                                 |
+| `conformance/`  | The certification suite — **24 checks** across every guarantee, incl. **C14 govern-the-verb negative oracle** (decision invariant to perception-shaped inputs — [ADR-0007](./adr/ADR-0007-govern-the-verb-oracle.md)) and **C24 validator-set/epoch binding** (ADR-0020)              |
 | `rust/`         | **Compiler-verified** Rust hot-path: **full Plane-1 crypto** (HMAC-SHA-384 + AES-256-GCM) + **ML-DSA-87 + ML-KEM-1024** + SuiteID + SHA3 (RustCrypto). **13 tests pass** (9 unit + 4 KAT byte-exact against `conformance/vectors/ps-kat.json`); `gate-rust` CI job runs on every push |
 
 ## Runnable
@@ -28,7 +28,7 @@
 - `npm run gate` — clean-room lint + prettier + tsc + 752 tests
 - `npm run demo` — end-to-end T2 governed payment
 - `npm run build && npm run bundle && npm run verify:cli` — independent external receipt verification
-- `npm run conformance` — certification report (23/23)
+- `npm run conformance` — certification report (24/24)
 - `cd rust && cargo test` — Rust foundation: 13 tests pass (9 unit + 4 KAT); `gate-rust` CI runs on every push
 
 ## Deployment maturity — Local/Private dev (honest)
@@ -115,10 +115,13 @@ suite)` — cross-epoch consent transfer. Now closed: `consensusSetId(set)` (SHA
    trusted set and a signature made under a different set/epoch reconstructs to a different preimage
    and fails verification (contributes zero stake / rejects the proof). Equivocation slashing is now
    epoch-scoped. Regression-tested in the ledger suite (a same-members/different-epoch bundle
-   finalizes under epoch 0 but not epoch 1). **Remaining follow-up:** the conformance **C24** check +
-   `ps-kat.json` consensus vectors are not yet added (count stays 23/23; the property is unit-tested,
-   not yet pinned as a conformance vector), and the TLA⁺ model is not extended to multi-epoch. Still
-   **UNAUDITED**; epoch _authenticity_ (which set is canonical) remains the finalized-chain's job.
+   finalizes under epoch 0 but not epoch 1). **Conformance C24 ADDED (2026-07-08):** asserts the same
+   property end-to-end via the public `verifyFinalized` API — a bundle finalizes under its own epoch's
+   set and is rejected under a different epoch (count now 24/24). **Still a follow-up (NOT done):** the
+   `ps-kat.json` consensus vectors from the Implementation-plan §5 (byte-exact `consensusSetId` /
+   `attestMessage` / `viewChangeMessage` fixtures) are not yet added — C24 is unit/conformance-level,
+   not yet KAT-vector-pinned — and the TLA⁺ model is not extended to multi-epoch. Still **UNAUDITED**;
+   epoch _authenticity_ (which set is canonical) remains the finalized-chain's job.
 
 3. **Equivocation is DETECTED but slashing is NOT enforced end-to-end (LEDGER-006).**
    `ledger/src/equivocation.ts` provides `detectEquivocations` (builds a slashable proof when a

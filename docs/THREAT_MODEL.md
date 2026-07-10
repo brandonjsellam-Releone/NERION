@@ -4,7 +4,7 @@
 > protocol stack is implemented in TypeScript: `crypto/`, `kernel/`, `attest/`, `capabilities/`,
 > `planes/`, `receipts/`, `translog/`, `ledger/`, `settlement/`, `governance/`, `conformance/`,
 > `sdks/`, `disclosure/`, `keystore/`, plus a Rust hot-path foundation. **752 tests pass**
-> (`npm run gate`) and **23/23 conformance checks pass** (`npm run conformance`). See
+> (`npm run gate`) and **24/24 conformance checks pass** (`npm run conformance`). See
 > [docs/STATUS.md](./STATUS.md) for the full module inventory and
 > [docs/ASSURANCE.md](./ASSURANCE.md) for the evidence-tier matrix. The threat model's §5
 > mitigations are no longer requirements only — the majority are implemented; the
@@ -309,14 +309,14 @@ authorization on its own):**
 ## 7. Residual risks we are NOT mitigating yet (and why)
 
 > Honesty clause: as of 2026-07-06 the §5 mitigations are largely **implemented and gate-tested**
-> (752 tests, 23/23 conformance), so the single largest residual is no longer that the code is
+> (752 tests, 24/24 conformance), so the single largest residual is no longer that the code is
 > unbuilt — it is that the built stack is **UNAUDITED, not FIPS-validated, and pre-FTO**. The list
 > below is the residual set _on top of_ a built implementation; R1 now records that audit gap, not an
 > empty repository.
 
 | #   | Residual risk                                                                       | Why not mitigated yet / accepted                                                                                                                                                                                                                                                                                                              |
 | --- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| R1  | **Built but UNAUDITED (no external crypto/ZK audit; not FIPS-validated; pre-FTO).** | P0–P4 are implemented and gate-tested (752 tests, 23/23 conformance), but no external cryptographic/ZK audit, FIPS CMVP validation, or FTO clearance is on file. Assurance is bounded by "tested, not audited": the four launch gates (FTO, crypto/ZK audit, HSM/TEE hardware, FIPS CMVP) remain open. Highest-priority residual risk by far. |
+| R1  | **Built but UNAUDITED (no external crypto/ZK audit; not FIPS-validated; pre-FTO).** | P0–P4 are implemented and gate-tested (752 tests, 24/24 conformance), but no external cryptographic/ZK audit, FIPS CMVP validation, or FTO clearance is on file. Assurance is bounded by "tested, not audited": the four launch gates (FTO, crypto/ZK audit, HSM/TEE hardware, FIPS CMVP) remain open. Highest-priority residual risk by far. |
 | R2  | **In-window PermitToken replay against the bound audience.**                        | A deliberate design trade: statelessness + no round-trip + no sequence tracking means we _cannot_ prevent replay within the validity window server-side. Pushed to short lifetimes, audience/action binding, and resource-side idempotency — but for non-idempotent resources that don't cooperate, a bounded replay window is **accepted**.  |
 | R3  | **Nearline gap (action executes before durable receipt).**                          | Inherent to async batching for latency. Mitigated only by bounding the window and forcing high tiers off the nearline path; for T0/T1 a small unrecorded-action window is accepted.                                                                                                                                                           |
 | R4  | **Insider kernel operator (ADV-4) within a single deployment.**                     | A single honest-but-curious or malicious operator holding the HMAC key can mint/permit during their window before P2/P3 detect divergence. Cross-plane detection is _detective, not preventive_; we accept detection-after-the-fact for P1 operator abuse.                                                                                    |

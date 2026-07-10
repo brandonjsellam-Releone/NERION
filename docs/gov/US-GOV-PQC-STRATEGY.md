@@ -44,7 +44,7 @@ This is **not** a PQC library. It is a **governance protocol** — the policy _i
 | Claim                                | Evidence                                                         | Caveat                                                                                             |
 | ------------------------------------ | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
 | FIPS 203/204/205 algorithm alignment | ML-KEM-1024, ML-DSA-87, SLH-DSA implemented + conformance-tested | **CNSA 2.0 aligned — not FIPS 140-3 certified.** CMVP validation not yet started.                  |
-| 756 tests, 23/23 conformance checks  | `npm run gate` + `npm run conformance`                           | Demonstrates implementation consistency with Nerion's own spec — not external security validation. |
+| 756 tests, 24/24 conformance checks  | `npm run gate` + `npm run conformance`                           | Demonstrates implementation consistency with Nerion's own spec — not external security validation. |
 | Open-source, auditable supply chain  | Apache-2.0, GitHub public                                        | **Externally UNAUDITED.** Audit inquiries submitted to OSTIF and OTF Security Lab.                 |
 | Rust hot-path, TypeScript core       | 13 Rust tests (9 unit + 4 KAT)                                   | Production deployment requires FIPS 140-3 validated crypto boundary.                               |
 
@@ -105,7 +105,7 @@ This is **not** a PQC library. It is a **governance protocol** — the policy _i
 **Mitigation:**
 
 - Lead with audit submission: "We have submitted independent audit inquiries to OSTIF and OTF Security Lab and are actively seeking a qualified cryptographic auditor."
-- 756 tests + 23/23 conformance provide deterministic behavior evidence. Frame as: "Reproducible coverage metrics and deterministic behavior under test vectors suitable for government evaluation environments."
+- 756 tests + 24/24 conformance provide deterministic behavior evidence. Frame as: "Reproducible coverage metrics and deterministic behavior under test vectors suitable for government evaluation environments."
 - The NCCoE consortium engagement itself creates peer review from federal-grade evaluators.
 
 ### Risk 4: No Prior Government Performance
@@ -177,7 +177,7 @@ Brandon Sellam's French-American profile and the pending NLnet NGI Restack grant
 - "Externally unaudited; audit in process"
 - "Pre-FTO; patent clearance not yet obtained"
 - "Applying to NLnet; not yet funded"
-- "756 tests and 23/23 conformance checks — implementation consistency, not external validation"
+- "756 tests and 24/24 conformance checks — implementation consistency, not external validation"
 
 **Never say:**
 

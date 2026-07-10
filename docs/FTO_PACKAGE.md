@@ -6,7 +6,7 @@
 > PolarSeek avoids, does not infringe, is clear of, or designs around any SIGA patent or claim.
 > **Never cite or file this under a title shortened to "FTO Brief" or "FTO Opinion."**
 >
-> Wherever this brief uses words like *distinction*, *candidate*, *clears*, or *designs around*, read
+> Wherever this brief uses words like _distinction_, _candidate_, _clears_, or _designs around_, read
 > them as **engineering hypotheses about where SIGA's claims may stop** — none is a finding that
 > PolarSeek is outside any claim. Only counsel's written opinion can make that finding.
 
@@ -14,7 +14,7 @@
 
 Claims read on what is actually **made, used, sold, or offered**. As of 2026‑06‑20 PolarSeek's software
 build is complete (P0–P4: crypto, capabilities, kernel, receipts, translog, attest, planes, ledger,
-governance, disclosure, settlement, keystore, conformance — **365 tests pass, 23/23 conformance**).
+governance, disclosure, settlement, keystore, conformance — **365 tests pass, 24/24 conformance**).
 Counsel must compare against the **as‑built** implementation, not a description or an intended design.
 
 ## 1. Target patent family to clear
@@ -25,7 +25,7 @@ Counsel must compare against the **as‑built** implementation, not a descriptio
   sequential frames ("the cognitive loop") → object‑identity continuity → zone/polygon occupancy over
   time → state‑change trigger → gate → record. Every link is perception‑ and state‑based.
 - **The dual‑claim theory counsel must split:** SIGA asserts a **dual** monopoly over **both** AI
-  *perception* (the "eye") **and** *governance* (the "gate"). Counsel must determine, per claim, which
+  _perception_ (the "eye") **and** _governance_ (the "gate"). Counsel must determine, per claim, which
   read on perception vs. governance vs. the fused chain — because PolarSeek's entire design‑around
   hypothesis rests on the governance claims being **tethered to the perception limitations**. If any
   governance/recording claim stands **without** the perception limitations, the wedge weakens and the
@@ -35,20 +35,20 @@ Counsel must compare against the **as‑built** implementation, not a descriptio
   claims can be tailored to a shipped competitor product). None of these counts is independently
   verified.
 
-## 2.A The load‑bearing wedge — PolarSeek's *intended design* includes no perception/cognitive‑loop pillar (a distinction for counsel to confirm)
+## 2.A The load‑bearing wedge — PolarSeek's _intended design_ includes no perception/cognitive‑loop pillar (a distinction for counsel to confirm)
 
 All‑elements rule (engineering, not legal): a claim is literally infringed only if **every** element is
-present; a missing element defeats literal infringement of *that* claim but **not** necessarily under
+present; a missing element defeats literal infringement of _that_ claim but **not** necessarily under
 the doctrine of equivalents (DOE) — counsel must analyze DOE per element. This is a **skeleton** to
 populate against actual claim language, not a conclusion.
 
-| SIGA element | Where PolarSeek's intended design does not practice it | CI signal |
-|---|---|---|
-| **[F1]** camera/sensor frame ingestion | kernel accepts only **typed action intents** (tool‑call/API/transaction) in canonical CBOR; no image/frame/pixel/sensor type is ever an input | `lint:cleanroom` F1 |
-| **[F2]** static/dynamic decomposition across frames ("cognitive loop", Claim 1) | **no** feature decomposition, **no** per‑frame loop; admission is one pure policy evaluation over one explicit intent — *the single most important candidate distinction for counsel to test* (verify it is a true claim limitation, not a preferred embodiment) | F2 |
-| **[F3]** object‑identity continuity across frames | no tracked entity persists across calls; subject refs are opaque caller IDs, never re‑identified/correlated | F3 |
-| **[F4]** zone/polygon occupancy over time | no spatial/geometric model; authority = typed capability scopes, not geography‑over‑time | F4 |
-| **[F8]** "attention = decomposition" stretched onto LLM/tensor inference | admission is bounded policy evaluation over CBOR, **not** neural inference/tensor decomposition — the most likely DOE vector; counsel should test it directly | F8 |
+| SIGA element                                                                    | Where PolarSeek's intended design does not practice it                                                                                                                                                                                                           | CI signal           |
+| ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| **[F1]** camera/sensor frame ingestion                                          | kernel accepts only **typed action intents** (tool‑call/API/transaction) in canonical CBOR; no image/frame/pixel/sensor type is ever an input                                                                                                                    | `lint:cleanroom` F1 |
+| **[F2]** static/dynamic decomposition across frames ("cognitive loop", Claim 1) | **no** feature decomposition, **no** per‑frame loop; admission is one pure policy evaluation over one explicit intent — _the single most important candidate distinction for counsel to test_ (verify it is a true claim limitation, not a preferred embodiment) | F2                  |
+| **[F3]** object‑identity continuity across frames                               | no tracked entity persists across calls; subject refs are opaque caller IDs, never re‑identified/correlated                                                                                                                                                      | F3                  |
+| **[F4]** zone/polygon occupancy over time                                       | no spatial/geometric model; authority = typed capability scopes, not geography‑over‑time                                                                                                                                                                         | F4                  |
+| **[F8]** "attention = decomposition" stretched onto LLM/tensor inference        | admission is bounded policy evaluation over CBOR, **not** neural inference/tensor decomposition — the most likely DOE vector; counsel should test it directly                                                                                                    | F8                  |
 
 ## 2.B Governance‑only fallbacks (if a governance claim survives without the perception limitations)
 

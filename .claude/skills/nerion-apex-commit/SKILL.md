@@ -37,6 +37,7 @@ git diff --cached --name-only | xargs -I{} grep -l \
 If any matches → **ABORT immediately**. Un-stage the file, redact the secret, re-stage.
 
 Also verify the frozen KATs are NOT staged:
+
 ```bash
 git diff --cached --name-only | grep 'conformance/vectors/' && echo "FROZEN KAT STAGED" && exit 1 || true
 ```
@@ -62,7 +63,7 @@ If gate fails → fix ALL failures before proceeding. Do NOT skip or `--no-verif
 npm run build && npm run conformance
 ```
 
-Must show `23/23` passing. If conformance drops → investigate immediately;
+Must show `24/24` passing. If conformance drops → investigate immediately;
 do NOT commit.
 
 ---
@@ -86,6 +87,7 @@ cargo test
 ```
 
 Must show `188/188` (or more if new files added). If it fails:
+
 - New `.ts` files missing SPDX → add the header block:
   ```
   // SPDX-FileCopyrightText: 2026 TRELYAN
@@ -99,6 +101,7 @@ Must show `188/188` (or more if new files added). If it fails:
 ## STEP 6 — Build commit message
 
 The commit message must:
+
 1. Use imperative mood, one-line subject (≤72 chars)
 2. Body: what changed and why (not "what the code does")
 3. End with the council trailer if council-reviewed
@@ -108,6 +111,7 @@ The commit message must:
    ```
 
 Example:
+
 ```
 fix: enforce audience binding in HKDF permit-key derivation
 
@@ -142,11 +146,13 @@ EOF
 ## STEP 8 — Push
 
 **Team engine (branch-only):**
+
 ```bash
 git push -u origin <branch>
 ```
 
 **Main-loop solo council-reviewed fix (only with --main flag):**
+
 ```bash
 git push origin main
 ```
@@ -159,8 +165,9 @@ NEVER use `--force` or `--force-with-lease` without explicit human approval.
 ## STEP 9 — Sprint log
 
 Append one line to `docs/APEX_SPRINT_LOG.md`:
+
 ```
-YYYY-MM-DD HH:MM | <branch> | <item summary> | gate: PASS | conformance: 23/23 | council: N/11
+YYYY-MM-DD HH:MM | <branch> | <item summary> | gate: PASS | conformance: 24/24 | council: N/11
 ```
 
 ---
@@ -168,9 +175,10 @@ YYYY-MM-DD HH:MM | <branch> | <item summary> | gate: PASS | conformance: 23/23 |
 ## STEP 10 — Report
 
 Output:
+
 ```
 ✓ Gate: PASS (462 tests)
-✓ Conformance: 23/23
+✓ Conformance: 24/24
 ✓ REUSE: N/N
 ✓ No secrets found
 ✓ Committed: <sha>

@@ -21,11 +21,11 @@ SPDX-License-Identifier: Apache-2.0
 The handbook structures migration as **(1) Quantum-Vulnerability Diagnosis → (2) Planning →
 (3) Execution**. Nerion's position in each:
 
-| Step | Handbook intent | Nerion |
-|---|---|---|
+| Step         | Handbook intent                       | Nerion                                                                                                                                                  |
+| ------------ | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1. Diagnosis | inventory crypto; assess quantum risk | **No quantum-vulnerable primitive is load-bearing.** The full inventory is the CBOM ([`nerion.cbom.json`](../nerion.cbom.json), CycloneDX 1.6, §2.3.4). |
-| 2. Planning | when/how to migrate; maturity | N/A as a migration; Nerion ships the migrated target. The SuiteID registry is the agility plan (§4.4). |
-| 3. Execution | swap primitives without new vulns | Done at design time: every signed/encrypted object carries its SuiteID; no algorithm is hard-coded in protocol logic. |
+| 2. Planning  | when/how to migrate; maturity         | N/A as a migration; Nerion ships the migrated target. The SuiteID registry is the agility plan (§4.4).                                                  |
+| 3. Execution | swap primitives without new vulns     | Done at design time: every signed/encrypted object carries its SuiteID; no algorithm is hard-coded in protocol logic.                                   |
 
 Nerion is an **"urgent adopter" end-state** (handbook §2.1.1): it governs high-impact AI/agent
 actions (payments, infra) where a harvest-now-decrypt-later (HNDL) break would be unacceptable, so
@@ -33,20 +33,20 @@ it uses NIST Level-5 parameters (the CNSA 2.0 algorithm set) from day one.
 
 ## 2. No-Regret Moves (§1.6) — status
 
-| No-regret move | Nerion |
-|---|---|
-| Cryptographic asset management | ✓ CBOM (`nerion.cbom.json`) + SBOM (`nerion.spdx`) |
-| Review cryptographic policies | ✓ policy is explicit + versioned (`evaluatorVersion`); suites carry `standards` provenance |
+| No-regret move                    | Nerion                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cryptographic asset management    | ✓ CBOM (`nerion.cbom.json`) + SBOM (`nerion.spdx`)                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Review cryptographic policies     | ✓ policy is explicit + versioned (`evaluatorVersion`); suites carry `standards` provenance                                                                                                                                                                                                                                                                                                                                                                                       |
 | Conduct (quantum) risk assessment | ✓ design assumes a CRQC adversary; classical-only primitives (ECDH/X25519) are confined to hybrid-KEM fallback, never standalone confidentiality. **Residual (present design limitation):** the ristretto255 ZK range-proof's _hiding_ is information-theoretic (PQ), but its _soundness_ rests on classical discrete-log — the proof system is **not** post-quantum-sound, so a future CRQC could forge a compliance proof. Tracked for the PQ-commitment migration (ADR-0022). |
-| Cryptographic agility | ✓ SuiteID registry (see §4 below) |
-| Inventory regulatory requirements | ✓ CNSA 2.0 (§5.2.6), FIPS 203/204/205 tracked per suite |
-| Back-up plan | ✓ non-lattice diversity registered (HQC-256 KEM) + compact-sig agility (FN-DSA), both non-active pending standardization |
+| Cryptographic agility             | ✓ SuiteID registry (see §4 below)                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Inventory regulatory requirements | ✓ CNSA 2.0 (§5.2.6), FIPS 203/204/205 tracked per suite                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Back-up plan                      | ✓ non-lattice diversity registered (HQC-256 KEM) + compact-sig agility (FN-DSA), both non-active pending standardization                                                                                                                                                                                                                                                                                                                                                         |
 
 ## 3. Cryptographic Maturity (§1.7)
 
 The handbook's maturity criteria, met: complete asset overview (CBOM); risk insight (no load-bearing
 quantum-vulnerable primitive); policy aligned to regulation (CNSA 2.0 Cat-5); continuous monitoring
-(`npm run gate` + 23/23 conformance + the Team Apex adversarial sweeps gate every change).
+(`npm run gate` + 24/24 conformance + the Team Apex adversarial sweeps gate every change).
 
 ## 4. Cryptographic Agility (§4.4) — the SuiteID registry
 
@@ -66,7 +66,7 @@ hybrid-KEM constructions are an instance of **composability** agility:
 algorithms in an "OR" fashion invites downgrade attacks. Nerion closes this by **binding the SuiteID
 into the signed/MAC'd message** at every layer — capabilities (CAP-001), attestation evidence
 (ATTEST-SUITE-001), ledger votes/blocks/view-change (cross-suite hardening), governance approvals
-(GOV-SUITE-001), and signed tree heads (STH-SUITE-001, Team Apex 2026-06-22). A relayed *signed object*
+(GOV-SUITE-001), and signed tree heads (STH-SUITE-001, Team Apex 2026-06-22). A relayed _signed object_
 cannot be relabeled to a weaker shared-signature suite and still verify. (This protects **signed
 objects**; downgrade resistance during live suite **negotiation** is a separate transcript-binding
 concern at the negotiation layer, not claimed here.) Non-active suites (`pending-standardization`,
@@ -76,19 +76,19 @@ concern at the negotiation layer, not claimed here.) Non-active suites (`pending
 
 Nerion's **PS-5** tier uses the handbook's **Recommended algorithms** at **NIST security category 5**,
 aligned with the **CNSA 2.0** algorithm set (§5.2.6). ("Category 5" is NIST's security-strength
-category — ~256-bit — *not* a NIST certification and *not* a FIPS 140-3 level; CNSA 2.0 separately
+category — ~256-bit — _not_ a NIST certification and _not_ a FIPS 140-3 level; CNSA 2.0 separately
 names the specific algorithms, so this is **alignment** with the CNSA 2.0 algorithm direction, not a
 compliance or certification claim.) The general **PS-1** tier is **NIST category 3** (X-Wing wraps
 ML-KEM-768). **Two deliberate divergences** are documented below the table — the **signature**
-deployment and the **hash** choice — which mean PS-5 is *not* CNSA-2.0-compliant (see §6).
+deployment and the **hash** choice — which mean PS-5 is _not_ CNSA-2.0-compliant (see §6).
 
-| Functionality | Handbook "Recommended" | Nerion (PS-5) |
-|---|---|---|
-| Key encapsulation | ML-KEM (hybrid w/ ECDH) | ML-KEM-1024 + ECDH P-384 (L5) |
-| Signature (stateless) | ML-DSA / SLH-DSA | ML-DSA-87 (L5); SLH-DSA-SHAKE-256f available |
-| Hash | SHA-2 / SHA-3 | SHA3-256 / SHAKE256 † |
-| AEAD | AES-GCM(-SIV) | AES-256-GCM |
-| MAC / KDF | HMAC-SHA-2 / KMAC | HMAC-SHA-384 / HKDF-SHA-384 |
+| Functionality         | Handbook "Recommended"  | Nerion (PS-5)                                |
+| --------------------- | ----------------------- | -------------------------------------------- |
+| Key encapsulation     | ML-KEM (hybrid w/ ECDH) | ML-KEM-1024 + ECDH P-384 (L5)                |
+| Signature (stateless) | ML-DSA / SLH-DSA        | ML-DSA-87 (L5); SLH-DSA-SHAKE-256f available |
+| Hash                  | SHA-2 / SHA-3           | SHA3-256 / SHAKE256 †                        |
+| AEAD                  | AES-GCM(-SIV)           | AES-256-GCM                                  |
+| MAC / KDF             | HMAC-SHA-2 / KMAC       | HMAC-SHA-384 / HKDF-SHA-384                  |
 
 **Documented divergence (honest).** The handbook (Table 4.1, note 2) recommends deploying ML-DSA in a
 **hybrid** combination with EdDSA/ECDSA, reflecting the more conservative BSI/ANSSI/NLNCSA stance.

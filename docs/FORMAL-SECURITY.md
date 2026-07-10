@@ -192,7 +192,7 @@ MEASURE uses quantitative and qualitative methods to analyze AI risks.
 
 | MEASURE aspect              | Nerion property                                                                                                                                                                                       |
 | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| M2 — Quantitative testing   | 752 automated tests (npm run gate), 23/23 conformance checks. Property-based testing for capability attenuation and quorum receipts.                                                                  |
+| M2 — Quantitative testing   | 752 automated tests (npm run gate), 24/24 conformance checks. Property-based testing for capability attenuation and quorum receipts.                                                                  |
 | M2.5 — Bias / fairness      | Not applicable to a cryptographic governance protocol.                                                                                                                                                |
 | M4 — Residual risk tracking | SECURITY_FINDINGS.md, APEX_SPRINT_LOG.md, APEX_SPRINT_BACKLOG.md track known issues and their resolution status.                                                                                      |
 | **Gap**                     | No fuzzing, formal verification, or differential testing against an independent implementation. The ASSURANCE.md "conformance-checked" tier explicitly states it is not external security validation. |
@@ -205,7 +205,7 @@ MANAGE treats, monitors, and responds to AI risks.
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | MN1 — Response plan     | SECURITY.md responsible-disclosure policy; CONTRIBUTING.md patch process.                                                                                                                |
 | MN2 — Incident tracking | APEX_SPRINT_LOG.md tracks findings and fixes (e.g., ZKRANGE-002, RCPT-001, CB-001, PERMIT-001).                                                                                          |
-| MN4 — Metrics           | Conformance count (23/23) and test count (752) provide basic metrics; no SLO or MTTR defined.                                                                                            |
+| MN4 — Metrics           | Conformance count (24/24) and test count (752) provide basic metrics; no SLO or MTTR defined.                                                                                            |
 | **Gap**                 | No automated vulnerability scanning, no supply-chain SBOM beyond the CBOM (ADR-0009), no incident response SLA. These are pre-production gaps appropriate to the current maturity level. |
 
 ---

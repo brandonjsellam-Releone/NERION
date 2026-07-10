@@ -101,6 +101,13 @@ import {
   verifySupplyChainStatement,
   supplyChainLeaf,
 } from './supplychain.js'
+import {
+  Ledger,
+  verifyFinalized,
+  GENESIS_PREV,
+  selectLeader,
+  type ValidatorSet,
+} from '../../ledger/src/index.js'
 
 export interface ConformanceResult {
   readonly id: string
@@ -768,6 +775,36 @@ const CHECKS: Array<() => ConformanceResult> = [
         const needsSalt = !verifyDisclosure(salted, intent) // attacker without the salt fails
         const wrongSalt = !verifyDisclosure(salted, intent, new Uint8Array(16).fill(0x6b))
         return hides && discloses && needsSalt && wrongSalt
+      },
+    ),
+
+  () =>
+    check(
+      'C24',
+      'ADR-0020/B5: a validator-set attestation bundle does NOT finalize under a different reconfiguration epoch (cross-epoch set-substitution rejected)',
+      () => {
+        const s = signerFor(SUITE)
+        const keys = [s.keygen(), s.keygen(), s.keygen()]
+        const stakes = [34n, 33n, 33n]
+        const base = {
+          validators: keys.map((k, i) => ({ pubkey: bytesToHex(k.publicKey), stake: stakes[i]! })),
+        }
+        // Same members + stake, different reconfiguration epoch => different consensusSetId
+        // (ADR-0020/B5). An attestation bundle gathered under set0 binds THAT setId, so it must
+        // fail to finalize under set1 — a signature cannot be re-counted across epochs even though
+        // the validator roster is byte-identical.
+        const set0: ValidatorSet = { ...base, epoch: 0 }
+        const set1: ValidatorSet = { ...base, epoch: 1 }
+        const ledger0 = new Ledger(set0, SUITE)
+        // Leader selection is epoch-independent (same members) — find the key selectLeader names.
+        const proposer = keys.find(
+          (k) => bytesToHex(k.publicKey) === selectLeader(set0, GENESIS_PREV, 0),
+        )!
+        const block = ledger0.propose('c2'.repeat(32), 0, NOW, proposer)
+        const atts = keys.map((k) => ledger0.attest(block, k))
+        const finalizesUnderOwnEpoch = verifyFinalized(block, atts, set0, GENESIS_PREV).finalized
+        const rejectedUnderOtherEpoch = !verifyFinalized(block, atts, set1, GENESIS_PREV).finalized
+        return finalizesUnderOwnEpoch && rejectedUnderOtherEpoch
       },
     ),
 ]

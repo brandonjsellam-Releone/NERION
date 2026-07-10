@@ -1,7 +1,7 @@
 # PolarSeek Launch Readiness — Code‑Complete, NOT Launch‑Cleared
 
 **Status (2026‑06‑20):** P0–P4 software build complete — **365 tests pass**, `npm run conformance` →
-**23/23 CONFORMANT**, Rust hot‑path foundation compiles. **That is the entirety of what code can
+**24/24 CONFORMANT**, Rust hot‑path foundation compiles. **That is the entirety of what code can
 close.** Four independent gates stand between "code complete" and any public non‑infringement claim,
 GA launch, or paid pilot sign‑off — and **none of the four is closable by PolarSeek alone.** Each
 requires an external party (patent counsel, a crypto/ZK audit firm, a hardware/cloud vendor, an
@@ -21,13 +21,14 @@ party), what the external party **must do**, and what stays **blocked** until do
 ---
 
 ## Gate 1 — Freedom‑To‑Operate (FTO) patent opinion
-*(vs. SIGA "Sovereign OS" / "Commit‑Point Gate" family; anchor US 9,607,214 B2)*
+
+_(vs. SIGA "Sovereign OS" / "Commit‑Point Gate" family; anchor US 9,607,214 B2)_
 
 - **Prepared (engineering input, NOT a legal opinion):** an element‑by‑element design‑around mapping
   skeleton — the load‑bearing **"govern the verb, never the eye"** wedge (no perception/cognitive‑loop
   pillar) plus governance‑only fallbacks (stateless pure‑function kernel; no "commit‑point gate"
   branding; decoupled SCITT/COSE receipts) — **each flagged as a hypothesis, not a finding**; the
-  dual‑claim split (perception "eye" vs. governance "gate") counsel must make; prior‑art *candidates*;
+  dual‑claim split (perception "eye" vs. governance "gate") counsel must make; prior‑art _candidates_;
   a CI‑enforced clean‑room record ([CLEANROOM.md](./CLEANROOM.md), `npm run lint:cleanroom`); and the
   verbatim disclaimer + counsel checklist.
 - **External party must do:** qualified patent counsel independently verifies the actual SIGA patent
@@ -40,7 +41,8 @@ party), what the external party **must do**, and what stays **blocked** until do
   of the other three.**
 
 ## Gate 2 — External cryptography / ZK protocol audit
-*(Trail of Bits / NCC / Cure53‑grade)*
+
+_(Trail of Bits / NCC / Cure53‑grade)_
 
 - **Prepared:** a quote‑ready scope over the **five unaudited compositions** PolarSeek wrote on audited
   `@noble` primitives — (A) ZK range proof `zkrange`, (B) policy‑satisfaction `policyproof`, (C) ECVRF
@@ -62,7 +64,7 @@ party), what the external party **must do**, and what stays **blocked** until do
 - **Prepared:** the injectable adapter **seams are built + unit‑tested with fakes** (never run against
   live silicon here): `Pkcs11WrapEngine`/`Pkcs11KeyProvider`, the `HbsSignEngine` + `OtsStateStore` +
   reserve‑before‑sign `HbsKeyProvider`, the Azure KV / AWS KMS sealing backends (Azure KV is
-  *provisioned* — credentials only, never exercised end‑to‑end), and the `QuoteVerifier` registry +
+  _provisioned_ — credentials only, never exercised end‑to‑end), and the `QuoteVerifier` registry +
   N‑of‑M appraisal. Model‑B custody means a classical‑only HSM/KMS suffices to custody PQC keys.
 - **Honest corrections (the runbook overstated these):** the three bindings (`Pkcs11WrapEngine`,
   `HbsSignEngine`, per‑format `QuoteVerifier`) are **net‑new code the operator must write and validate
@@ -80,7 +82,7 @@ party), what the external party **must do**, and what stays **blocked** until do
 ## Gate 4 — FIPS 140‑3 CMVP validation
 
 - **Prepared:** PolarSeek **emits the surrounding evidence** a validator consumes — signed CNSA 2.0
-  verdict (C16), signed CBOM (C17), COSE_Sign1/RATS (C19), `npm run conformance` → 23/23, and the
+  verdict (C16), signed CBOM (C17), COSE_Sign1/RATS (C19), `npm run conformance` → 24/24, and the
   standalone receipt verifier — all signed + log‑anchored + externally verifiable.
 - **Critical honesty constraint:** assembling this evidence and **consuming** a CMVP‑validated HSM/CSP
   boundary **does NOT make PolarSeek FIPS 140‑3 validated**; PolarSeek's in‑process ML‑DSA/ML‑KEM
@@ -88,7 +90,7 @@ party), what the external party **must do**, and what stays **blocked** until do
   machine‑checked against our **own oracle** — it is **not** third‑party CMVP validation. **No
   configuration in this repo produces a FIPS validation.**
 - **External party must do:** **Path A** (pilots) — place FIPS‑relevant ops behind an already‑CMVP‑
-  validated module and document PolarSeek as a *consumer*, explicitly noting the PQC signing stays
+  validated module and document PolarSeek as a _consumer_, explicitly noting the PQC signing stays
   outside; or **Path B** — contract an accredited CST lab (Leidos/atsec/DEKRA/Acumen), define a
   boundary, CAVP/ACVP‑validate, budget 9–18 months + the NIST MIP queue.
 - **Blocks:** any "FIPS 140‑3 validated" statement and any procurement requiring CMVP‑validated crypto.

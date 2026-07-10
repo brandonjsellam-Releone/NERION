@@ -91,11 +91,11 @@ _(Confirm the article mapping against the consolidated AI Act before relying on 
 - **Standardisation** through **IETF / W3C / ETSI / OASIS** — including an intended "govern-the-verb"
   profile and COSE/RATS codepoints — and presentation at **European venues (FOSDEM, IETF, RIPE)**.
 - **Reproducible open security research** — the NGI ethos. `docs/REPRODUCE.md` makes **every claim
-  runnable** (`npm run gate`, `npm run conformance` → **23/23**, KAT byte-exactness, the TLC model check).
+  runnable** (`npm run gate`, `npm run conformance` → **24/24**, KAT byte-exactness, the TLC model check).
 - **Rigorous evidence the dossier predates:** a **TLA⁺ accountable-safety model now MACHINE-CHECKED
   with TLC** across multiple configurations (a model of an _abstraction_, not an implementation proof —
   CI runs it on every change); **FIPS 203/204/205 negative-conformance tests** + a conformance map;
-  **~756 automated tests / 23-of-23 conformance**. _(These replace the dossier's stale "365 assertions
+  **~756 automated tests / 24-of-24 conformance**. _(These replace the dossier's stale "365 assertions
   / 12 ADRs" — use the current figures.)_
 
 ### Restack eligible-activity mapping (the EU-substance work)
@@ -115,7 +115,7 @@ _(Confirm the article mapping against the consolidated AI Act before relying on 
 
 1. Reconcile the **applicant EU-nexus** (§0) — state French/EU citizenship + EU residence accurately; apply as an individual.
 2. Fold the **§§1–4 substance** into the dossier's §4 _European Dimension_ — **in Brandon's own words** (NLnet AI-ban).
-3. Refresh the dossier's **stale numbers** to current (~756 tests / 23-of-23 / machine-checked TLA⁺) when he rewrites it.
+3. Refresh the dossier's **stale numbers** to current (~756 tests / 24-of-24 / machine-checked TLA⁺) when he rewrites it.
 4. Keep the **honesty frame**: UNAUDITED / pre-product / CNSA-aligned / pre-FTO — the grant funds the audit.
 
 _Fact-base only. Conformant is not validated; machine-checked is not implementation-proven; a

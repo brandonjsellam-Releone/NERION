@@ -51,7 +51,7 @@ Nerion aligns to both active federal mandates:
 | NIST AI RMF                  | Cryptographic enforcement of AI risk controls     |
 | E.O. 14110 AI Accountability | Non-repudiable audit trail for AI decisions       |
 
-**Current state:** 756 automated tests + 23/23 conformance checks. CNSA 2.0 aligned — **not yet FIPS 140-3 certified** (CMVP process to be initiated as federal engagement deepens). Externally **unaudited** — independent audit in procurement. Apache-2.0 open source.
+**Current state:** 756 automated tests + 24/24 conformance checks. CNSA 2.0 aligned — **not yet FIPS 140-3 certified** (CMVP process to be initiated as federal engagement deepens). Externally **unaudited** — independent audit in procurement. Apache-2.0 open source.
 
 ---
 

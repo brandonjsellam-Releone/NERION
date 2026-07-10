@@ -22,7 +22,7 @@ Nerion is the first open-source **post-quantum execution governance protocol** f
 
 | Capability                                | Technical Implementation                                       | Evidence                                 |
 | ----------------------------------------- | -------------------------------------------------------------- | ---------------------------------------- |
-| **Post-quantum key encapsulation**        | ML-KEM-1024 (NIST FIPS 203)                                    | 23/23 conformance checks; KAT byte-exact |
+| **Post-quantum key encapsulation**        | ML-KEM-1024 (NIST FIPS 203)                                    | 24/24 conformance checks; KAT byte-exact |
 | **Post-quantum digital signatures**       | ML-DSA-87 (NIST FIPS 204)                                      | CNSA 2.0 Category 5 aligned              |
 | **Hash-based signature backup**           | SLH-DSA (NIST FIPS 205)                                        | Conservative long-term root signing      |
 | **Symmetric channel security**            | HMAC-SHA-384 + AES-256-GCM                                     | CNSA 2.0 aligned                         |
@@ -58,7 +58,7 @@ Nerion is the first open-source **post-quantum execution governance protocol** f
 | Federal past performance      | **None.** First government engagement expected via NIST NCCoE consortium.                                                     |
 | NLnet grant funding           | **Applying** to NLnet NGI Restack (call opens ~September 2026). Not yet funded.                                               |
 | Entity / SAM.gov registration | **Pending** (entity registration submitted; UEI forthcoming). US corporation; US business banking (Mercury) established 2026. |
-| Test coverage                 | **756 tests** (102 test files) + **23/23 conformance checks** on published specification.                                     |
+| Test coverage                 | **756 tests** (102 test files) + **24/24 conformance checks** on published specification.                                     |
 
 ---
 
@@ -79,7 +79,7 @@ Nerion is the first open-source **post-quantum execution governance protocol** f
 No formal federal past performance. Comparable technical work:
 
 - Public protocol specification (github.com/brandonjsellam-Releone/NERION)
-- 756-test suite with 23/23 conformance against published specification
+- 756-test suite with 24/24 conformance against published specification
 - Rust hot-path implementation: 13 tests (9 unit + 4 KAT byte-exact against NIST vectors)
 - Independent audit inquiries submitted June 2026
 

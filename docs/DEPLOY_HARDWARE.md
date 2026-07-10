@@ -8,7 +8,7 @@
 ## 0. Honest starting point
 
 PolarSeek is **Local/Private dev**: software unit‑ and conformance‑tested **with fakes** (365 tests,
-23/23 conformance) — **no hardware/integration/audit coverage**. The custody/attestation **adapter
+24/24 conformance) — **no hardware/integration/audit coverage**. The custody/attestation **adapter
 seams are built and offline‑tested with fakes; none has been exercised against live silicon or a live
 cloud KMS.** "Framework built" ≠ "custody works on real hardware."
 
@@ -18,11 +18,11 @@ These are **net‑new code the operator must write AND validate against their sp
 "config not architecture" is an engineering **expectation, not a guarantee**, and the seams are
 **untested against real silicon here**:
 
-| Binding | Plugs into (built seam) | Operator writes |
-|---|---|---|
-| `Pkcs11WrapEngine` | `keystore` SealingKeyProvider / Pkcs11* | a pkcs11js→C binding to the HSM's wrap/unwrap |
-| `HbsSignEngine` | `keystore` `HbsKeyProvider` + `OtsStateStore` | the LMS/XMSS sign call backed by a **hardware‑counter** state store (never the software store) |
-| `QuoteVerifier` (one per TEE format) | `attest` QuoteVerifierRegistry | the per‑format quote verification + golden enclave measurements |
+| Binding                              | Plugs into (built seam)                       | Operator writes                                                                                |
+| ------------------------------------ | --------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `Pkcs11WrapEngine`                   | `keystore` SealingKeyProvider / Pkcs11\*      | a pkcs11js→C binding to the HSM's wrap/unwrap                                                  |
+| `HbsSignEngine`                      | `keystore` `HbsKeyProvider` + `OtsStateStore` | the LMS/XMSS sign call backed by a **hardware‑counter** state store (never the software store) |
+| `QuoteVerifier` (one per TEE format) | `attest` QuoteVerifierRegistry                | the per‑format quote verification + golden enclave measurements                                |
 
 **Until wired:** keys are software‑custodied (dev‑grade); TEE attestation **fails closed** (no hardware
 enclave is verified — the N‑of‑M heterogeneous‑attestation defense exists in the framework but
@@ -41,7 +41,7 @@ counter (the software store is provably reuse‑unsafe under restore).
 
 ## 3. Cloud KMS sealing + confidential‑compute TEE
 
-- **Azure Key Vault** — *provisioned* (a dedicated Key Vault + app registration w/ Crypto
+- **Azure Key Vault** — _provisioned_ (a dedicated Key Vault + app registration w/ Crypto
   User; IDs only, secret in `.env`) but **never exercised end‑to‑end here**; KV has **no PQC support**
   and serves only as a **sealing KEK**. The provider is **implemented + offline‑tested with a fake
   sealer**, not run against the live KV.
@@ -71,6 +71,6 @@ CMVP validation; never conflate the two.
 
 Signed CNSA 2.0 verdict (`conformance/cnsa-oracle.ts`, C16); signed CBOM (`cbom.ts`, C17); COSE_Sign1 +
 RATS/EAT (`crypto/cose.ts`, C19); signed SBOM + SLSA provenance (`supplychain.ts`, C20); the standalone
-external receipt verifier (`npm run verify:cli`); `npm run conformance` → 23/23. All signed,
+external receipt verifier (`npm run verify:cli`); `npm run conformance` → 24/24. All signed,
 transparency‑log‑anchored, externally verifiable — and **none confers FIPS validation, audit, or
 non‑infringement status.**

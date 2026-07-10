@@ -37,10 +37,16 @@ under, recompute-and-compare at verify) is delivered exactly as argued. The impl
   finalized under epoch 0 but NOT under epoch 1 — `ledger/test/chain.test.ts`; all timeout-vote tests
   bind `consensusSetId`). Equivocation slashing is now **epoch-scoped** (a stale cross-epoch proof is
   rejected — Attack C closed in the "reject" direction).
-- **Still a follow-up (NOT done here):** the conformance **C24** check + the `ps-kat.json` consensus
-  vectors from the Implementation-plan §5 — the count stays **23/23** for now; the property is
-  unit-tested, not yet pinned as a conformance vector. The TLA⁺ accountable-safety model is **not**
-  extended to a multi-epoch dimension (single-epoch model remains valid; the binding is additive).
+- **Conformance C24 ADDED (2026-07-08).** `conformance/src/suite.ts` now asserts the property
+  end-to-end via the public API: a same-members/different-epoch attestation bundle finalizes under
+  its own epoch's `verifyFinalized` and is rejected under a different epoch's — count lifted **23 →
+  24**; every "23-of-23" cross-reference (README/STATUS/ASSURANCE/THREAT_MODEL/gov+grants docs and the
+  memory index) updated in the same commit, per this ADR's own §5 instruction.
+- **Still a follow-up (NOT done):** the `ps-kat.json` consensus vectors from the Implementation-plan
+  §5 (byte-exact `consensusSetId` / `attestMessage` / `viewChangeMessage` fixtures for a fixed toy set
+  - epoch) are not yet added — C24 is conformance-level (asserts the property via the public API), not
+    yet a frozen byte-exact KAT vector. The TLA⁺ accountable-safety model is **not** extended to a
+    multi-epoch dimension (single-epoch model remains valid; the binding is additive).
 
 ## Context
 
@@ -217,7 +223,14 @@ consensusSetId(set', epoch')`. By collision-resistance of _H_ over an injective 
 **This is an argument, not a proof.** It is informal, in the random-oracle idealization of SHAKE256,
 and **not externally audited**. See limits below.
 
-## Implementation plan (DEFERRED to council; flagged for completeness)
+## Implementation plan (original pre-as-built proposal; superseded by the As-built section above)
+
+> **Superseded (2026-07-08).** The binding itself landed as the simpler **as-built variant** described
+> at the top of this ADR (no `epoch` wire field, no `V2`-suffixed function names, no migration flag —
+> `epoch` lives on `ValidatorSet` and rides inside `setId`). §5's conformance item is now DONE (C24,
+> via the public `verifyFinalized` API, count 24/24); its KAT-vector sub-item remains open. The
+> numbered plan below is preserved as the historical record of the original (heavier) design; it was
+> not built as specified.
 
 Nothing here is built by this ADR. When council approves implementation:
 

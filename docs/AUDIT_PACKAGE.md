@@ -18,13 +18,13 @@ audit** — confirm or refute each independently; do not treat the project's sel
 
 ## 1. In‑scope components (five compositions)
 
-| # | Component | File | Self‑flagged status |
-|---|---|---|---|
-| A | ZK range proof — Pedersen/ristretto255 + bit‑decomposition + Chaum‑Pedersen OR‑proofs, SHAKE256 Fiat‑Shamir, dual‑range, **n≤251 cap (ZKRANGE‑002 fix)** | `disclosure/zkrange.ts` | "audited group, **UNAUDITED protocol**" |
-| B | Policy‑satisfaction composition (hidden‑amount ≤ ceiling / aggregate ≤ cap) | `disclosure/policyproof.ts` | UNAUDITED |
-| C | ECVRF (RFC 9381 suite 0x03, ed25519‑TAI) | `ledger/vrf.ts` | classical VRF (PQ caveat) |
-| D | k‑of‑n independent‑signature quorum receipts | `receipts/quorum.ts` | composition unaudited |
-| E | COSE_Sign1 + RATS/EAT envelope | `crypto/cose.ts` | ML‑DSA COSE codepoint IANA‑provisional |
+| #   | Component                                                                                                                                                | File                        | Self‑flagged status                     |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- | --------------------------------------- |
+| A   | ZK range proof — Pedersen/ristretto255 + bit‑decomposition + Chaum‑Pedersen OR‑proofs, SHAKE256 Fiat‑Shamir, dual‑range, **n≤251 cap (ZKRANGE‑002 fix)** | `disclosure/zkrange.ts`     | "audited group, **UNAUDITED protocol**" |
+| B   | Policy‑satisfaction composition (hidden‑amount ≤ ceiling / aggregate ≤ cap)                                                                              | `disclosure/policyproof.ts` | UNAUDITED                               |
+| C   | ECVRF (RFC 9381 suite 0x03, ed25519‑TAI)                                                                                                                 | `ledger/vrf.ts`             | classical VRF (PQ caveat)               |
+| D   | k‑of‑n independent‑signature quorum receipts                                                                                                             | `receipts/quorum.ts`        | composition unaudited                   |
+| E   | COSE_Sign1 + RATS/EAT envelope                                                                                                                           | `crypto/cose.ts`            | ML‑DSA COSE codepoint IANA‑provisional  |
 
 ## 2. Per‑component claims to verify (project claims — auditor confirms or refutes)
 
@@ -32,11 +32,11 @@ audit** — confirm or refute each independently; do not treat the project's sel
   `threshold‑1‑amount∈[0,2^n)`) with strong Fiat‑Shamir (statement‑binding challenge) is sound and
   closes the Frozen‑Heart/weak‑FS class, and that the **n≤251** cap is **intended** to prevent modular
   wraparound (corrected from 252 after the internal audit found a mod‑L aliasing at n=252 — ZKRANGE‑002;
-  an internal 3‑lens deep‑dive then concluded the corrected construction sound — a *lead*, see
+  an internal 3‑lens deep‑dive then concluded the corrected construction sound — a _lead_, see
   SECURITY_FINDINGS.md). **Verify** the soundness, the OR‑proof simulation/special‑soundness, and the
   generator‑H nothing‑up‑my‑sleeve provenance.
 - **B:** the project **claims** the amount's confidentiality is information‑theoretic (Pedersen perfect
-  hiding) as a *primitive* property; whether **this composition** preserves it (correct generators, no
+  hiding) as a _primitive_ property; whether **this composition** preserves it (correct generators, no
   transcript leakage) and whether soundness reduces to discrete‑log is **the auditor's to confirm** —
   do **not** treat "no harvest‑now‑decrypt‑later risk" as established for the composition.
 - **C:** the project **claims** a VRF break is a liveness/fairness degradation that does **not** forge
@@ -67,10 +67,10 @@ audit** — confirm or refute each independently; do not treat the project's sel
 - **Threat model:** [THREAT_MODEL.md](./THREAT_MODEL.md).
 - **Runnable vectors (KAT conformance ONLY — not a security assurance):** RFC 9381 VRF KATs
   (`ledger/test/vrf-rfc9381.test.ts`); 3‑language SHA3/HMAC conformance KATs; `npm run gate`;
-  `npm run conformance` → 23/23.
+  `npm run conformance` → 24/24.
 - **Eight auditor questions:** Frozen‑Heart/weak‑FS; OR‑proof simulation soundness; generator‑H
   provenance; commitment‑to‑intent linkage; VRF malleability; quorum‑vs‑threshold semantics; COSE
-  canonicalization; the PQ‑vs‑classical split (state the *primitive* property and the *composition*
+  canonicalization; the PQ‑vs‑classical split (state the _primitive_ property and the _composition_
   claim separately).
 
 ## 5. What the firm must do

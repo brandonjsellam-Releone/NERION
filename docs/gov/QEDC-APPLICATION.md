@@ -26,7 +26,7 @@ TRELYAN develops **Nerion**, an open-source post-quantum execution governance pr
 
 **Why this matters for quantum:** AI systems operating today are making decisions authorized by classical cryptographic credentials. A "harvest now, decrypt later" adversary capturing those credentials today can forge AI agent authorizations when quantum computers mature. Nerion eliminates this vulnerability by applying ML-KEM-1024 (FIPS 203), ML-DSA-87 (FIPS 204), and SLH-DSA (FIPS 205) to the execution governance layer — not just communications.
 
-**Technical status:** 756 automated tests + 23/23 conformance checks against the published specification. Rust hot-path with 13 tests including byte-exact KAT comparisons against NIST vectors. Apache-2.0 open-source. CNSA 2.0 algorithm aligned (not FIPS 140-3 certified — CMVP process not yet initiated). External audit inquiries submitted to OSTIF and OTF Security Lab.
+**Technical status:** 756 automated tests + 24/24 conformance checks against the published specification. Rust hot-path with 13 tests including byte-exact KAT comparisons against NIST vectors. Apache-2.0 open-source. CNSA 2.0 algorithm aligned (not FIPS 140-3 certified — CMVP process not yet initiated). External audit inquiries submitted to OSTIF and OTF Security Lab.
 
 **Federal alignment:** Aligned to June 2026 quantum executive orders (PQC migration by 2030–2031). Addresses both the PQC cryptographic migration mandate and the parallel AI governance mandate simultaneously.
 

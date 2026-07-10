@@ -28,6 +28,7 @@ tests for the Nerion codebase (C:\Users\User\polarseek).
 file first and mirror its import style, describe/it structure, and assertion patterns.
 
 **SPDX header:** every new test file must start with:
+
 ```typescript
 // SPDX-FileCopyrightText: 2026 TRELYAN
 //
@@ -40,22 +41,25 @@ file first and mirror its import style, describe/it structure, and assertion pat
 → expected error), and one edge-case test per public function.
 
 **Property-based tests:** use `fast-check` (already a dev dependency) for:
+
 - Round-trip properties (encode → decode → equal)
 - Domain boundary conditions (min/max sizes, empty buffers)
 - Invariants that must hold regardless of input
 
 **Forbidden in tests:**
+
 - Never import from `.env` or reference real keys
 - Never call `npm run kat` or modify `conformance/vectors/`
 - Never add `// @ts-nocheck` or suppress TypeScript errors
 - Never use `Math.random()` — use `crypto.getRandomValues()` for random bytes
 
 **After writing:** run `npm run gate` to verify the tests pass without breaking
-the existing 462 tests. The conformance count (23/23) must remain unchanged.
+the existing 462 tests. The conformance count (24/24) must remain unchanged.
 
 ## What you produce
 
 Given a description of what to test, you:
+
 1. Read the relevant source file(s)
 2. Read the nearest existing test file for style reference
 3. Write a complete, valid Vitest test file
