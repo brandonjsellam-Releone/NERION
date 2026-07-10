@@ -29,6 +29,7 @@ import {
   COSE_PROFILE,
   coseProfileAad,
   issuePermit,
+  randomBytes,
 } from '../../crypto/src/index.js'
 import {
   issueRoot,
@@ -645,19 +646,34 @@ const CHECKS: Array<() => ConformanceResult> = [
           resource: 'vendor-acme',
           amount: 500,
         }
-        const bound = bindAmountCommitment(intent)
-        const good = verifyBoundCommitment(intent, bound.commitment, bound.digest)
-        const full = verifyBoundAmount(intent, bound.commitment, bound.opening, bound.digest)
+        const salt = randomBytes(16)
+        const bound = bindAmountCommitment(intent, salt)
+        const good = verifyBoundCommitment(intent, bound.commitment, bound.digest, salt)
+        const full = verifyBoundAmount(intent, bound.commitment, bound.opening, bound.digest, salt)
         // a malicious issuer substituting a commitment to a different amount is rejected
-        const rejectsSub = !verifyBoundCommitment(intent, commitAmount(1n).commitment, bound.digest)
+        const rejectsSub = !verifyBoundCommitment(
+          intent,
+          commitAmount(1n).commitment,
+          bound.digest,
+          salt,
+        )
         // a wrong opening (C does not open to the intent's amount) is rejected by the full check
         const rejectsBadOpening = !verifyBoundAmount(
           intent,
           bound.commitment,
           bound.opening + 1n,
           bound.digest,
+          salt,
         )
-        return good && full && rejectsSub && rejectsBadOpening
+        // SEAM-CB-SALT-001: the digest is only verifiable under the SAME salt it was built with —
+        // a wrong salt must be rejected too (closes the unsalted-brute-forceability gap).
+        const rejectsWrongSalt = !verifyBoundCommitment(
+          intent,
+          bound.commitment,
+          bound.digest,
+          randomBytes(16),
+        )
+        return good && full && rejectsSub && rejectsBadOpening && rejectsWrongSalt
       },
     ),
 

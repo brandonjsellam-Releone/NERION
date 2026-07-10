@@ -75,26 +75,42 @@ export function intentAmount(intent: ActionIntent): bigint {
 
 /**
  * Bound intent digest = SHA3-256 over the deterministic CBOR encoding of
- * {domain, intent-skeleton, commitment}, where the skeleton is the intent with its
- * `amount` OMITTED.
+ * {domain, salt, intent-skeleton, commitment}, where the skeleton is the intent with
+ * its `amount` OMITTED.
  *
- * CB-001 (Team Apex audit, 2026-06-21): this digest is a PUBLIC, externally-
- * recomputable receipt field. Hashing the plaintext `amount` into it would NULLIFY the
- * commitment's perfect hiding — anyone holding the receipt could brute-force the amount
- * over its small enumerable domain by recomputing the digest per candidate. The amount
- * is instead bound CRYPTOGRAPHICALLY by the commitment (and checked against
- * `intent.amount` in `verifyBoundAmount`), so it is excluded from the pre-image. Any
- * future SECRET intent field must be excluded here likewise.
+ * CB-001 (Team Apex audit, 2026-06-21): `amount` is excluded from the pre-image for a
+ * reason INDEPENDENT of brute-forceability — the design goal (stated in the module
+ * TRUST MODEL above) is that a PRIVACY verifier can recompute this digest from just
+ * `{intent-minus-amount, commitment}`, without ever learning the amount; the amount's
+ * binding comes from the COMMITMENT itself (checked in `verifyBoundAmount`), not from
+ * appearing in this preimage. Putting it back — even salted — would break that
+ * recomputability-without-the-amount property. `amount` therefore stays excluded here.
+ *
+ * SEAM-CB-SALT-001 (AAC council review, 2026-07-11): every OTHER field — including
+ * `counterparty` (types.ts: "never re-identified across calls") and arbitrary `params`
+ * — WAS hashed into this digest unsalted, so a low-entropy/enumerable value among them
+ * was brute-forceable from the public digest (the same CB-001 class, just left
+ * unfixed on this specific pre-image). Mirroring `selective.ts`'s salted mode
+ * (RCPT-001/ADR-0014), `salt` is now REQUIRED (not optional — an opt-in defense here
+ * would repeat the exact mistake CUSTODY-SEAL-002 just closed elsewhere in this
+ * session) and folded into the preimage. A high-entropy salt makes EVERY field in the
+ * skeleton non-brute-forceable, including any field added to `ActionIntent` in the
+ * future — this is a global, forward-safe fix, not a per-field allowlist that would
+ * need remembering to extend. Reuse the SAME salt a caller already mints for its other
+ * receipt commitments (e.g. `receipt.ts`'s `intentSalt`) — one salt per receipt, kept
+ * off the public leaf, revealed only to an authorized disclosure verifier.
  *
  * Including the compressed commitment still binds the point to this exact intent
  * skeleton; dCBOR makes the encoding unambiguous (no concatenation-splitting).
  */
-export function boundIntentDigest(intent: ActionIntent, commitment: Pt): Bytes {
-  // Bind every intent field EXCEPT the secret amount (CB-001). The commitment carries the
+export function boundIntentDigest(intent: ActionIntent, commitment: Pt, salt: Bytes): Bytes {
+  // Bind every intent field EXCEPT the secret amount (CB-001; see the doc comment above for
+  // why amount specifically stays excluded even under salting). The commitment carries the
   // amount's binding; the public digest must not make it brute-forceable.
   const skeleton = Object.fromEntries(Object.entries(intent).filter(([k]) => k !== 'amount'))
   const preimage = encodeCanonical({
     domain: DOMAIN,
+    salt,
     intent: skeleton,
     commitment: commitment.toBytes(),
   })
@@ -102,21 +118,23 @@ export function boundIntentDigest(intent: ActionIntent, commitment: Pt): Bytes {
 }
 
 /** Hex of the bound digest — a stable, externally-recomputable receipt field. */
-export function boundIntentDigestHex(intent: ActionIntent, commitment: Pt): string {
-  return bytesToHex(boundIntentDigest(intent, commitment))
+export function boundIntentDigestHex(intent: ActionIntent, commitment: Pt, salt: Bytes): string {
+  return bytesToHex(boundIntentDigest(intent, commitment, salt))
 }
 
 /**
  * POINT-binding check ONLY: true iff `commitment` is the point bound into `digest`
- * for this intent. Does NOT prove the commitment opens to `intent.amount` — use
- * `verifyBoundAmount` when the opening is available.
+ * for this intent (under the same `salt` the digest was built with). Does NOT prove
+ * the commitment opens to `intent.amount` — use `verifyBoundAmount` when the opening
+ * is available.
  */
 export function verifyBoundCommitment(
   intent: ActionIntent,
   commitment: Pt,
   digest: Bytes,
+  salt: Bytes,
 ): boolean {
-  return constantTimeEqual(boundIntentDigest(intent, commitment), digest)
+  return constantTimeEqual(boundIntentDigest(intent, commitment, salt), digest)
 }
 
 /**
@@ -128,8 +146,9 @@ export function verifyBoundAmount(
   commitment: Pt,
   opening: bigint,
   digest: Bytes,
+  salt: Bytes,
 ): boolean {
-  if (!verifyBoundCommitment(intent, commitment, digest)) return false
+  if (!verifyBoundCommitment(intent, commitment, digest, salt)) return false
   const expected = commit(intentAmount(intent), opening)
   return constantTimeEqual(expected.toBytes(), commitment.toBytes())
 }
@@ -139,16 +158,18 @@ export interface BoundAmount {
   readonly commitment: Pt
   /** Secret blinding; kept by the prover to build the satisfaction proof. */
   readonly opening: bigint
-  /** SHA3-256 digest binding the commitment to the intent. */
+  /** SHA3-256 digest binding the commitment to the intent (salted — see SEAM-CB-SALT-001). */
   readonly digest: Bytes
 }
 
 /**
  * Commit to the intent's OWN amount (derived from `intent.amount`, not a separate
  * parameter — so the commitment cannot be to a different value than the intent
- * records) and bind it to the intent.
+ * records) and bind it to the intent. `salt` should be the SAME high-entropy salt the
+ * caller uses for its other receipt-field commitments (SEAM-CB-SALT-001) — kept off
+ * the public leaf, revealed only to an authorized disclosure verifier.
  */
-export function bindAmountCommitment(intent: ActionIntent): BoundAmount {
+export function bindAmountCommitment(intent: ActionIntent, salt: Bytes): BoundAmount {
   const { commitment, opening } = commitAmount(intentAmount(intent))
-  return { commitment, opening, digest: boundIntentDigest(intent, commitment) }
+  return { commitment, opening, digest: boundIntentDigest(intent, commitment, salt) }
 }
