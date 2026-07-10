@@ -78,6 +78,17 @@ export interface SeedSealer {
   wrap(seed: Bytes, aad?: Bytes): Promise<Bytes>
   /** Unwrap (decrypt) a sealed blob back to the original seed. */
   unwrap(sealed: Bytes, aad?: Bytes): Promise<Bytes>
+  /**
+   * True iff this backend wraps with a PUBLIC key (e.g. Azure Key Vault RSA-OAEP): anyone who
+   * knows the (public) KEK can craft a valid `wrappedSeed` for a chosen seed OFFLINE, so
+   * `SealingKeyProvider.load()` REQUIRES `opts.trustedPublicKey` for such a sealer
+   * (CUSTODY-SEAL-002, AAC council review — the mandatory-gate hardening of CUSTODY-SEAL-001,
+   * whose `trustedPublicKey` check was opt-in and, per council review, no production/test call
+   * site actually passed it). A sealer that omits this field is treated as `false` — reserve that
+   * for backends you are CERTAIN wrap with a symmetric AEAD (AWS KMS Encrypt, an AES-based
+   * PKCS#11 mechanism); when unsure, declare `true` (fail closed).
+   */
+  readonly isPublicKeyWrap?: boolean
 }
 
 /**
@@ -202,7 +213,22 @@ export class SealingKeyProvider implements KeyProvider {
           `sealed key "${sealed.id}" failed integrity check: re-derived public key does not match sealed.publicKey`,
         )
       }
-      // (2) Authenticity check (CUSTODY-SEAL-001 fix): if the caller supplies the out-of-band
+      // (2) Mandatory-gate hardening (CUSTODY-SEAL-002, AAC council review, 2026-07-11): the
+      // trustedPublicKey check below was OPT-IN — nothing forced a caller of a public-key-wrap
+      // backend to supply it, and no production/test call site in this repo did (the exact
+      // condition CUSTODY-SEAL-001 warns about). Fail closed instead: a sealer that declares
+      // itself a public-key wrap REQUIRES trustedPublicKey; omitting it is now an error, not a
+      // silent skip. Source trustedPublicKey from a channel INDEPENDENT of the at-rest blob
+      // store (e.g. a pinned/integrity-protected record) — never by reading it back from the
+      // same store the blob itself lives in, which would defeat this check.
+      if (this.sealer.isPublicKeyWrap === true && opts.trustedPublicKey === undefined) {
+        kp.secretKey.fill(0)
+        throw new Error(
+          `sealed key "${sealed.id}" requires opts.trustedPublicKey: the "${this.name}" backend ` +
+            'is a public-key wrap (offline-forgeable without it) — CUSTODY-SEAL-002.',
+        )
+      }
+      // (3) Authenticity check (CUSTODY-SEAL-001 fix): if the caller supplies the out-of-band
       // trusted public key, the re-derived key MUST equal it — this rejects a substituted blob
       // that a public-key (e.g. Azure RSA-OAEP) wrap would otherwise admit.
       if (

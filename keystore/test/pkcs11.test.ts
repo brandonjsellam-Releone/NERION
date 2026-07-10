@@ -41,11 +41,33 @@ describe('Pkcs11KeyProvider (HSM-as-sealing-KEK, model B)', () => {
       new Pkcs11Sealer(new FakeEngine()),
     ).provision(suite, 'k')
     const coldEngine = new FakeEngine()
+    // Pkcs11Sealer defaults isPublicKeyWrap:true (CUSTODY-SEAL-002) so trustedPublicKey is
+    // required — modeled here as the value provision() returned, kept out-of-band-trusted.
     const cold = new Pkcs11KeyProvider(new Pkcs11Sealer(coldEngine))
-    const ref = await cold.load(sealed)
+    const ref = await cold.load(sealed, { trustedPublicKey: publicKey })
     expect(coldEngine.unwraps).toBe(1) // load does exactly one unwrap
     expect(cold.getPublicKey(ref)).toEqual(publicKey)
     expect(signerFor(suite).verify(cold.sign(ref, suite, MSG), MSG, publicKey)).toBe(true)
+  })
+
+  it('CUSTODY-SEAL-002: fails closed without trustedPublicKey when isPublicKeyWrap defaults true', async () => {
+    const { sealed } = await new Pkcs11KeyProvider(new Pkcs11Sealer(new FakeEngine())).provision(
+      suite,
+      'k2',
+    )
+    const cold = new Pkcs11KeyProvider(new Pkcs11Sealer(new FakeEngine()))
+    await expect(cold.load(sealed)).rejects.toThrow(
+      /CUSTODY-SEAL-002|requires opts\.trustedPublicKey/,
+    )
+  })
+
+  it('an engine known to be symmetric-AEAD can opt out via isPublicKeyWrap:false', async () => {
+    const { sealed, publicKey } = await new Pkcs11KeyProvider(
+      new Pkcs11Sealer(new FakeEngine(), false),
+    ).provision(suite, 'k3')
+    const cold = new Pkcs11KeyProvider(new Pkcs11Sealer(new FakeEngine(), false))
+    const ref = await cold.load(sealed) // no trustedPublicKey needed — opted out
+    expect(cold.getPublicKey(ref)).toEqual(publicKey)
   })
 
   it('refuses to sign before unlock', () => {

@@ -80,6 +80,9 @@ function safeError(json: Json): string {
  * Tokens and the resolved key version (kid) are cached for the client's life.
  */
 export class AzureKeyVaultSealer implements SeedSealer {
+  /** RSA-OAEP is a PUBLIC-key wrap — offline-forgeable given the vault's public KEK
+   *  (CUSTODY-SEAL-001/-002). See {@link SeedSealer.isPublicKeyWrap}. */
+  readonly isPublicKeyWrap = true
   private readonly cfg: ResolvedConfig
   private token: { value: string; expiresAt: number } | undefined
   private kid: string | undefined

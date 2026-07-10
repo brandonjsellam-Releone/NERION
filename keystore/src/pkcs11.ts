@@ -41,8 +41,17 @@ export interface Pkcs11Config {
 /** A {@link SeedSealer} backed by a PKCS#11 token via a user-supplied engine. */
 export class Pkcs11Sealer implements SeedSealer {
   private readonly engine: Pkcs11WrapEngine
-  constructor(engine: Pkcs11WrapEngine) {
+  /**
+   * CUSTODY-SEAL-002 (AAC council review, 2026-07-11): PKCS#11 wrap-key mechanisms vary by
+   * deployment — RSA-OAEP is a public-key wrap (offline-forgeable, CUSTODY-SEAL-001), an
+   * AES-based mechanism is not — and {@link Pkcs11WrapEngine} doesn't expose which. Defaults
+   * CONSERVATIVELY to `true` (fail closed / require `trustedPublicKey` in `load()`); pass
+   * `isPublicKeyWrap: false` only when you are CERTAIN the underlying mechanism is symmetric AEAD.
+   */
+  readonly isPublicKeyWrap: boolean
+  constructor(engine: Pkcs11WrapEngine, isPublicKeyWrap = true) {
     this.engine = engine
+    this.isPublicKeyWrap = isPublicKeyWrap
   }
   wrap(seed: Bytes): Promise<Bytes> {
     return this.engine.wrap(seed)

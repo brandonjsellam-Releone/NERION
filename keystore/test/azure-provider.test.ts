@@ -52,10 +52,12 @@ describe('AzureKeyVaultKeyProvider (KV-as-sealing-KEK, model B)', () => {
       'k',
     )
 
-    // brand-new provider + sealer, only the sealed blob on hand (fresh process)
+    // brand-new provider + sealer, only the sealed blob on hand (fresh process). trustedPublicKey
+    // is required unconditionally by AzureKeyVaultKeyProvider.load() (CUSTODY-SEAL-002) — modeled
+    // here as the value provision() returned, kept in an out-of-band-trusted record.
     const coldSealer = new FakeSealer()
     const cold = new AzureKeyVaultKeyProvider(coldSealer)
-    const ref = await cold.load(sealed)
+    const ref = await cold.load(sealed, { trustedPublicKey: publicKey })
     expect(coldSealer.unwraps).toBe(1) // load does exactly one unwrap
 
     expect(cold.getPublicKey(ref)).toEqual(publicKey)
@@ -84,11 +86,25 @@ describe('AzureKeyVaultKeyProvider (KV-as-sealing-KEK, model B)', () => {
 
   it('rejects a tampered sealed blob (re-derived public key must match)', async () => {
     const sealer = new FakeSealer()
-    const { sealed } = await new AzureKeyVaultKeyProvider(sealer).provision(suite, 'k')
+    const { sealed, publicKey } = await new AzureKeyVaultKeyProvider(sealer).provision(suite, 'k')
     const tampered = { ...sealed, wrappedSeed: Uint8Array.from(sealed.wrappedSeed) }
     tampered.wrappedSeed[0] = (tampered.wrappedSeed[0] ?? 0) ^ 0xff
     const cold = new AzureKeyVaultKeyProvider(sealer)
-    await expect(cold.load(tampered)).rejects.toThrow(/integrity check/)
+    // trustedPublicKey supplied (required unconditionally, CUSTODY-SEAL-002) so this test
+    // isolates the CORRUPTION self-check, not the separate trustedPublicKey requirement.
+    await expect(cold.load(tampered, { trustedPublicKey: publicKey })).rejects.toThrow(
+      /integrity check/,
+    )
+  })
+
+  it('CUSTODY-SEAL-002: requires trustedPublicKey unconditionally, even for a sealer that omits isPublicKeyWrap', async () => {
+    const { sealed } = await new AzureKeyVaultKeyProvider(new FakeSealer()).provision(suite, 'k2')
+    const cold = new AzureKeyVaultKeyProvider(new FakeSealer())
+    // FakeSealer does NOT declare isPublicKeyWrap — proves the AzureKeyVaultKeyProvider-level
+    // override closes the gap independently of what the sealer instance self-reports.
+    await expect(cold.load(sealed)).rejects.toThrow(
+      /CUSTODY-SEAL-002|requires opts\.trustedPublicKey/,
+    )
   })
 
   it('sign() rejects a mismatched suite', async () => {
