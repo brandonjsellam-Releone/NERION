@@ -27,6 +27,21 @@ export interface EquivocationProof {
   readonly attB: Attestation
 }
 
+/**
+ * Decode-side DoS cap on `detectEquivocations`'s input arrays (ADV-002, AAC council review,
+ * 2026-07-11). This exported, peer-facing function takes no `ValidatorSet`, so it cannot compute
+ * the `max(4*|set|, 256)`-style cap `verifyFinalized`'s F6 guard uses (chain.ts) — this is a fixed,
+ * generous constant instead, matching this codebase's other fixed decode-side bounds (e.g.
+ * gossip.ts's MAX_ATTESTED_HASHES). LATENT today (confirmed: `detectEquivocations` is called only
+ * from tests; GossipNode never calls it, and its own bounded attestation pool is the only place
+ * this repo currently produces attestation arrays), but a caller wiring it directly to
+ * attacker-controlled input would otherwise pay 2 ML-DSA-87 verifies per produced proof
+ * (`verifyEquivocationProof`) with no bound on how many candidates `detectEquivocations` itself
+ * will scan first. Callers with a `ValidatorSet` in scope SHOULD additionally pre-bound with the
+ * F6 formula before invoking; this constant is the floor when they cannot.
+ */
+const MAX_ATTESTATIONS_PER_SIDE = 4096
+
 function safeVerifyAtt(a: Attestation, setId: string): boolean {
   try {
     return signerFor(a.suite).verify(
@@ -49,6 +64,12 @@ export function detectEquivocations(
   blockB: Block,
   attsB: readonly Attestation[],
 ): EquivocationProof[] {
+  // ADV-002: bound attacker-controlled input BEFORE any per-entry work — see
+  // MAX_ATTESTATIONS_PER_SIDE's docstring. Fail closed (no proofs) on an over-cap side, matching
+  // this function's existing "return [] on invalid input" contract (blockA/B mismatch, above).
+  if (attsA.length > MAX_ATTESTATIONS_PER_SIDE || attsB.length > MAX_ATTESTATIONS_PER_SIDE) {
+    return []
+  }
   if (blockA.header.height !== blockB.header.height) return []
   const hA = blockHash(blockA.header)
   const hB = blockHash(blockB.header)
@@ -100,7 +121,22 @@ export function verifyEquivocationProof(proof: EquivocationProof, set: Validator
   return safeVerifyAtt(proof.attA, setId) && safeVerifyAtt(proof.attB, setId)
 }
 
-/** Remove slashed validators, returning a new ValidatorSet (their stake is forfeit). */
+/**
+ * Remove slashed validators, returning a new ValidatorSet (their stake is forfeit).
+ *
+ * CONTRACT (ADV-003, AAC council review, 2026-07-11): `slash()` is UNCONDITIONAL — it removes
+ * every named validator with NO internal proof check. It is a public export (`ledger/src/index.ts`),
+ * so any caller can invoke it directly. The caller MUST have independently verified a
+ * `verifyEquivocationProof(proof, set)` for EACH validator passed here, against the EXACT `set`
+ * argument this call receives — not a proof verified against a different set, and not a stale
+ * proof from a different epoch (consensusSetId folds the epoch, so a proof verified against one
+ * epoch's set will not silently apply to another's, but only if the SAME `set` is used for both
+ * the verify and this call). Every in-repo caller (see equivocation.test.ts, gossip.test.ts)
+ * already does this correctly; this is a residual API-surface footgun for a FUTURE caller, not a
+ * currently-exploitable path. Folding verification into `slash()` itself (accepting
+ * `EquivocationProof[]` instead of bare pubkeys) is deliberately NOT done here — it is a
+ * larger, security-sensitive signature change flagged for dedicated review, not a rushed patch.
+ */
 export function slash(set: ValidatorSet, validators: readonly string[]): ValidatorSet {
   const bad = new Set(validators)
   return { validators: set.validators.filter((v) => !bad.has(v.pubkey)) }

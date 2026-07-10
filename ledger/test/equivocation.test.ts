@@ -13,8 +13,10 @@ import {
   verifyEquivocationProof,
   slash,
   totalStake,
+  blockHash,
   GENESIS_PREV,
   type ValidatorSet,
+  type Attestation,
 } from '../src/index.js'
 
 const suite = SUITE_IDS.PS_5
@@ -63,6 +65,29 @@ describe('accountable finality safety (LEDGER-001)', () => {
     const attsA = keys.map((k) => ledger.attest(blockA, k))
     const attsB: never[] = [] // nobody attested B
     expect(detectEquivocations(blockA, attsA, blockB, attsB).length).toBe(0)
+  })
+
+  it('ADV-002: rejects (returns no proofs) an over-cap attestation array, fail-closed before any verify', () => {
+    const ledger = new Ledger(set, suite)
+    const proposer = leaderKey(GENESIS_PREV, 0)
+    const blockA = ledger.propose('fa'.repeat(32), 0, 1000, proposer)
+    const blockB = ledger.propose('fb'.repeat(32), 0, 1000, proposer)
+    const hA = blockHash(blockA.header)
+    const hB = blockHash(blockB.header)
+    // Cheap SYNTHETIC (unsigned) attestations: the cap check runs BEFORE any per-entry
+    // signature verification, so 4097 real ML-DSA-87 signs are unnecessary to prove the bound.
+    const flood: Attestation[] = Array.from({ length: 4097 }, (_, i) => ({
+      blockHash: hA,
+      height: 0,
+      validator: `synthetic-${i}`,
+      suite,
+      sig: new Uint8Array(0),
+    }))
+    const attsB = keys.map((k) => ({ ...ledger.attest(blockB, k), blockHash: hB }))
+    expect(detectEquivocations(blockA, flood, blockB, attsB).length).toBe(0)
+    // Sanity: the SAME real attestations, well under the cap, still detect normally.
+    const attsA = keys.map((k) => ledger.attest(blockA, k))
+    expect(detectEquivocations(blockA, attsA, blockB, attsB).length).toBe(3)
   })
 
   it('rejects a forged equivocation proof (mismatched/invalid attestations)', () => {
