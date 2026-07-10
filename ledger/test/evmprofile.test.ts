@@ -80,6 +80,27 @@ describe('EVM-native attestation profile (interchain option B)', () => {
     expect(verifyEvmFinality(set, tampered, suite, HEIGHT, HASH, TARGET).finalized).toBe(false)
   })
 
+  it('PARITY-001 (contracts/NerionFinalityVerifier.sol cross-impl spec): an invalid-sig attestation for X followed by a VALID one for the SAME X still counts X', () => {
+    // This pins the exact ordering the Solidity dedup fix (PARITY-001, AAC council review
+    // 2026-07-11) must match byte-for-byte: `seen`/`counted` is populated only AFTER a successful
+    // verify (see this function's `if (!ok) continue` before `seen.add`), so an EARLIER failed
+    // attestation for a validator must not block a LATER, valid one for the same validator. The
+    // Solidity contract previously deduped on any PRIOR OCCURRENCE regardless of validity, which
+    // would silently drop this validator's stake — a liveness-only cross-impl divergence.
+    const { keys, set } = fixture()
+    const good = keys.map((k) => signEvmAttestation(k, set, suite, HEIGHT, HASH, TARGET))
+    const bad0 = {
+      ...good[0]!,
+      evmSig: Uint8Array.from(good[0]!.evmSig).map((b, i) => (i === 0 ? b ^ 0xff : b)),
+    }
+    // Order: [invalid-sig(X), valid-sig(X), Y, Z] — only 3 of 4 stake, but X must still count via
+    // its valid (second) attestation, so all 4 validators' stake is present -> full quorum.
+    const ordered = [bad0, good[0]!, good[1]!, good[2]!]
+    const verdict = verifyEvmFinality(set, ordered, suite, HEIGHT, HASH, TARGET)
+    expect(verdict.finalized).toBe(true)
+    expect(verdict.attestingStake).toBe(3n) // X (via its valid 2nd attestation) + Y + Z
+  })
+
   it('fail-closed: a duplicated signer cannot inflate the quorum', () => {
     const { keys, set } = fixture()
     const one = signEvmAttestation(keys[0]!, set, suite, HEIGHT, HASH, TARGET)

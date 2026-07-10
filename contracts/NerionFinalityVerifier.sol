@@ -59,6 +59,15 @@ contract NerionFinalityVerifier {
     function evmSetId(Validator[] calldata validators, uint256 epoch) public pure returns (bytes32) {
         bytes32 h = keccak256(SET_TAG);
         for (uint256 i = 0; i < validators.length; i++) {
+            // PARITY-003: reject an empty pubkey at ANY index, unconditionally — matching
+            // evmprofile.ts:130's unconditional throw. The sortedness check below only runs for
+            // i>0 and an empty bytes value sorts FIRST (shorter length), so without this an
+            // empty pubkey at index 0 would silently pass `_lt` and fold keccak256("") into the
+            // set id instead of being rejected like every other index the sortedness check does
+            // catch. Not independently exploitable (no honest signer can produce a signature over
+            // the resulting setId — its own evmSetId call throws first), but a real cross-impl
+            // accepted-input-domain divergence closed here for parity with the TS reference.
+            require(validators[i].pubkey.length > 0, "empty pubkey");
             if (i > 0) require(_lt(validators[i - 1].pubkey, validators[i].pubkey), "unsorted/dup");
             bytes32 vrfH = keccak256(validators[i].vrfPubkey); // keccak256("") when none
             h = keccak256(abi.encodePacked(h, keccak256(validators[i].pubkey), validators[i].stake, vrfH));
@@ -125,18 +134,29 @@ contract NerionFinalityVerifier {
         require(total > 0, "empty set");
 
         uint256 attesting = 0;
+        // PARITY-001: tracks which INDICES were actually COUNTED (stake resolved AND signature
+        // verified) — not merely which pubkeys APPEARED. Matches evmprofile.ts's `seen.add(a.validator)`,
+        // which likewise runs only after a successful verify (`if (!ok) continue` gates it). Without
+        // this, an attacker/relayer could grief a specific validator's stake off-chain by PREPENDING
+        // one {validator.pubkey, garbage_signature} attestation ahead of that validator's real one:
+        // the old "seen on any prior occurrence" dedup would skip the later, VALID attestation before
+        // it ever reached MLDSA87.verify, silently under-counting relative to the TS reference (which
+        // still counts the valid one) and potentially pushing a block below the on-chain quorum that
+        // the TS reference reports as finalized (a liveness-only divergence — never a soundness break,
+        // since an invalid entry itself never contributes stake on either side).
+        bool[] memory counted = new bool[](attestations.length);
         for (uint256 a = 0; a < attestations.length; a++) {
             bytes calldata pk = attestations[a].pubkey;
 
-            // Dedup: count each distinct validator at most once.
-            bool seen = false;
+            // Dedup: skip pk only if an EARLIER attestation for the SAME pubkey was already COUNTED.
+            bool alreadyCounted = false;
             for (uint256 p = 0; p < a; p++) {
-                if (keccak256(attestations[p].pubkey) == keccak256(pk)) {
-                    seen = true;
+                if (counted[p] && keccak256(attestations[p].pubkey) == keccak256(pk)) {
+                    alreadyCounted = true;
                     break;
                 }
             }
-            if (seen) continue;
+            if (alreadyCounted) continue;
 
             // Resolve to a set member + its stake.
             uint256 stake = 0;
@@ -151,6 +171,7 @@ contract NerionFinalityVerifier {
             // Native post-quantum verification over the RECOMPUTED message.
             if (!MLDSA87.verify(pk, message, attestations[a].signature)) continue;
 
+            counted[a] = true;
             attesting += stake;
         }
 
