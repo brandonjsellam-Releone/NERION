@@ -41,6 +41,22 @@ const MAX_FUTURE_HEIGHTS = 64
  *  load (a few blocks/height); a real transport would also expire buffered blocks. */
 const MAX_PENDING_PER_HEIGHT = 64
 
+/** Cap distinct blocks retained at the node's CURRENT height (GOSSIP-BUFFER-002, AAC council
+ *  review). MAX_PENDING_PER_HEIGHT bounds distinct blocks flooded at a FUTURE height, but the
+ *  symmetric current-height path (`knownBlocks` in {@link GossipNode}) had no equivalent cap: an
+ *  attacker simply floods distinct garbage blocks at the height the node is ALREADY on instead of
+ *  ahead of it, growing `knownBlocks` (full `Block` objects) without bound, with each accepted
+ *  distinct hash re-broadcast (amplification). Same generous headroom as the future-height cap. */
+const MAX_KNOWN_AT_HEIGHT = MAX_PENDING_PER_HEIGHT
+
+/** Cap the total (not just per-height) size of {@link GossipNode.observedConflicts}
+ *  (GOSSIP-BUFFER-002). This record is never pruned as the chain advances — unlike `knownBlocks`,
+ *  which is swept in `drainBuffered` — so even with the per-height `MAX_KNOWN_AT_HEIGHT` cap in
+ *  place it would otherwise grow without bound over the node's lifetime. Sized generously above
+ *  the attestation-pool cap; honest operation should almost never approach it (a legitimate
+ *  proposer double-propose is rare and itself slashable). */
+const MAX_OBSERVED_CONFLICTS = MAX_FUTURE_HEIGHTS * MAX_PENDING_PER_HEIGHT
+
 /** Cap distinct block hashes the attestation pool tracks (GOSSIP-DOS-001). A valid
  *  attestation needs a real staked validator's signature, so this only bites a
  *  misbehaving staked validator; combined with the live-height window + sub-head
@@ -111,7 +127,18 @@ export class GossipNode {
   private readonly finalizedHashes = new Set<string>()
   /** Blocks whose height is ahead of ours, held until we catch up (liveness). */
   private readonly pendingBlocks = new Map<number, Block[]>()
-  /** Proposer-equivocations this node observed (it saw two blocks at one height). */
+  /**
+   * Proposer-equivocations this node observed (it saw two blocks at one height), capped at
+   * {@link MAX_OBSERVED_CONFLICTS} (GOSSIP-BUFFER-002).
+   *
+   * NOT ITSELF SLASHING EVIDENCE: neither `a` nor `b` here has had its PROPOSER SIGNATURE or
+   * leader-eligibility checked before being recorded (`onBlock` accepts and attests over any
+   * block matching the height shape, with no gate on who proposed it — a documented, tracked
+   * residual, GOSSIP-BLIND-ATTEST-001, not fixed by this cap). A consumer wiring this record into
+   * a slashing pipeline MUST independently re-verify both blocks' proposer signatures via
+   * `verifyFinalized`/the equivocation module before treating an entry as proof — do not pass
+   * `observedConflicts` directly to `detectEquivocations`/`slash()`.
+   */
   readonly observedConflicts: { height: number; a: string; b: string }[] = []
 
   constructor(
@@ -146,6 +173,11 @@ export class GossipNode {
     for (const list of this.pendingBlocks.values()) n += list.length
     return n
   }
+  /** Distinct blocks retained at the CURRENT height — bounded by MAX_KNOWN_AT_HEIGHT
+   *  (GOSSIP-BUFFER-002). Exposed for DoS-bound assertions. */
+  knownBlockCount(): number {
+    return this.knownBlocks.size
+  }
 
   /** If this node is the canonical leader for its current head, propose + gossip. */
   proposeIfLeader(payloadRoot: string, timestamp: number): Block | undefined {
@@ -172,6 +204,10 @@ export class GossipNode {
     }
     const h = blockHash(block.header)
     if (this.knownBlocks.has(h)) return // already processed this block
+    // GOSSIP-BUFFER-002: bound distinct blocks retained at the CURRENT height — mirrors
+    // bufferFuture's per-future-height cap. Drop distinct blocks beyond the cap rather than
+    // store/reflood; a real transport would also expire entries.
+    if (this.knownBlocks.size >= MAX_KNOWN_AT_HEIGHT) return
     this.knownBlocks.set(h, block)
     if (flood) this.bus.broadcast(this.id, { kind: 'block', block }) // flood once (skipped on replay)
 
@@ -183,8 +219,12 @@ export class GossipNode {
       }
     } else if (already !== h) {
       // The proposer sent a second, conflicting block at this height: honest nodes
-      // do NOT double-attest. Record it so a slashable proof can be built.
-      this.observedConflicts.push({ height: block.header.height, a: already, b: h })
+      // do NOT double-attest. Record it so a slashable proof can be built (see the
+      // observedConflicts docstring re: this record is NOT itself verified evidence).
+      // GOSSIP-BUFFER-002: bound the total record — it is never pruned as the chain advances.
+      if (this.observedConflicts.length < MAX_OBSERVED_CONFLICTS) {
+        this.observedConflicts.push({ height: block.header.height, a: already, b: h })
+      }
     }
     this.tryFinalize(h)
   }
