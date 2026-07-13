@@ -131,13 +131,25 @@ export class GossipNode {
    * Proposer-equivocations this node observed (it saw two blocks at one height), capped at
    * {@link MAX_OBSERVED_CONFLICTS} (GOSSIP-BUFFER-002).
    *
-   * NOT ITSELF SLASHING EVIDENCE: neither `a` nor `b` here has had its PROPOSER SIGNATURE or
-   * leader-eligibility checked before being recorded (`onBlock` accepts and attests over any
-   * block matching the height shape, with no gate on who proposed it — a documented, tracked
-   * residual, GOSSIP-BLIND-ATTEST-001, not fixed by this cap). A consumer wiring this record into
-   * a slashing pipeline MUST independently re-verify both blocks' proposer signatures via
-   * `verifyFinalized`/the equivocation module before treating an entry as proof — do not pass
-   * `observedConflicts` directly to `detectEquivocations`/`slash()`.
+   * GOSSIP-BLIND-ATTEST-001 (traced + CLOSED as a safety question, 2026-07-11): `onBlock` does
+   * attest over any block matching the height shape with NO leader-eligibility gate at receipt
+   * time — but this does NOT weaken FINALIZATION safety. `tryFinalize` → `Ledger.submit` →
+   * `verifyFinalized` independently RE-DERIVES leader eligibility (correct sortition/VRF leader,
+   * valid proposer signature — `chain.ts` lines ~337-406) from the block header + the TRUSTED
+   * validator set alone, entirely BEFORE it ever looks at the attestations array. No number of
+   * "blind" attestations — honest or colluding — can make an ineligible proposer's block pass
+   * that check; it is a pure function of (validator set, block header), not of who attested.
+   * Confirmed by `gossip.test.ts`'s existing "Byzantine leader flooding two conflicting blocks:
+   * only one finalizes network-wide" case and a dedicated regression below.
+   *
+   * The REAL residual is narrower than "blind attestation": (a) a wasted-signing / gossip-
+   * amplification nuisance for garbage blocks that can never finalize (already bounded by
+   * MAX_KNOWN_AT_HEIGHT above), and (b) this record itself is NOT slashing evidence — neither
+   * `a` nor `b` has had ITS proposer signature independently re-checked as part of building this
+   * array. A consumer wiring `observedConflicts` into a slashing pipeline MUST go through
+   * `detectEquivocations`/`verifyEquivocationProof` (which DO independently re-verify both
+   * attestations' signatures) rather than trusting this record directly — no code in this repo
+   * currently does the unsafe thing.
    */
   readonly observedConflicts: { height: number; a: string; b: string }[] = []
 

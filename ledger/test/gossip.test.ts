@@ -4,7 +4,7 @@
 
 import { describe, it, expect } from 'vitest'
 import { bytesToHex } from '@noble/hashes/utils.js'
-import { signerFor, SUITE_IDS } from '../../crypto/src/index.js'
+import { signerFor, SUITE_IDS, DOMAIN_TAGS, encodeCanonical } from '../../crypto/src/index.js'
 import type { KeyPair } from '../../crypto/src/index.js'
 import {
   GossipBus,
@@ -154,6 +154,51 @@ describe('networked ledger — equivocation safety (accountable finality)', () =
     expect(nodes.every((n) => n.hasFinalized(hA))).toBe(true) // A reached honest quorum
     expect(nodes.some((n) => n.hasFinalized(hB))).toBe(false) // B never did
     expect(nodes.every((n) => n.observedConflicts.length > 0)).toBe(true)
+  })
+
+  it('GOSSIP-BLIND-ATTEST-001 (traced + closed): a validly-self-signed but ineligible proposer never finalizes, even after every honest node blind-attests it', () => {
+    // gossip.ts's onBlock() attests over any block matching the height shape with NO
+    // leader-eligibility gate at RECEIPT time — but Ledger.propose() refuses to sign a
+    // non-leader block via the SDK, so an attacker demonstrating this must (as one legitimately
+    // could) forge the signature out-of-band using only PUBLIC crypto primitives, exactly as
+    // blockSignMessage does internally (DOMAIN_TAGS.BLOCK_SIG + suite + hash). This proves the
+    // real invariant: even a GENUINE signature from a validator that is NOT the sortition
+    // leader can never reach finalization, because verifyFinalized re-derives leader
+    // eligibility from (validator set, block header) alone, entirely before it looks at the
+    // attestations — so "how many honest nodes blind-attested it" cannot matter.
+    const { keys, set, leaderId, leaderIdx } = fixture()
+    const nonLeaderKey = keys[(leaderIdx + 1) % N]!
+    const nonLeaderHex = bytesToHex(nonLeaderKey.publicKey)
+    expect(nonLeaderHex).not.toBe(leaderId)
+
+    const header = {
+      height: 0,
+      prevHash: GENESIS_PREV,
+      round: 0,
+      proposer: nonLeaderHex, // NOT the sortition leader for (GENESIS_PREV, round 0)
+      payloadRoot: 'ineligible-root',
+      timestamp: 1,
+    }
+    const hash = blockHash(header)
+    const sig = signerFor(suite).sign(
+      encodeCanonical([DOMAIN_TAGS.BLOCK_SIG, suite, hash]),
+      nonLeaderKey.secretKey,
+    )
+    const forged = { header, proposerSig: sig, suite }
+
+    const bus = new GossipBus()
+    const nodes = keys.map((k) => new GossipNode(k, set, suite, bus))
+    bus.broadcast('attacker', { kind: 'block', block: forged })
+    bus.run()
+
+    // Every honest node DID blind-attest it, and (via gossip) pooled all N validators'
+    // attestations — confirming the "blind attest" premise is real, not a strawman...
+    for (const n of nodes) expect(n.attestationsFor(hash).length).toBe(N)
+    // ...yet NONE finalized it, and the chain never advanced — safety holds regardless.
+    for (const n of nodes) {
+      expect(n.hasFinalized(hash)).toBe(false)
+      expect(n.height()).toBe(0)
+    }
   })
 
   it('a garbage-attestation flood cannot censor finalization (GOSSIP-CENSOR-001)', () => {
