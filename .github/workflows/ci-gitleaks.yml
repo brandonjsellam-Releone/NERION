@@ -16,7 +16,7 @@ jobs:
   gitleaks-scan:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           # Full history required so gitleaks --log-opts=--all can scan every
           # commit, not just the tip.  A shallow clone would silently miss
