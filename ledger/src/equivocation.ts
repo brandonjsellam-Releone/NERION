@@ -121,23 +121,109 @@ export function verifyEquivocationProof(proof: EquivocationProof, set: Validator
   return safeVerifyAtt(proof.attA, setId) && safeVerifyAtt(proof.attB, setId)
 }
 
+/** Reason a single proof in a {@link slash} batch was NOT applied. */
+export type SlashRejectionReason =
+  | 'invalid-proof' // verifyEquivocationProof(proof, set) returned false
+  | 'duplicate' // an earlier proof in this same batch already got this validator slashed
+  | 'verification-error' // verifying this proof threw (malformed/adversarial input) — caught, not propagated
+
+export interface SlashRejection {
+  /** proof.validator, or '<malformed>' if the proof itself couldn't be read at all. */
+  readonly validator: string
+  /** Original input entry, kept for caller-side audit/logging (may be malformed at runtime). */
+  readonly proof: EquivocationProof
+  readonly reason: SlashRejectionReason
+}
+
+/** Full audit trail for one {@link slash} call. */
+export interface SlashResult {
+  /** New ValidatorSet with every entry in `slashed` removed (stake forfeit). */
+  readonly set: ValidatorSet
+  /** Validator ids actually removed, in proof-array order. */
+  readonly slashed: readonly string[]
+  /** Every proof that did NOT result in a removal, and why. */
+  readonly rejected: readonly SlashRejection[]
+}
+
 /**
- * Remove slashed validators, returning a new ValidatorSet (their stake is forfeit).
- *
- * CONTRACT (ADV-003, AAC council review, 2026-07-11): `slash()` is UNCONDITIONAL — it removes
- * every named validator with NO internal proof check. It is a public export (`ledger/src/index.ts`),
- * so any caller can invoke it directly. The caller MUST have independently verified a
- * `verifyEquivocationProof(proof, set)` for EACH validator passed here, against the EXACT `set`
- * argument this call receives — not a proof verified against a different set, and not a stale
- * proof from a different epoch (consensusSetId folds the epoch, so a proof verified against one
- * epoch's set will not silently apply to another's, but only if the SAME `set` is used for both
- * the verify and this call). Every in-repo caller (see equivocation.test.ts, gossip.test.ts)
- * already does this correctly; this is a residual API-surface footgun for a FUTURE caller, not a
- * currently-exploitable path. Folding verification into `slash()` itself (accepting
- * `EquivocationProof[]` instead of bare pubkeys) is deliberately NOT done here — it is a
- * larger, security-sensitive signature change flagged for dedicated review, not a rushed patch.
+ * Decode-side DoS cap on `slash()`'s `proofs` batch (Team Apex council review, 2026-07-14,
+ * following the ADV-002 precedent above for `detectEquivocations`). Each non-duplicate proof pays
+ * a full `verifyEquivocationProof` call — up to two real ML-DSA-87 signature verifications — so an
+ * attacker who knows a public validator id can cheaply construct a large batch of
+ * syntactically-plausible-but-forged proofs to force unbounded verification work. Fail closed (a
+ * no-op: unchanged set, nothing slashed or recorded) on an over-cap batch, matching
+ * `detectEquivocations`'s existing "reject the whole batch before any per-entry work" contract.
  */
-export function slash(set: ValidatorSet, validators: readonly string[]): ValidatorSet {
-  const bad = new Set(validators)
-  return { validators: set.validators.filter((v) => !bad.has(v.pubkey)) }
+const MAX_PROOFS_PER_SLASH = 4096
+
+/**
+ * Verify each proof against `set` and slash only the validators with a valid, non-duplicate
+ * equivocation proof in this batch (their stake is forfeit).
+ *
+ * ADV-003 (closed, 2026-07-14): `slash()` previously took a bare list of validator ids and RELIED
+ * on the caller having independently called `verifyEquivocationProof(proof, set)` for each one
+ * against this exact `set` — a JSDoc convention, not a compiler- or runtime-enforced invariant.
+ * `slash()` now takes the proofs themselves and verifies each one internally, against this same
+ * `set` argument, via the unmodified `verifyEquivocationProof` — there is no longer any code path
+ * that removes a validator without a proof having actually been checked against the set it is
+ * being removed from.
+ *
+ * Never throws, and one bad entry can never affect another: the ENTIRE per-proof body (the
+ * duplicate check, the verification call, and both outcomes) is wrapped in a single try/catch.
+ * Do NOT narrow this guard to wrap only the `verifyEquivocationProof` call — a proof array element
+ * that is itself null/undefined/a non-object (plausible for proofs deserialized off a gossip/wire
+ * layer) throws the moment ANY field on it is read, including in the duplicate check or in the
+ * push of a rejection record; guarding only the verify call still lets such an entry abort the
+ * whole batch (an earlier draft of this design had exactly that gap — found independently by 3
+ * adversarial critique passes and 2 external council reviews before this version shipped). In
+ * practice `verifyEquivocationProof` only ever throws this way: `stakeOf`, `consensusSetId`, and
+ * `safeVerifyAtt` are total/self-catching for any WELL-FORMED proof against any `ValidatorSet` —
+ * so a caught `'verification-error'` here specifically means the proof's shape itself was too
+ * malformed to evaluate, not a latent bug in verification logic.
+ *
+ * `proofs` itself (not just its elements) is defended too: a non-array argument is treated as
+ * empty rather than throwing on the `for...of`, and a batch over {@link MAX_PROOFS_PER_SLASH} is
+ * rejected wholesale before any verification work begins.
+ *
+ * The returned `set` preserves every field of the input `set` (e.g. `epoch`) via spread — the
+ * original unconditional `slash()` silently dropped non-`validators` fields, which would have
+ * reset a set's `epoch` to `consensusSetId`'s default (0) after any slash, silently changing the
+ * epoch-scoping of every subsequent verification against the result.
+ *
+ * Invariant (unless the whole batch was rejected for exceeding {@link MAX_PROOFS_PER_SLASH}):
+ * `slashed.length + rejected.length === proofs.length`.
+ */
+export function slash(set: ValidatorSet, proofs: readonly EquivocationProof[]): SlashResult {
+  const list = Array.isArray(proofs) ? proofs : []
+  if (list.length > MAX_PROOFS_PER_SLASH) return { set, slashed: [], rejected: [] }
+
+  const slashed: string[] = []
+  const rejected: SlashRejection[] = []
+  const accepted = new Set<string>()
+
+  for (const proof of list) {
+    try {
+      if (accepted.has(proof.validator)) {
+        rejected.push({ validator: proof.validator, proof, reason: 'duplicate' })
+        continue
+      }
+      if (!verifyEquivocationProof(proof, set)) {
+        rejected.push({ validator: proof.validator, proof, reason: 'invalid-proof' })
+        continue
+      }
+      accepted.add(proof.validator)
+      slashed.push(proof.validator)
+    } catch {
+      // Any failure while inspecting/verifying this proof — including a fully malformed array
+      // element — is a rejection, never a batch-wide abort.
+      const id = (proof as EquivocationProof | null | undefined)?.validator ?? '<malformed>'
+      rejected.push({ validator: id, proof, reason: 'verification-error' })
+    }
+  }
+
+  return {
+    set: { ...set, validators: set.validators.filter((v) => !accepted.has(v.pubkey)) },
+    slashed,
+    rejected,
+  }
 }

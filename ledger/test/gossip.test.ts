@@ -130,7 +130,9 @@ describe('networked ledger — equivocation safety (accountable finality)', () =
     expect(proof.validator).toBe(bytesToHex(byzantine.publicKey))
     expect(verifyEquivocationProof(proof, set)).toBe(true)
 
-    const slashed = slash(set, [proof.validator])
+    const { set: slashed, slashed: slashedIds, rejected } = slash(set, [proof])
+    expect(slashedIds).toEqual([proof.validator])
+    expect(rejected).toEqual([])
     expect(slashed.validators.length).toBe(set.validators.length - 1)
     expect(slashed.validators.some((v) => v.pubkey === proof.validator)).toBe(false)
   })

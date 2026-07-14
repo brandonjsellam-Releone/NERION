@@ -30,7 +30,12 @@ export {
 export { Ledger, LedgerError, blockHash, verifyFinalized, GENESIS_PREV } from './chain.js'
 export type { VerifyOpts } from './chain.js'
 export { detectEquivocations, verifyEquivocationProof, slash } from './equivocation.js'
-export type { EquivocationProof } from './equivocation.js'
+export type {
+  EquivocationProof,
+  SlashResult,
+  SlashRejection,
+  SlashRejectionReason,
+} from './equivocation.js'
 export { GossipBus, GossipNode } from './gossip.js'
 export type { GossipMessage } from './gossip.js'
 export { prove, verify, vrfPublicKey, VrfError } from './vrf.js'

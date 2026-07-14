@@ -17,6 +17,7 @@ import {
   GENESIS_PREV,
   type ValidatorSet,
   type Attestation,
+  type EquivocationProof,
 } from '../src/index.js'
 
 const suite = SUITE_IDS.PS_5
@@ -48,10 +49,9 @@ describe('accountable finality safety (LEDGER-001)', () => {
 
     // Slash the double-signers; the remaining honest stake can no longer reach
     // 2/3 for either block — accountable safety.
-    const slashed = slash(
-      set,
-      proofs.map((p) => p.validator),
-    )
+    const { set: slashed, slashed: slashedIds, rejected } = slash(set, proofs)
+    expect(slashedIds.slice().sort()).toEqual(proofs.map((p) => p.validator).sort())
+    expect(rejected).toEqual([])
     expect(totalStake(slashed)).toBe(0n)
     expect(verifyFinalized(blockA, attsA, slashed, GENESIS_PREV).finalized).toBe(false)
     expect(verifyFinalized(blockB, attsB, slashed, GENESIS_PREV).finalized).toBe(false)
@@ -146,6 +146,126 @@ describe('accountable finality safety (LEDGER-001)', () => {
     const v = verifyFinalized(negRound, atts, set, GENESIS_PREV)
     expect(v.ok).toBe(false)
     expect(v.reasons.join(' ')).toMatch(/round must be a non-negative integer/)
+  })
+})
+
+describe('slash() hardening (ADV-003): verify-then-slash with an auditable rejection trail', () => {
+  it('verifies internally: a caller cannot slash with an unverified/forged proof', () => {
+    const ledger = new Ledger(set, suite)
+    const proposer = leaderKey(GENESIS_PREV, 0)
+    const blockA = ledger.propose('10'.repeat(32), 0, 1000, proposer)
+    const attA = ledger.attest(blockA, keys[0]!)
+    // Forged: blockHashB doesn't correspond to a real second block, and attB is a copy of attA
+    // with a fabricated blockHashB — verifyEquivocationProof rejects this (attB.blockHash
+    // mismatch), which slash() must inherit without slashing keys[0].
+    const forged: EquivocationProof = {
+      validator: bytesToHex(keys[0]!.publicKey),
+      height: 0,
+      blockHashA: attA.blockHash,
+      blockHashB: 'ff'.repeat(32),
+      attA,
+      attB: { ...attA, blockHash: 'ff'.repeat(32) },
+    }
+    expect(verifyEquivocationProof(forged, set)).toBe(false)
+    const { set: after, slashed, rejected } = slash(set, [forged])
+    expect(slashed).toEqual([])
+    expect(rejected).toEqual([
+      { validator: forged.validator, proof: forged, reason: 'invalid-proof' },
+    ])
+    expect(after.validators.length).toBe(set.validators.length)
+  })
+
+  it('one invalid proof in a batch does not prevent the other, valid proofs from slashing', () => {
+    const ledger = new Ledger(set, suite)
+    const proposer = leaderKey(GENESIS_PREV, 0)
+    const blockA = ledger.propose('11'.repeat(32), 0, 1000, proposer)
+    const blockB = ledger.propose('12'.repeat(32), 0, 1000, proposer)
+    const attsA = keys.map((k) => ledger.attest(blockA, k))
+    const attsB = keys.map((k) => ledger.attest(blockB, k))
+    const [valid] = detectEquivocations(blockA, attsA, blockB, attsB)
+    const forged: EquivocationProof = {
+      validator: bytesToHex(keys[0]!.publicKey),
+      height: 0,
+      blockHashA: attsA[0]!.blockHash,
+      blockHashB: 'ee'.repeat(32),
+      attA: attsA[0]!,
+      attB: { ...attsA[0]!, blockHash: 'ee'.repeat(32) },
+    }
+    const { slashed, rejected } = slash(set, [forged, valid!])
+    expect(slashed).toEqual([valid!.validator])
+    expect(rejected).toEqual([
+      { validator: forged.validator, proof: forged, reason: 'invalid-proof' },
+    ])
+  })
+
+  it('a second proof for an already-slashed validator in the same batch is rejected as a duplicate', () => {
+    const ledger = new Ledger(set, suite)
+    const proposer = leaderKey(GENESIS_PREV, 0)
+    const blockA = ledger.propose('13'.repeat(32), 0, 1000, proposer)
+    const blockB = ledger.propose('14'.repeat(32), 0, 1000, proposer)
+    const attsA = keys.map((k) => ledger.attest(blockA, k))
+    const attsB = keys.map((k) => ledger.attest(blockB, k))
+    const [valid] = detectEquivocations(blockA, attsA, blockB, attsB)
+    const { slashed, rejected } = slash(set, [valid!, valid!])
+    expect(slashed).toEqual([valid!.validator])
+    expect(rejected).toEqual([{ validator: valid!.validator, proof: valid!, reason: 'duplicate' }])
+  })
+
+  it('a fully malformed batch element is rejected without aborting the rest of the batch', () => {
+    const ledger = new Ledger(set, suite)
+    const proposer = leaderKey(GENESIS_PREV, 0)
+    const blockA = ledger.propose('15'.repeat(32), 0, 1000, proposer)
+    const blockB = ledger.propose('16'.repeat(32), 0, 1000, proposer)
+    const attsA = keys.map((k) => ledger.attest(blockA, k))
+    const attsB = keys.map((k) => ledger.attest(blockB, k))
+    const [valid] = detectEquivocations(blockA, attsA, blockB, attsB)
+    // Simulates a malformed element from a deserialized/adversarial gossip payload.
+    const malformed = null as unknown as EquivocationProof
+    const { slashed, rejected } = slash(set, [malformed, valid!])
+    expect(slashed).toEqual([valid!.validator])
+    expect(rejected).toEqual([
+      { validator: '<malformed>', proof: malformed, reason: 'verification-error' },
+    ])
+  })
+
+  it('rejects (no-op) an over-cap proof batch, fail-closed before any verification', () => {
+    const flood: EquivocationProof[] = Array.from({ length: 4097 }, (_, i) => ({
+      validator: `synthetic-${i}`,
+      height: 0,
+      blockHashA: 'aa'.repeat(32),
+      blockHashB: 'bb'.repeat(32),
+      attA: {
+        blockHash: 'aa'.repeat(32),
+        height: 0,
+        validator: `synthetic-${i}`,
+        suite,
+        sig: new Uint8Array(0),
+      },
+      attB: {
+        blockHash: 'bb'.repeat(32),
+        height: 0,
+        validator: `synthetic-${i}`,
+        suite,
+        sig: new Uint8Array(0),
+      },
+    }))
+    const { set: after, slashed, rejected } = slash(set, flood)
+    expect(slashed).toEqual([])
+    expect(rejected).toEqual([])
+    expect(after).toBe(set)
+  })
+
+  it('preserves ValidatorSet.epoch through a slash (the original unconditional slash() dropped it)', () => {
+    const epochSet: ValidatorSet = { ...set, epoch: 7 }
+    const ledger = new Ledger(epochSet, suite)
+    const proposer = leaderKey(GENESIS_PREV, 0)
+    const blockA = ledger.propose('17'.repeat(32), 0, 1000, proposer)
+    const blockB = ledger.propose('18'.repeat(32), 0, 1000, proposer)
+    const attsA = keys.map((k) => ledger.attest(blockA, k))
+    const attsB = keys.map((k) => ledger.attest(blockB, k))
+    const [valid] = detectEquivocations(blockA, attsA, blockB, attsB)
+    const { set: after } = slash(epochSet, [valid!])
+    expect(after.epoch).toBe(7)
   })
 })
 
