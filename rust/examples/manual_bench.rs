@@ -92,5 +92,7 @@ fn main() {
     });
 
     println!("{}", "-".repeat(96));
-    println!("NOTE: rough single-machine baseline; not criterion-grade. Do not cite in procurement.");
+    println!(
+        "NOTE: rough single-machine baseline; not criterion-grade. Do not cite in procurement."
+    );
 }
