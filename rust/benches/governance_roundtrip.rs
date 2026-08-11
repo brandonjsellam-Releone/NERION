@@ -17,7 +17,7 @@
 //!
 //! HTML reports land at: target/criterion/report/index.html
 
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
 use polarseek_crypto::{MlDsaKeypair, aes256gcm_seal, hmac_sha384, sha3_256};
 
 // ---------------------------------------------------------------------------
@@ -181,8 +181,7 @@ fn bench_governance_roundtrip(c: &mut Criterion) {
     c.bench_function("governance_roundtrip", |b| {
         b.iter(|| {
             // Step 1: session key establishment (sender encap).
-            let (ct, ss_send) =
-                ek.encapsulate_deterministic(&KemB32::from(black_box(KEM_M)));
+            let (ct, ss_send) = ek.encapsulate_deterministic(&KemB32::from(black_box(KEM_M)));
 
             // Step 2: permit intention commitment — sign the governance message.
             let sig = dsa_kp.sign(black_box(GOVERNANCE_MSG));
@@ -267,11 +266,7 @@ criterion_group!(
     bench_ml_kem_1024_decap,
 );
 
-criterion_group!(
-    dsa_benches,
-    bench_ml_dsa_87_sign,
-    bench_ml_dsa_87_verify,
-);
+criterion_group!(dsa_benches, bench_ml_dsa_87_sign, bench_ml_dsa_87_verify,);
 
 criterion_group!(
     symmetric_benches,
@@ -279,16 +274,9 @@ criterion_group!(
     bench_aes_256_gcm_encrypt,
 );
 
-criterion_group!(
-    roundtrip_benches,
-    bench_governance_roundtrip,
-);
+criterion_group!(roundtrip_benches, bench_governance_roundtrip,);
 
-criterion_group!(
-    scaling_benches,
-    bench_aes_gcm_scaling,
-    bench_hmac_scaling,
-);
+criterion_group!(scaling_benches, bench_aes_gcm_scaling, bench_hmac_scaling,);
 
 criterion_main!(
     kem_benches,

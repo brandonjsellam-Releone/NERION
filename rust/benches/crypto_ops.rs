@@ -17,7 +17,7 @@
 //!
 //! HTML reports: target/criterion/report/index.html
 
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
 use polarseek_crypto::{
     MlDsaKeypair, aes256gcm_open, aes256gcm_seal, hmac_sha384, hmac_sha384_verify,
     mlkem1024_roundtrip_ok, sha3_256, shake256,
@@ -90,16 +90,12 @@ fn bench_hmac_sha384_ops(c: &mut Criterion) {
     for size in [32usize, 64, 128, 256, 512, 1024] {
         let msg = vec![0xefu8; size];
         group.throughput(Throughput::Bytes(size as u64));
-        group.bench_with_input(
-            BenchmarkId::new("tag_gen", size),
-            &msg,
-            |b, msg| {
-                b.iter(|| {
-                    let tag = hmac_sha384(black_box(&HMAC_KEY), black_box(msg));
-                    black_box(tag)
-                })
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("tag_gen", size), &msg, |b, msg| {
+            b.iter(|| {
+                let tag = hmac_sha384(black_box(&HMAC_KEY), black_box(msg));
+                black_box(tag)
+            })
+        });
     }
 
     // Tag verification (constant-time)
@@ -132,39 +128,31 @@ fn bench_aes256gcm_ops(c: &mut Criterion) {
         group.throughput(Throughput::Bytes(size as u64));
 
         // Seal (encrypt + tag)
-        group.bench_with_input(
-            BenchmarkId::new("seal", size),
-            &pt,
-            |b, pt| {
-                b.iter(|| {
-                    let ct = aes256gcm_seal(
-                        black_box(&AES_KEY),
-                        black_box(&AES_NONCE),
-                        black_box(pt),
-                        black_box(AES_AAD),
-                    );
-                    black_box(ct)
-                })
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("seal", size), &pt, |b, pt| {
+            b.iter(|| {
+                let ct = aes256gcm_seal(
+                    black_box(&AES_KEY),
+                    black_box(&AES_NONCE),
+                    black_box(pt),
+                    black_box(AES_AAD),
+                );
+                black_box(ct)
+            })
+        });
 
         // Open (decrypt + verify tag)
         let ct = aes256gcm_seal(&AES_KEY, &AES_NONCE, &pt, AES_AAD);
-        group.bench_with_input(
-            BenchmarkId::new("open", size),
-            &ct,
-            |b, ct| {
-                b.iter(|| {
-                    let pt = aes256gcm_open(
-                        black_box(&AES_KEY),
-                        black_box(&AES_NONCE),
-                        black_box(ct),
-                        black_box(AES_AAD),
-                    );
-                    black_box(pt)
-                })
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("open", size), &ct, |b, ct| {
+            b.iter(|| {
+                let pt = aes256gcm_open(
+                    black_box(&AES_KEY),
+                    black_box(&AES_NONCE),
+                    black_box(ct),
+                    black_box(AES_AAD),
+                );
+                black_box(pt)
+            })
+        });
     }
 
     group.finish();
@@ -184,8 +172,7 @@ fn bench_ml_kem_1024_ops(c: &mut Criterion) {
     // Keygen from seed (deterministic — measures FIPS 203 KeyGen_internal + Expand)
     group.bench_function("keygen_from_seed", |b| {
         b.iter(|| {
-            let dk =
-                DecapsulationKey::<MlKem1024>::from_seed(Seed::from(black_box(KEM_SEED)));
+            let dk = DecapsulationKey::<MlKem1024>::from_seed(Seed::from(black_box(KEM_SEED)));
             black_box(dk)
         })
     });
@@ -329,4 +316,10 @@ criterion_group!(
 
 criterion_group!(kdf_benches, bench_permit_token_derivation);
 
-criterion_main!(hash_benches, mac_benches, aead_benches, pqc_benches, kdf_benches);
+criterion_main!(
+    hash_benches,
+    mac_benches,
+    aead_benches,
+    pqc_benches,
+    kdf_benches
+);
