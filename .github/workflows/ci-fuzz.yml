@@ -20,10 +20,15 @@ jobs:
   fuzz-smoke:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@nightly
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # Pinned to the 40-char commit SHA at the head of the action's `nightly`
+      # branch. The channel is now also passed explicitly, so which toolchain
+      # gets installed no longer depends on the branch the SHA was taken from.
+      - uses: dtolnay/rust-toolchain@7c8d7d138f5c09cef361f8214cf96882cd029cdb # nightly
+        with:
+          toolchain: nightly
       - name: Cache cargo
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           workspaces: rust/fuzz
       - name: Install cargo-fuzz
