@@ -1,9 +1,11 @@
 # SPDX-FileCopyrightText: 2026 TRELYAN
 # SPDX-License-Identifier: Apache-2.0
 #
-# Foundry config for the Nerion interchain reference contracts. NOT built in CI here (Nerion is a
-# TypeScript/Rust repo with no Solidity toolchain); this targets a Foundry + QRL Zond / Hyperion
-# environment. See contracts/README.md.
+# Foundry config for the Nerion interchain reference contracts. These ARE built and tested in CI
+# now (.github/workflows/ci.yml, job `contracts`) - the note that they were not was accurate when
+# written and is what let the TS<->Solidity golden-vector lock run with only one half compiled.
+# Stock solc 0.8.24 + forge-std is enough: the tests exercise evmSetId/evmMessage only, so no QRL
+# Zond / Hyperion environment is required to run them. See contracts/README.md.
 
 [profile.default]
 src = "."
