@@ -39,7 +39,9 @@ The SIGA claim chain (per the deck and US 9,607,214 B2) is, in essence:
 object-identity continuity → zone occupancy over time → state-change trigger →
 gate → record.** Every link is perception- and state-based. PolarSeek
 implements **none** of them. The `tools/cleanroom-lint.mjs` linter greps the
-admission path for the signals below and fails the build on a hit.
+**TypeScript** admission-path sources for the signals below and fails the build
+on a hit. Its scope is narrower than "the admission path" — see
+[§6 Enforcement](#6-enforcement).
 
 | ID | SIGA element (avoid) | How PolarSeek avoids it | Lint signal (rejected) |
 |----|----------------------|--------------------------|------------------------|
@@ -75,7 +77,35 @@ frames) may appear to the kernel as hashed facts in the explicit facts snapshot.
 ## 6. Enforcement
 
 - `tools/cleanroom-lint.mjs` runs in CI (`npm run lint:cleanroom`) and fails on
-  any forbidden signal in the admission path.
+  any forbidden signal in the directories listed in its `SCAN_DIRS`.
+
+  **Exact scope, because this gate carries FTO design-around evidence and a
+  reader should not have to infer it:**
+
+  - `SCAN_DIRS` names 14 directories (`crypto/src`, `kernel`, `capabilities`,
+    `receipts`, `translog`, `attest`, `planes`, `sdks`, `governance`,
+    `conformance`, `disclosure`, `ledger`, `settlement`, `keystore`). The walk is
+    rooted only at those, so **`rust/` is not scanned** — no file under it is ever
+    opened. All 8 tracked `.rs` files live there, and the 14 scanned directories
+    contain **zero** `.rs` files, so the `.rs` entry in the linter's `CODE_EXT`
+    is currently unreachable.
+  - `SKIP_DIR` excludes `node_modules`, `dist`, `spec`, `test`, `vectors`. That
+    includes **`kernel/spec/`**, which §4 names as where the machine-checked
+    statelessness proof lives.
+
+  **The Rust admission crate is therefore covered by review, not by this gate.**
+  `rust/src/lib.rs:5-6` describes itself as mirroring the TypeScript reference in
+  `crypto/src` — which *is* scanned — so by this document's own scope definition
+  the mirror belongs in the gate. Adding `'rust'` to `SCAN_DIRS` (plus `'target'`
+  and `'fuzz'` to `SKIP_DIR`) is the intended fix.
+
+  **Latent, not live:** all eight F1–F8 regexes were applied by hand to every
+  tracked `.ts`/`.rs`/`.go`/`.py`/`.rego` file outside the scanned set, including
+  all 8 `.rs` files and `kernel/spec/` — **0 hits**. Nothing is escaping today;
+  the gap is that nothing would stop it from doing so tomorrow. The most
+  plausible escape is F5 (`kernel_state`, `mutable_state`, `prev_decision`,
+  `last_seen`, `stateful`, `in_kernel_counter`), the doctrine-of-equivalents
+  firewall this document calls non-negotiable.
 - PR review rejects: frame ingestion as an admission input; feature
   decomposition; object-identity tracking in the admission path; spatial
   zone/occupancy logic in admission; or **any cross-decision state in the

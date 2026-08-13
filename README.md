@@ -65,7 +65,10 @@ npm run build && npm run bundle && npm run verify:cli   # independent receipt ve
   encoding; SuiteID-bound signed envelopes + hot-path PermitTokens; deterministic
   KAT vectors. HQC and Falcon are honest `NotImplementedError` agility stubs.
 - **`tools/cleanroom-lint.mjs`** — CI gate rejecting forbidden perception/stateful
-  signals (CLEANROOM F1–F8) in the admission path.
+  signals (CLEANROOM F1–F8) in the **TypeScript** admission-path sources listed in
+  its `SCAN_DIRS`. It does **not** scan `rust/`; the Rust crate is covered by
+  review, not by this gate. See [CLEANROOM §6](docs/CLEANROOM.md#6-enforcement)
+  for the exact scope and why it matters.
 - **`docs/`** — threat model, clean-room map, design-around strategy, ADRs, FTO.
 - **Standards & ecosystem** — public standards throughout (FIPS 203/204/205, NSA CNSA 2.0, RFC 9052 COSE,
   RFC 6962, RATS/EAT, SCITT-style logs); the CBOM uses **OWASP CycloneDX** (the toolchain can COSE_Sign1 /
