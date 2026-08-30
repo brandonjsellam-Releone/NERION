@@ -13,5 +13,9 @@ test = "test"
 out = "out"
 libs = ["lib"]
 solc_version = "0.8.24"
+# verifyFinality's 10-arg ABI plus locals exceeds the legacy codegen 16-slot
+# stack ("Stack too deep" at the total-stake loop). IR pipeline is stock
+# solc 0.8.24; it does not change evmSetId/evmMessage encodings the tests lock.
+via_ir = true
 # Allow tests to read the golden cross-impl vectors if they parse the JSON directly.
 fs_permissions = [{ access = "read", path = "./test" }]
