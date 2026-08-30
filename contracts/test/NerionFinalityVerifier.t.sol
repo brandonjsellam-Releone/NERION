@@ -62,7 +62,7 @@ contract NerionFinalityVerifierTest is Test {
             v.evmMessage(
                 "PS-5",
                 8888,
-                address(0xc0C0c0C0C0c0c0C0C0C0c0c0c0c0C0c0c0C0C0c0),
+                address(0xC0C0c0c0C0C0c0c0c0C0c0C0C0C0C0C0C0C0c0c0),
                 7,
                 blockHash,
                 setId
