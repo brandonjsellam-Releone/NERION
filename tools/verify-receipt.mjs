@@ -15,6 +15,10 @@
  * self-rooted bundle would "verify" (VERIFY-CLI-001, Team Apex 2026-06-21). This
  * CLI therefore REFUSES to verify unless both anchors are given out of band.
  *
+ * G3 displayed-vs-signed: the portable bundle's `decision.effect`/`tier` are
+ * UNSIGNED wrapper fields. VERIFIED may paint effect/tier only from the signed
+ * ReceiptBody (`r.body`). A swapped wrapper must FAIL, not print VERIFIED.
+ *
  * Prereq: `npm run build` (+ `npm run bundle` to produce a sample, which prints the
  * exact out-of-band command).
  * Usage:
@@ -24,7 +28,7 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { hexToBytes } from '@noble/hashes/utils.js'
-import { verifyReceiptInclusion } from '../dist/receipts/src/index.js'
+import { verifyReceiptInclusion, signedDisplayFields, verifiedPaint } from '../dist/receipts/src/index.js'
 import { loadEnv } from '../dist/ops/src/index.js'
 
 loadEnv()
@@ -48,6 +52,20 @@ if (!issuerHex || !rootHex) {
   process.exit(2)
 }
 
+// G3 displayed-vs-signed: NEVER paint unsigned wrapper decision effect/tier as
+// the verified result. Inclusion verify uses only r.body; a swapped wrapper
+// decision must FAIL, not print VERIFIED. Software check runs BEFORE any
+// signature work so a diverging fixture fails closed without ML-DSA.
+const display = signedDisplayFields(b)
+const paint = verifiedPaint(b)
+if (!display.ok || paint === null) {
+  console.log('PolarSeek external receipt verification')
+  console.log('  file         :', path)
+  console.log('\n  RESULT: x FAILED')
+  for (const r of display.reasons) console.log('   -', r)
+  process.exit(1)
+}
+
 const receipt = {
   body: b.receipt.body,
   sig: hexToBytes(b.receipt.sigHex),
@@ -68,9 +86,10 @@ const verdict = verifyReceiptInclusion(receipt, witness, gossipedRoot, issuerKey
 
 console.log('PolarSeek external receipt verification')
 console.log('  file         :', path)
-console.log('  effect/tier  :', b.decision?.effect, '/', b.decision?.tier)
-console.log('  suite        :', receipt.body.suite)
-console.log('  jurisdiction :', receipt.body.jurisdiction)
+// Paint ONLY signature-covered ReceiptBody fields (never the unsigned wrapper).
+console.log('  effect/tier  :', display.signed.effect, '/', display.signed.tier)
+console.log('  suite        :', paint.suite)
+console.log('  jurisdiction :', paint.jurisdiction)
 console.log('  pinned issuer:', issuerHex.slice(0, 24) + '…  (out-of-band)')
 console.log('  pinned root  :', rootHex.slice(0, 24) + '…  (out-of-band)')
 console.log('  intent commit:', receipt.body.commitments.intent.slice(0, 24) + '…')

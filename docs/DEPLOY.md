@@ -31,11 +31,12 @@ npm run verify:cli     # INDEPENDENTLY verify that bundle (sig + log inclusion)
 node tools/verify-receipt.mjs path/to/bundle.json
 ```
 
-`verify:cli` trusts **only** the issuer public key and the gossiped log root
-embedded in the bundle — never the issuer's or the log operator's honesty. It
-re-derives the Merkle root from the inclusion proof and verifies the ML-DSA-87
-signature. Tampering with any field (effect, tier, commitments, proof) makes it
-exit non-zero with a reason.
+`verify:cli` trusts **only** an out-of-band issuer public key and gossiped log
+root — never anchors or the unsigned wrapper `decision` from the bundle. Inclusion
+verify uses the signed `ReceiptBody` (`r.body`). The CLI will not print VERIFIED
+using unsigned `decision.effect`/`tier` (G3 displayed-vs-signed). Tampering with
+signed fields, or swapping the wrapper so it disagrees with `body.effect`/`tier`,
+makes it exit non-zero with a reason.
 
 ## Embedding (library) — admit an agent action
 

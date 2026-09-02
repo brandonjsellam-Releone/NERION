@@ -86,6 +86,8 @@ if (out.decision.effect !== 'allow' || !out.receipt || !out.inclusion) {
 
 const bundle = {
   description: 'PolarSeek portable receipt bundle — verify with: npm run verify:cli',
+  // UNSIGNED convenience wrapper — not covered by the receipt signature.
+  // verify-receipt.mjs must paint effect/tier from receipt.body (G3).
   decision: { effect: out.decision.effect, tier: out.decision.tier, obligations: out.decision.obligations },
   receipt: {
     body: out.receipt.body,

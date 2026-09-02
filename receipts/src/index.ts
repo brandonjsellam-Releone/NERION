@@ -34,3 +34,5 @@ export type {
   QuorumAttestation,
   QuorumVerdict,
 } from './quorum.js'
+export { signedDisplayFields, verifiedPaint } from './verify-display.js'
+export type { DisplayVerdict, SignedDisplayFields } from './verify-display.js'
