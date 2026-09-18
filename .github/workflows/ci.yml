@@ -31,6 +31,17 @@ jobs:
       # Regenerate KAT vectors and fail if they drift from the committed file.
       - run: node crypto/vectors/_gen.mjs && git diff --exit-code crypto/vectors/deterministic-kat.json
 
+  # The release build, run on every push and pull request. ci-slsa.yml calls the same
+  # reusable workflow on a published release, so the build that provenance attests is
+  # never a build that has only ever run at release time. If `npm run build` stops
+  # producing dist/, this job goes red here rather than silently attesting a stand-in
+  # tarball of README, LICENSE and NOTICE at release time.
+  build:
+    name: Release build (same steps as slsa-provenance)
+    permissions:
+      contents: read
+    uses: ./.github/workflows/build-artifact.yml
+
   # Rust hot-path gate (backlog A1, the keystone): fmt + clippy + the committed
   # KAT reproduction. `cargo test` byte-matches conformance/vectors/ps-kat.json,
   # so a Rust regression or an accidental vector edit turns this job red.
