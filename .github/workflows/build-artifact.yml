@@ -1,0 +1,76 @@
+# SPDX-FileCopyrightText: 2026 TRELYAN
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# The one place the release artifact is built.
+#
+# It exists so that the build which release provenance attests is the same build
+# that runs on every push. ci.yml calls it on push and pull_request; ci-slsa.yml
+# calls it on a published release and feeds its digest to the SLSA generator.
+# Because both callers run these exact steps, a build that stops producing dist/
+# turns main red immediately instead of being discovered at release time.
+#
+# This workflow is workflow_call only. It is never triggered directly, and no
+# push trigger is added to ci-slsa.yml, so a push can never produce a run named
+# "slsa-provenance" with the signing job skipped.
+
+name: build-artifact
+
+on:
+  workflow_call:
+    inputs:
+      upload:
+        description: >-
+          Upload nerion-release.tar.gz and its .sha256 as a run artifact.
+          The release path needs it; the per-push path only needs the build to
+          succeed, so it passes false.
+        required: false
+        default: false
+        type: boolean
+    outputs:
+      digests:
+        description: base64 of the sha256sum line for nerion-release.tar.gz
+        value: ${{ jobs.build.outputs.digests }}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build release artifact
+    runs-on: ubuntu-latest
+    outputs:
+      digests: ${{ steps.hash.outputs.digests }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: '22'
+      - name: Install dependencies (lockfile only)
+        run: npm ci
+      # `--if-present` is deliberately NOT used: if the build script disappears,
+      # that is a failure, not a reason to continue and attest something else.
+      - name: Build
+        run: npm run build
+      - name: Package artifact
+        run: |
+          set -euo pipefail
+          # Without this the old `tar dist/ || tar README.md LICENSE NOTICE` fallback
+          # would package the stand-in files whenever the build produced nothing, and
+          # the release provenance would then attest documentation instead of code.
+          test -d dist || { echo "::error::build produced no dist/; refusing to attest a stand-in"; exit 1; }
+          tar -czf nerion-release.tar.gz dist/
+      - name: Compute SHA-256 digest
+        id: hash
+        run: |
+          set -euo pipefail
+          sha256sum nerion-release.tar.gz > nerion-release.tar.gz.sha256
+          echo "digests=$(base64 -w0 < nerion-release.tar.gz.sha256)" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ inputs.upload }}
+        with:
+          name: nerion-release
+          path: |
+            nerion-release.tar.gz
+            nerion-release.tar.gz.sha256
+          if-no-files-found: error

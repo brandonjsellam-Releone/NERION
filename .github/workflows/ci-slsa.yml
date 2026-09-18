@@ -28,35 +28,17 @@ permissions:
   contents: read
 
 jobs:
+  # The build lives in one reusable workflow so that the artifact this job attests is
+  # produced by exactly the steps ci.yml runs on every push. It refuses to package a
+  # stand-in: if the build produces no dist/, the job fails instead of tarring
+  # README/LICENSE/NOTICE and handing their digest to the generator.
   build:
     name: Build release artifact
-    runs-on: ubuntu-latest
-    outputs:
-      digests: ${{ steps.hash.outputs.digests }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
-        with:
-          node-version: '22'
-      - name: Install dependencies (lockfile only)
-        run: npm ci
-      - name: Build
-        run: npm run build --if-present
-      - name: Package artifact
-        run: |
-          tar -czf nerion-release.tar.gz dist/ || tar -czf nerion-release.tar.gz README.md LICENSE NOTICE
-      - name: Compute SHA-256 digest
-        id: hash
-        run: |
-          sha256sum nerion-release.tar.gz > nerion-release.tar.gz.sha256
-          echo "digests=$(cat nerion-release.tar.gz.sha256 | base64 -w0)" >> "$GITHUB_OUTPUT"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: nerion-release
-          path: |
-            nerion-release.tar.gz
-            nerion-release.tar.gz.sha256
-          if-no-files-found: error
+    permissions:
+      contents: read
+    uses: ./.github/workflows/build-artifact.yml
+    with:
+      upload: true
 
   provenance:
     name: SLSA provenance
@@ -67,7 +49,10 @@ jobs:
       id-token: write
       contents: read
       actions: read
-    # Pin to a specific release SHA for supply-chain hygiene.
+    # Referenced by TAG, not by commit SHA, and that is required rather than sloppy:
+    # slsa-github-generator checks its own invocation ref and refuses to run when it is
+    # called by SHA, because the ref is what the generated provenance names as the
+    # builder id. Pin by moving this tag deliberately; do not "fix" it to a SHA.
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
     with:
       base64-subjects: ${{ needs.build.outputs.digests }}
