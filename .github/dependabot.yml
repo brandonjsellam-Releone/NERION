@@ -23,9 +23,20 @@ updates:
       prefix-development: "deps-dev"
       include: "scope"
     groups:
+      # Crypto primitives get their own PR. A 0.x "minor" (@noble/post-quantum 0.6 -> 0.7)
+      # is semver-breaking, and every @noble bump needs a crypto review before merge.
+      # All four @noble packages stay in ONE group on purpose: @noble/post-quantum 0.7.1
+      # requires @noble/ciphers, @noble/curves and @noble/hashes at exactly 2.4.0, so
+      # splitting them would produce PRs that cannot install.
+      noble-crypto:
+        applies-to: version-updates
+        patterns:
+          - "@noble/*"
       # Batch all non-major (minor + patch) bumps into a single PR to cut review noise.
       npm-minor-patch:
         applies-to: version-updates
+        exclude-patterns:
+          - "@noble/*"
         update-types:
           - "minor"
           - "patch"
