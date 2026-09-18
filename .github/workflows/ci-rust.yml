@@ -7,11 +7,20 @@ name: ci-rust
 on:
   push:
     branches: [main]
+    # The Rust tests read conformance/vectors/ps-kat.json (rust/tests/kat.rs and
+    # rust/src/lib.rs resolve it relative to CARGO_MANIFEST_DIR), and a change to this
+    # workflow file is itself a change to what is being checked. Both sit outside
+    # rust/**, so without them listed here this job does not run when its own inputs move.
     paths:
       - 'rust/**'
+      - 'conformance/vectors/ps-kat.json'
+      - '.github/workflows/ci-rust.yml'
   pull_request:
     paths:
       - 'rust/**'
+      - 'conformance/vectors/ps-kat.json'
+      - '.github/workflows/ci-rust.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -29,6 +38,10 @@ jobs:
           toolchain: stable
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        with:
+          # The workspace is rust/, not the repository root. Without this the action
+          # runs cargo metadata at the root, logs an error and restores nothing.
+          workspaces: rust
       - run: cargo fmt --check
       - run: cargo clippy -- -D warnings
       - run: cargo test
