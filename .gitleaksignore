@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: 2026 TRELYAN
+# SPDX-License-Identifier: Apache-2.0
+#
+# Triaged gitleaks findings, suppressed by FINGERPRINT only.
+#
+# A fingerprint is commit:file:rule:line, so each entry silences exactly one
+# match at one line of one commit. Never suppress by path or by rule here, and
+# never widen an allowlist in .gitleaks.toml to make a finding go away: that
+# would blind the scan to everything else at that path.
+#
+# These two were found by the first scan that actually covered every ref
+# (gitleaks 8.30.1, --log-opts=--all). The previous action-based job scanned a
+# commit range and reported "0 commits scanned" on merge pushes, so it had never
+# looked at either line.
+#
+# 1) keystore/src/pkcs11.ts:85 — the default generic-api-key rule matches inside
+#    an English error message that names two environment variables:
+#      throw new Error('pkcs11SealerFromEnv: PKCS11_MODULE_PATH and PKCS11_PIN must both be set')
+#    There is no value here, only variable names. False positive.
+50193fba718ef9055ab8c803fb05a1ae566586f6:keystore/src/pkcs11.ts:generic-api-key:85
+
+# 2) keystore/test/aws-kms.test.ts:19 — AWS's own published SigV4 documentation
+#    example signing key, used as a test vector by the mock-KMS unit test. The
+#    test performs no network I/O and the value corresponds to no AWS account;
+#    it exists so the test can assert that requests were correctly SigV4-signed.
+#    Not a credential of TRELYAN's or of anyone else's.
+50193fba718ef9055ab8c803fb05a1ae566586f6:keystore/test/aws-kms.test.ts:nerion-high-entropy-generic:19

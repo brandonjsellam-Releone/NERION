@@ -13,8 +13,12 @@ permissions:
   contents: read
 
 jobs:
-  gitleaks-scan:
+  gitleaks:
     runs-on: ubuntu-latest
+    env:
+      GITLEAKS_VERSION: "8.30.1"
+      GITLEAKS_SHA256: "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"
+      GITLEAKS_LOG_OPTS: "--all"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -23,11 +27,56 @@ jobs:
           # secrets introduced in prior commits.
           fetch-depth: 0
 
-      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
-        with:
-          config: .gitleaks.toml
-          fail: true
-          log-opts: "--all"
-        env:
-          # GITHUB_TOKEN is needed by the action to post annotations on PRs.
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # gitleaks/gitleaks-action declares no inputs, so the `config`, `fail` and
+      # `log-opts` this job used to pass were all ignored ("Unexpected input(s)"
+      # in the logs). It scans a commit RANGE, so the merge push of 3c447b8
+      # reported "0 commits scanned" and still went green (run 33330572730).
+      # The action is replaced by a pinned binary invoked directly.
+      - name: Install gitleaks (SHA-256 verified)
+        run: |
+          set -euo pipefail
+          curl -sSfL -o "$RUNNER_TEMP/gitleaks.tar.gz" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/gitleaks.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/gitleaks.tar.gz" -C "$RUNNER_TEMP" gitleaks
+
+      # The teeth check uses the SAME log-opts and the SAME repo config as the real scan, so narrowing the
+      # scan scope or adding a catch-all allowlist turns this step red.
+      - name: Teeth check (a planted finding reachable only from another ref must be found)
+        run: |
+          set -euo pipefail
+          d="$RUNNER_TEMP/teeth"; cfg="$RUNNER_TEMP/teeth.toml"
+          rm -rf "$d"; mkdir -p "$d"
+          if [ -f "$GITHUB_WORKSPACE/.gitleaks.toml" ]; then
+            printf '[extend]\npath = "%s"\n' "$GITHUB_WORKSPACE/.gitleaks.toml" > "$cfg"
+          else
+            printf '[extend]\nuseDefault = true\n' > "$cfg"
+          fi
+          cat >> "$cfg" <<'EOF'
+
+          [[rules]]
+          id = "teeth-canary"
+          regex = '''TEETH_CANARY_[0-9]{8}'''
+          EOF
+          g() { git -C "$d" -c user.name=ci -c user.email=ci@invalid "$@"; }
+          g init -q -b main
+          echo "planted TEETH_CANARY_12345678" > "$d/planted.txt"
+          g add planted.txt && g commit -qm planted
+          g checkout -q --orphan clean
+          g rm -q --cached planted.txt && rm "$d/planted.txt"
+          echo ok > "$d/ok.txt" && g add ok.txt && g commit -qm clean
+          set +e
+          "$RUNNER_TEMP/gitleaks" git --config "$cfg" --gitleaks-ignore-path "$GITHUB_WORKSPACE" \
+            --log-opts="$GITLEAKS_LOG_OPTS" --exit-code 3 --no-banner "$d"
+          rc=$?
+          set -e
+          [ "$rc" -eq 3 ] || { echo "::error::teeth check expected exit 3, got $rc"; exit 1; }
+
+      # Printed so the scan's own "N commits scanned" line can be read against the
+      # number of commits that exist. A merge commit carries no patch, so the scanned
+      # figure is lower than this by the number of merges; what it must never be is 1 or 0.
+      - name: Commits in scope
+        run: git rev-list --all --count
+
+      - name: gitleaks over every ref
+        run: '"$RUNNER_TEMP/gitleaks" git --log-opts="$GITLEAKS_LOG_OPTS" --redact=100 --verbose --no-banner --exit-code 1 .'
