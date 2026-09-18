@@ -37,11 +37,7 @@ import { assertCnsa } from './cnsa-oracle.js'
 const CBOM_CONTEXT = DOMAIN_TAGS.CBOM
 
 export type QuantumClass =
-  | 'pq-cat5'
-  | 'pq-cat3'
-  | 'pq-other'
-  | 'quantum-resistant-symmetric'
-  | 'quantum-vulnerable'
+  'pq-cat5' | 'pq-cat3' | 'pq-other' | 'quantum-resistant-symmetric' | 'quantum-vulnerable'
 
 export interface CryptoAsset {
   readonly name: string
