@@ -21,11 +21,11 @@
  * is registered but not yet implementable — see {@link ./stubs}.
  */
 
-import { XWing, MLKEM1024P384 } from '@noble/post-quantum/hybrid.js'
+import { ml_kem768_x25519, ml_kem1024_p384 } from '@noble/post-quantum/hybrid.js'
 import type { Bytes, Kem } from './types.js'
 import { NotImplementedError } from './errors.js'
 
-/** Structural shape of a noble KEM (XWing, MLKEM1024P384, ml_kem*, …). */
+/** Structural shape of a noble KEM (ml_kem768_x25519, ml_kem1024_p384, ml_kem*, …). */
 interface NobleKem {
   keygen(seed?: Bytes): { publicKey: Bytes; secretKey: Bytes }
   encapsulate(publicKey: Bytes, msg?: Bytes): { cipherText: Bytes; sharedSecret: Bytes }
@@ -62,9 +62,9 @@ export const KEM_IDS = {
 export type KemId = (typeof KEM_IDS)[keyof typeof KEM_IDS]
 
 const REGISTRY: Record<string, () => Kem> = {
-  [KEM_IDS.XWING]: () => wrap(KEM_IDS.XWING, XWing as unknown as NobleKem),
+  [KEM_IDS.XWING]: () => wrap(KEM_IDS.XWING, ml_kem768_x25519 as unknown as NobleKem),
   [KEM_IDS.MLKEM1024_P384]: () =>
-    wrap(KEM_IDS.MLKEM1024_P384, MLKEM1024P384 as unknown as NobleKem),
+    wrap(KEM_IDS.MLKEM1024_P384, ml_kem1024_p384 as unknown as NobleKem),
   [KEM_IDS.HQC256]: () => {
     throw new NotImplementedError(
       'HQC-256 KEM',
